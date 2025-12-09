@@ -1,0 +1,295 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kadysoft - Recipes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #5d5fef;
+            --light: #f8f9ff;
+            --gray: #e0e4ff;
+            --text: #2d3748;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Cairo', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f0f2ff 0%, #f8f9ff 100%);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        header {
+            background: white;
+            padding: 18px 20px;
+            box-shadow: 0 4px 20px rgba(93,95,239,0.12);
+            font-size: 1.4em;
+            font-weight: 800;
+            color: var(--primary);
+            text-align: center;
+            position: relative;
+        }
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.6em;
+            color: var(--primary);
+            cursor: pointer;
+            display: none;
+        }
+        .breadcrumbs {
+            padding: 12px 20px;
+            background: white;
+            font-size: 0.95em;
+            color: #666;
+            border-bottom: 1px solid #eee;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+        .breadcrumbs span {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 18px;
+        }
+        .item {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(93,95,239,0.1);
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            cursor: pointer;
+        }
+        .item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(93,95,239,0.2);
+        }
+        .item i {
+            font-size: 2.8em;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+        .item.folder i { color: #ffa502; }
+        .item span {
+            display: block;
+            font-weight: 600;
+            font-size: 1em;
+            word-break: break-word;
+        }
+        #preview {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: white;
+            z-index: 100;
+            display: none;
+            animation: slideIn 0.4s ease;
+        }
+        #preview iframe {
+            width: 100%;
+            height: calc(100% - 60px);
+            border: none;
+        }
+        .preview-header {
+            height: 60px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .close-preview {
+            font-size: 1.8em;
+            cursor: pointer;
+        }
+        footer {
+            background: white;
+            padding: 14px;
+            text-align: center;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+        }
+        footer a {
+            margin: 0 20px;
+            color: var(--primary);
+            font-size: 1.8em;
+            transition: 0.3s;
+        }
+        footer a:hover { transform: scale(1.2); }
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
+            .item { padding: 16px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <i class="fas fa-arrow-right back-btn" id="backBtn"></i>
+        Kadysoft - Recipes
+    </header>
+
+    <div class="breadcrumbs" id="breadcrumbs">Recipes</div>
+
+    <div class="content">
+        <div class="grid" id="grid"></div>
+    </div>
+
+    <div id="preview">
+        <div class="preview-header">
+            <span id="fileName">معاينة</span>
+            <i class="fas fa-times close-preview" id="closePreview"></i>
+        </div>
+        <iframe id="iframe"></iframe>
+    </div>
+
+    <footer>
+        <a href="https://facebook.com/kadinioo" target="_blank"><i class="fab fa-facebook"></i></a>
+        <a href="https://wa.me/+201555266002" target="_blank"><i class="fab fa-whatsapp"></i></a>
+    </footer>
+
+    <script>
+        const owner = 'ProgKady';
+        const repo = 'Recipes';
+        const branch = 'master';
+        const api = `https://api.github.com/repos/${owner}/${repo}/contents`;
+        const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
+
+        let history = [''];
+
+        const grid = document.getElementById('grid');
+        const breadcrumbs = document.getElementById('breadcrumbs');
+        const backBtn = document.getElementById('backBtn');
+        const preview = document.getElementById('preview');
+        const iframe = document.getElementById('iframe');
+        const fileName = document.getElementById('fileName');
+        const closePreview = document.getElementById('closePreview');
+
+      
+        function decodeKS(text) {
+            return text
+                .replace(/פֿ/g, "9").replace(/כֿ/g, "8").replace(/בֿ/g, "7").replace(/וֹ/g, "6").replace(/תּ/g, "5")
+                .replace(/שּ/g, "4").replace(/רּ/g, "3").replace(/קּ/g, "2").replace(/צּ/g, "1").replace(/פּ/g, "0")
+                .replace(/ףּ/g, "Z").replace(/סּ/g, "Y").replace(/נּ/g, "X").replace(/מּ/g, "W").replace(/לּ/g, "V")
+                .replace(/כּ/g, "U").replace(/ךּ/g, "T").replace(/יּ/g, "S").replace(/טּ/g, "R").replace(/זּ/g, "Q")
+                .replace(/וּ/g, "P").replace(/הּ/g, "O").replace(/דּ/g, "N").replace(/גּ/g, "M").replace(/בּ/g, "L")
+                .replace(/אּ/g, "K").replace(/אָ/g, "J").replace(/אַ/g, "I").replace(/שּׂ/g, "H").replace(/שּׁ/g, "G")
+                .replace(/שׂ/g, "F").replace(/שׁ/g, "E").replace(/﬩/g, "D").replace(/ﬨ/g, "C").replace(/ﬧ/g, "B")
+                .replace(/ﬦ/g, "A")
+                .replace(/&NBSP;/gi, "")
+                .replace(/[\u200B-\u200D\uFEFF]/g, "");
+        }
+
+        async function loadPath(path = '') {
+            const res = await fetch(`${api}/${path}?ref=${branch}`);
+            const items = await res.json();
+            items.sort((a,b) => (b.type === 'dir' ? -1 : 1));
+
+            grid.innerHTML = '';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item ' + item.type;
+                div.innerHTML = `
+                    <i class="fas ${item.type==='dir' ? 'fa-folder' : 'fa-file-code'}"></i>
+                    <span>${item.name.replace('.ks', '')}</span>
+                `;
+
+                div.onclick = () => {
+                    if (item.type === 'dir') {
+                        history.push(item.path);
+                        updateBreadcrumbs();
+                        loadPath(item.path);
+                        backBtn.style.display = 'block';
+                    } else if (item.name.endsWith('.ks')) {
+                        openPreview(item);
+                    }
+                };
+                grid.appendChild(div);
+            });
+        }
+
+        function updateBreadcrumbs() {
+            const parts = history[history.length-1].split('/').filter(x=>x);
+            let html = 'Recipes';
+            let currentPath = '';
+            parts.forEach(part => {
+                currentPath += (currentPath ? '/' : '') + part;
+                html += ` <i class="fas fa-chevron-left"></i> <span onclick="goTo('${currentPath}')">${part}</span>`;
+            });
+            breadcrumbs.innerHTML = html;
+        }
+
+        function goTo(path) {
+            const index = history.findIndex(p => p === path);
+            history = history.slice(0, index+1);
+            loadPath(path);
+            backBtn.style.display = history.length > 1 ? 'block' : 'none';
+            updateBreadcrumbs();
+        }
+
+        backBtn.onclick = () => {
+            if (history.length > 1) {
+                history.pop();
+                loadPath(history[history.length-1]);
+                updateBreadcrumbs();
+                if (history.length === 1) backBtn.style.display = 'none';
+            }
+        };
+
+       
+        async function openPreview(item) {
+            fileName.textContent = item.name;
+            iframe.srcdoc = '<h2 style="text-align:center;padding:80px;color:#999;font-family:Cairo"></h2>';
+            preview.style.display = 'block';
+
+            try {
+                const res = await fetch(`${raw}/${item.path}`);
+                let content = await res.text();
+                const decodedHTML = decodeKS(content);
+                iframe.srcdoc = decodedHTML;
+            } catch (err) {
+                iframe.srcdoc = '<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف</h3>';
+            }
+        }
+
+        closePreview.onclick = () => {
+            preview.style.display = 'none';
+        };
+
+        // Swipe back
+        let touchStartX = 0;
+        document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+        document.addEventListener('touchend', e => {
+            const touchEndX = e.changedTouches[0].clientX;
+            if (touchStartX - touchEndX > 100 && history.length > 1) {
+                backBtn.click();
+            }
+        });
+
+        // بدء التحميل
+        loadPath();
+        updateBreadcrumbs();
+    </script>
+</body>
+</html>
