@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -7,6 +6,7 @@
     <title>Kadysoft - Recipes</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+
     <style>
         :root {
             --primary: #5d5fef;
@@ -56,6 +56,7 @@
         .breadcrumbs span {
             color: var(--primary);
             font-weight: 600;
+            cursor: pointer;
         }
         .content {
             flex: 1;
@@ -75,6 +76,7 @@
             box-shadow: 0 8px 25px rgba(93,95,239,0.1);
             transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
             cursor: pointer;
+            user-select: none;
         }
         .item:hover {
             transform: translateY(-8px);
@@ -92,6 +94,7 @@
             font-size: 1em;
             word-break: break-word;
         }
+
         #preview {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -105,6 +108,7 @@
             height: calc(100% - 60px);
             border: none;
         }
+
         .preview-header {
             height: 60px;
             background: var(--primary);
@@ -120,11 +124,13 @@
             font-size: 1.8em;
             cursor: pointer;
         }
+
         footer {
             background: white;
             padding: 14px;
             text-align: center;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            user-select:none;
         }
         footer a {
             margin: 0 20px;
@@ -133,163 +139,194 @@
             transition: 0.3s;
         }
         footer a:hover { transform: scale(1.2); }
+
         @keyframes slideIn {
             from { transform: translateX(100%); }
             to { transform: translateX(0); }
         }
-        @media (max-width: 480px) {
-            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
-            .item { padding: 16px 12px; }
-        }
     </style>
 </head>
-<body>
 
-    <header>
-        <i class="fas fa-arrow-right back-btn" id="backBtn"></i>
-        Kadysoft - Recipes
-    </header>
+<body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
 
-    <div class="breadcrumbs" id="breadcrumbs">Recipes</div>
+<header>
+    <i class="fas fa-arrow-right back-btn" id="backBtn"></i>
+    Kadysoft - Recipes
+</header>
 
-    <div class="content">
-        <div class="grid" id="grid"></div>
+<div class="breadcrumbs" id="breadcrumbs">Recipes</div>
+
+<div class="content">
+    <div class="grid" id="grid"></div>
+</div>
+
+<div id="preview">
+    <div class="preview-header">
+        <span id="fileName">معاينة</span>
+        <i class="fas fa-times close-preview" id="closePreview"></i>
     </div>
+    <iframe id="iframe"></iframe>
+</div>
 
-    <div id="preview">
-        <div class="preview-header">
-            <span id="fileName">معاينة</span>
-            <i class="fas fa-times close-preview" id="closePreview"></i>
-        </div>
-        <iframe id="iframe"></iframe>
-    </div>
+<footer>
+    <a href="https://facebook.com/kadinioo" target="_blank"><i class="fab fa-facebook"></i></a>
+    <a href="https://wa.me/+201555266002" target="_blank"><i class="fab fa-whatsapp"></i></a>
+</footer>
 
-    <footer>
-        <a href="https://facebook.com/kadinioo" target="_blank"><i class="fab fa-facebook"></i></a>
-        <a href="https://wa.me/+201555266002" target="_blank"><i class="fab fa-whatsapp"></i></a>
-    </footer>
+<script>
 
-    <script>
-        const owner = 'ProgKady';
-        const repo = 'Recipes';
-        const branch = 'master';
-        const api = `https://api.github.com/repos/${owner}/${repo}/contents`;
-        const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
+    const owner = 'ProgKady';
+    const repo = 'Recipes';
+    const branch = 'master';
+    const api = `https://api.github.com/repos/${owner}/${repo}/contents`;
+    const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
+    let history = [''];
 
-        let history = [''];
+    const grid = document.getElementById('grid');
+    const breadcrumbs = document.getElementById('breadcrumbs');
+    const backBtn = document.getElementById('backBtn');
+    const preview = document.getElementById('preview');
+    const iframe = document.getElementById('iframe');
+    const fileName = document.getElementById('fileName');
+    const closePreview = document.getElementById('closePreview');
 
-        const grid = document.getElementById('grid');
-        const breadcrumbs = document.getElementById('breadcrumbs');
-        const backBtn = document.getElementById('backBtn');
-        const preview = document.getElementById('preview');
-        const iframe = document.getElementById('iframe');
-        const fileName = document.getElementById('fileName');
-        const closePreview = document.getElementById('closePreview');
+    function decodeKS(text) {
+        return text
+            .replace(/פֿ/g, "9").replace(/כֿ/g, "8").replace(/בֿ/g, "7")
+            .replace(/וֹ/g, "6").replace(/תּ/g, "5").replace(/שּ/g, "4")
+            .replace(/רּ/g, "3").replace(/קּ/g, "2").replace(/צּ/g, "1")
+            .replace(/פּ/g, "0").replace(/ףּ/g, "Z").replace(/סּ/g, "Y")
+            .replace(/נּ/g, "X").replace(/מּ/g, "W").replace(/לּ/g, "V")
+            .replace(/כּ/g, "U").replace(/ךּ/g, "T").replace(/יּ/g, "S")
+            .replace(/טּ/g, "R").replace(/זּ/g, "Q").replace(/וּ/g, "P")
+            .replace(/הּ/g, "O").replace(/דּ/g, "N").replace(/גּ/g, "M")
+            .replace(/בּ/g, "L").replace(/אּ/g, "K").replace(/אָ/g, "J")
+            .replace(/אַ/g, "I").replace(/שּׂ/g, "H").replace(/שּׁ/g, "G")
+            .replace(/שׂ/g, "F").replace(/שׁ/g, "E").replace(/﬩/g, "D")
+            .replace(/ﬨ/g, "C").replace(/ﬧ/g, "B").replace(/ﬦ/g, "A")
+            .replace(/&NBSP;/gi, "")
+            .replace(/[\u200B-\u200D\uFEFF]/g, "");
+    }
 
-      
-        function decodeKS(text) {
-            return text
-                .replace(/פֿ/g, "9").replace(/כֿ/g, "8").replace(/בֿ/g, "7").replace(/וֹ/g, "6").replace(/תּ/g, "5")
-                .replace(/שּ/g, "4").replace(/רּ/g, "3").replace(/קּ/g, "2").replace(/צּ/g, "1").replace(/פּ/g, "0")
-                .replace(/ףּ/g, "Z").replace(/סּ/g, "Y").replace(/נּ/g, "X").replace(/מּ/g, "W").replace(/לּ/g, "V")
-                .replace(/כּ/g, "U").replace(/ךּ/g, "T").replace(/יּ/g, "S").replace(/טּ/g, "R").replace(/זּ/g, "Q")
-                .replace(/וּ/g, "P").replace(/הּ/g, "O").replace(/דּ/g, "N").replace(/גּ/g, "M").replace(/בּ/g, "L")
-                .replace(/אּ/g, "K").replace(/אָ/g, "J").replace(/אַ/g, "I").replace(/שּׂ/g, "H").replace(/שּׁ/g, "G")
-                .replace(/שׂ/g, "F").replace(/שׁ/g, "E").replace(/﬩/g, "D").replace(/ﬨ/g, "C").replace(/ﬧ/g, "B")
-                .replace(/ﬦ/g, "A")
-                .replace(/&NBSP;/gi, "")
-                .replace(/[\u200B-\u200D\uFEFF]/g, "");
-        }
+    async function loadPath(path = '') {
+        const res = await fetch(`${api}/${path}?ref=${branch}`);
+        const items = await res.json();
 
-        async function loadPath(path = '') {
-            const res = await fetch(`${api}/${path}?ref=${branch}`);
-            const items = await res.json();
-            items.sort((a,b) => (b.type === 'dir' ? -1 : 1));
+        items.sort((a, b) => (b.type === 'dir' ? -1 : 1));
 
-            grid.innerHTML = '';
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'item ' + item.type;
-                div.innerHTML = `
-                    <i class="fas ${item.type==='dir' ? 'fa-folder' : 'fa-file-code'}"></i>
-                    <span>${item.name.replace('.ks', '')}</span>
-                `;
+        grid.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'item ' + item.type;
+            div.innerHTML = `
+                <i class="fas ${item.type === 'dir' ? 'fa-folder' : 'fa-file-code'}"></i>
+                <span>${item.name.replace('.ks', '')}</span>
+            `;
+            div.onclick = () => {
+                if (item.type === 'dir') {
+                    history.push(item.path);
+                    updateBreadcrumbs();
+                    loadPath(item.path);
+                    backBtn.style.display = 'block';
+                } else if (item.name.endsWith('.ks')) {
+                    openPreview(item);
+                }
+            };
+            grid.appendChild(div);
+        });
+    }
 
-                div.onclick = () => {
-                    if (item.type === 'dir') {
-                        history.push(item.path);
-                        updateBreadcrumbs();
-                        loadPath(item.path);
-                        backBtn.style.display = 'block';
-                    } else if (item.name.endsWith('.ks')) {
-                        openPreview(item);
-                    }
-                };
-                grid.appendChild(div);
-            });
-        }
+    function updateBreadcrumbs() {
+        const parts = history[history.length - 1].split('/').filter(x => x);
+        let html = 'Recipes';
+        let currentPath = '';
 
-        function updateBreadcrumbs() {
-            const parts = history[history.length-1].split('/').filter(x=>x);
-            let html = 'Recipes';
-            let currentPath = '';
-            parts.forEach(part => {
-                currentPath += (currentPath ? '/' : '') + part;
-                html += ` <i class="fas fa-chevron-left"></i> <span onclick="goTo('${currentPath}')">${part}</span>`;
-            });
-            breadcrumbs.innerHTML = html;
-        }
-
-        function goTo(path) {
-            const index = history.findIndex(p => p === path);
-            history = history.slice(0, index+1);
-            loadPath(path);
-            backBtn.style.display = history.length > 1 ? 'block' : 'none';
-            updateBreadcrumbs();
-        }
-
-        backBtn.onclick = () => {
-            if (history.length > 1) {
-                history.pop();
-                loadPath(history[history.length-1]);
-                updateBreadcrumbs();
-                if (history.length === 1) backBtn.style.display = 'none';
-            }
-        };
-
-       
-        async function openPreview(item) {
-            fileName.textContent = item.name;
-            iframe.srcdoc = '<h2 style="text-align:center;padding:80px;color:#999;font-family:Cairo"></h2>';
-            preview.style.display = 'block';
-
-            try {
-                const res = await fetch(`${raw}/${item.path}`);
-                let content = await res.text();
-                const decodedHTML = decodeKS(content);
-                iframe.srcdoc = decodedHTML;
-            } catch (err) {
-                iframe.srcdoc = '<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف</h3>';
-            }
-        }
-
-        closePreview.onclick = () => {
-            preview.style.display = 'none';
-        };
-
-        // Swipe back
-        let touchStartX = 0;
-        document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
-        document.addEventListener('touchend', e => {
-            const touchEndX = e.changedTouches[0].clientX;
-            if (touchStartX - touchEndX > 100 && history.length > 1) {
-                backBtn.click();
-            }
+        parts.forEach(part => {
+            currentPath += (currentPath ? '/' : '') + part;
+            html += ` <i class="fas fa-chevron-left"></i> 
+                      <span onclick="goTo('${currentPath}')">${part}</span>`;
         });
 
-        // بدء التحميل
-        loadPath();
+        breadcrumbs.innerHTML = html;
+    }
+
+    function goTo(path) {
+        const index = history.findIndex(p => p === path);
+        history = history.slice(0, index + 1);
+        loadPath(path);
+        backBtn.style.display = history.length > 1 ? 'block' : 'none';
         updateBreadcrumbs();
-    </script>
+    }
+
+    backBtn.onclick = () => {
+        if (history.length > 1) {
+            history.pop();
+            loadPath(history[history.length - 1]);
+            updateBreadcrumbs();
+            if (history.length === 1) backBtn.style.display = 'none';
+        }
+    };
+
+    async function openPreview(item) {
+
+        fileName.textContent = item.name;
+        preview.style.display = 'block';
+        iframe.srcdoc = `<h3 style='text-align:center;padding:80px;color:#999'>جارٍ التحميل...</h3>`;
+
+        try {
+            const res = await fetch(`${raw}/${item.path}`);
+            let content = await res.text();
+            const decodedHTML = decodeKS(content);
+
+            iframe.srcdoc = decodedHTML;
+
+            setTimeout(() => secureIframe(), 300);
+
+        } catch (err) {
+            iframe.srcdoc = '<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف</h3>';
+        }
+    }
+
+    closePreview.onclick = () => {
+        preview.style.display = 'none';
+    };
+
+    function secureIframe() {
+        try {
+            const doc = iframe.contentDocument;
+
+            const style = doc.createElement("style");
+            style.innerHTML = `
+                * { user-select:none !important; }
+                body { -webkit-touch-callout:none !important; }
+            `;
+            doc.head.appendChild(style);
+
+            doc.addEventListener("contextmenu", e => e.preventDefault());
+            doc.addEventListener("copy", e => e.preventDefault());
+            doc.addEventListener("cut", e => e.preventDefault());
+            doc.addEventListener("paste", e => e.preventDefault());
+            doc.addEventListener("selectstart", e => e.preventDefault());
+            doc.addEventListener("dragstart", e => e.preventDefault());
+            doc.addEventListener("touchstart", e => { 
+                if (e.touches.length === 1) e.preventDefault(); 
+            });
+
+        } catch (e) {}
+    }
+
+    // منع Screenshot (مضايقة فقط)
+    if (window.visualViewport) {
+        visualViewport.addEventListener("resize", () => {
+            preview.style.opacity = "0";
+            setTimeout(() => preview.style.opacity = "1", 500);
+        });
+    }
+
+    loadPath();
+    updateBreadcrumbs();
+
+</script>
+
 </body>
 </html>
