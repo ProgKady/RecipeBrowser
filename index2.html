@@ -340,23 +340,27 @@ async function openPreview(item){
             let htmlContent=await r.text();
             iframe.srcdoc = htmlContent;
         }
-        else if (item.name.endsWith('.xlsx')){
-            // تحميل مكتبة SheetJS أولاً
+        
+        else if (item.name.endsWith('.xlsx') || item.name.endsWith('.xls')){
+            // تحميل مكتبة SheetJS أولاً (مرة واحدة بس)
             await loadSheetJS();
             
             // تحميل الملف كـ ArrayBuffer
-            let r=await fetch(fileUrl);
-            let arrayBuffer=await r.arrayBuffer();
+            let r = await fetch(fileUrl);
+            if (!r.ok) throw new Error('فشل تحميل الملف');
+            let arrayBuffer = await r.arrayBuffer();
             
-            // قراءة الـ Excel
+            // قراءة الـ Excel (يدعم xlsx و xls تلقائيًا)
             let workbook = XLSX.read(arrayBuffer, {type: 'array'});
+            
+            // عرض أول شيت (أو يمكنك تطويره لعرض تبويبات لكل الشيتات لاحقًا)
             let firstSheetName = workbook.SheetNames[0];
             let worksheet = workbook.Sheets[firstSheetName];
             
-            // تحويل الـ Excel لـ HTML table
-            let htmlTable = XLSX.utils.sheet_to_html(worksheet);
+            // تحويل الشيت لـ HTML table
+            let htmlTable = XLSX.utils.sheet_to_html(worksheet, {editable: false});
             
-            iframe.srcdoc=`
+            iframe.srcdoc = `
             <html>
               <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -364,8 +368,8 @@ async function openPreview(item){
                   body { 
                     margin: 0; 
                     padding: 20px; 
-                    font-family: Arial, sans-serif; 
-                    direction: ltr;
+                    font-family: 'Cairo', Arial, sans-serif; 
+                    direction: rtl; 
                     overflow: auto;
                     background: #f8f9ff;
                   }
@@ -379,18 +383,22 @@ async function openPreview(item){
                   table {
                     width: 100%;
                     border-collapse: collapse;
-                    font-size: 12px;
+                    font-size: 14px;
                   }
                   th, td {
                     border: 1px solid #ddd;
-                    padding: 8px;
+                    padding: 10px;
                     text-align: right;
                     min-width: 80px;
+                    word-wrap: break-word;
                   }
                   th {
                     background: #5d5fef;
                     color: white;
                     font-weight: bold;
+                    position: sticky;
+                    top: 0;
+                    z-index: 1;
                   }
                   tr:nth-child(even) { background: #f9f9f9; }
                   tr:hover { background: #e3f2fd; }
@@ -398,75 +406,13 @@ async function openPreview(item){
               </head>
               <body>
                 <div class="excel-container">
+                  <h3 style="text-align:center; color:#5d5fef; margin-bottom:20px;">${item.name} - الشيت: ${firstSheetName}</h3>
                   ${htmlTable}
                 </div>
               </body>
             </html>`;
         }
-
-         else if (item.name.endsWith('.xls')){
-            // تحميل مكتبة SheetJS أولاً
-            await loadSheetJS();
-            
-            // تحميل الملف كـ ArrayBuffer
-            let r=await fetch(fileUrl);
-            let arrayBuffer=await r.arrayBuffer();
-            
-            // قراءة الـ Excel
-            let workbook = XLSX.read(arrayBuffer, {type: 'array'});
-            let firstSheetName = workbook.SheetNames[0];
-            let worksheet = workbook.Sheets[firstSheetName];
-            
-            // تحويل الـ Excel لـ HTML table
-            let htmlTable = XLSX.utils.sheet_to_html(worksheet);
-            
-            iframe.srcdoc=`
-            <html>
-              <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1">
-                <style>
-                  body { 
-                    margin: 0; 
-                    padding: 20px; 
-                    font-family: Arial, sans-serif; 
-                    direction: ltr;
-                    overflow: auto;
-                    background: #f8f9ff;
-                  }
-                  .excel-container {
-                    background: white;
-                    border-radius: 12px;
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-                    overflow: auto;
-                    max-height: 90vh;
-                  }
-                  table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 12px;
-                  }
-                  th, td {
-                    border: 1px solid #ddd;
-                    padding: 8px;
-                    text-align: right;
-                    min-width: 80px;
-                  }
-                  th {
-                    background: #5d5fef;
-                    color: white;
-                    font-weight: bold;
-                  }
-                  tr:nth-child(even) { background: #f9f9f9; }
-                  tr:hover { background: #e3f2fd; }
-                </style>
-              </head>
-              <body>
-                <div class="excel-container">
-                  ${htmlTable}
-                </div>
-              </body>
-            </html>`;
-        }
+         
 
         // تعطيل النسخ والقوائم السياقية
         setTimeout(()=>{
@@ -530,6 +476,7 @@ function openExternalLink(url) {
 </body>
 
 </html>
+
 
 
 
