@@ -320,18 +320,17 @@ async function openPreview(item){
             </html>`;
         }
         else if (item.name.endsWith('.html')){
-            // تحميل الـ HTML الخام ووضعه مباشرة في الـ iframe
             let r=await fetch(fileUrl);
             let htmlContent=await r.text();
             iframe.srcdoc = htmlContent;
         }
         else if (item.name.endsWith('.xlsx')){
-            // استخدام Microsoft Office Online Viewer
+            // Google Docs Viewer - أفضل حل مستقر لعرض Excel من روابط خام
             const encodedUrl = encodeURIComponent(fileUrl);
-            iframe.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`;
+            iframe.src = `https://docs.google.com/gview?url=${encodedUrl}&embedded=true`;
         }
 
-        // تعطيل النسخ والقوائم السياقية بعد التحميل
+        // تعطيل النسخ والقوائم السياقية
         setTimeout(()=>{
             try{
                 let d=iframe.contentDocument || iframe.contentWindow.document;
@@ -342,7 +341,7 @@ async function openPreview(item){
                     ["contextmenu","copy","cut","paste","selectstart","dragstart"].forEach(ev=>d.addEventListener(ev,e=>e.preventDefault()));
                 }
             }catch(e){}
-        }, 800);
+        }, 1000);  // زيادة الوقت شوية عشان Google Viewer
 
     }catch(e){
         iframe.srcdoc='<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف</h3>';
@@ -386,3 +385,4 @@ function openExternalLink(url) {
 </body>
 
 </html>
+
