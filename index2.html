@@ -6,21 +6,26 @@
     <title>Kadysoft</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
+
+
+
+<style>
     :root {
         --primary: #5d5fef;
         --light: #f8f9ff;
         --text: #2d3748;
     }
     * { margin:0; padding:0; box-sizing:border-box; }
-    body {
+    html, body {
+        height: 100%;
+        overflow: hidden;
         font-family: 'Cairo', 'Segoe UI', sans-serif;
         background: linear-gradient(135deg, #f0f2ff 0%, #f8f9ff 100%);
         color: var(--text);
-        height: 100vh;
+    }
+    body {
         display: flex;
         flex-direction: column;
-        overflow: hidden;
     }
     header {
         background: white;
@@ -69,7 +74,8 @@
         flex: 1;
         display: none;
         flex-direction: column;
-        overflow: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
     .tab-content.active { 
         display: flex; 
@@ -97,22 +103,18 @@
         -webkit-overflow-scrolling: touch;
     }
     .breadcrumbs span { color: var(--primary); font-weight: 600; cursor: pointer; }
-    
-    /* الحل الأساسي للسكرول على الموبايل */
     .content { 
-        flex: 1; 
-        overflow-y: auto; 
+        flex: 1;
+        overflow-y: auto;
         overflow-x: hidden;
-        padding: 20px; 
-        -webkit-overflow-scrolling: touch; 
-        overscroll-behavior: contain;
+        padding: 20px;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
     }
-    
     .grid { 
         display: grid; 
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
-        gap: 18px; 
-        min-height: 100%;
+        gap: 18px;
     }
     .item {
         background: white; border-radius: 16px; padding: 20px 16px; text-align: center;
@@ -123,14 +125,46 @@
     .item i { font-size: 2.8em; margin-bottom: 12px; color: var(--primary); }
     .item.folder i { color: #ffa502; }
     .item span { display: block; font-weight: 600; font-size: 1em; word-break: break-word; }
-    #preview { position: fixed; top:0; left:0; right:0; bottom:0; background: white; z-index: 100;
-               display: none; animation: slideIn 0.4s ease; flex-direction: column; }
-    #preview iframe { width: 100%; flex: 1; border: none; }
-    .preview-header { height: 60px; background: var(--primary); color: white;
-                      display: flex; align-items: center; justify-content: space-between;
-                      padding: 0 20px; font-size: 1.2em; font-weight: bold; flex-shrink: 0; }
+    #preview { 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        right: 0; 
+        bottom: 0; 
+        background: white; 
+        z-index: 100;
+        display: none; 
+        animation: slideIn 0.4s ease; 
+        flex-direction: column;
+    }
+    #preview iframe { 
+        width: 100%; 
+        flex: 1; 
+        border: none; 
+        -webkit-overflow-scrolling: touch;
+    }
+    .preview-header { 
+        height: 60px; 
+        background: var(--primary); 
+        color: white;
+        display: flex; 
+        align-items: center; 
+        justify-content: space-between;
+        padding: 0 20px; 
+        font-size: 1.2em; 
+        font-weight: bold; 
+        flex-shrink: 0; 
+    }
     .close-preview { font-size: 1.8em; cursor: pointer; }
-    .add-container { padding: 30px 20px; max-width: 420px; margin: 0 auto; flex: 1; display: flex; align-items: center; justify-content: center; }
+    .add-container { 
+        padding: 30px 20px; 
+        max-width: 420px; 
+        margin: 0 auto; 
+        flex: 1; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+    }
     .add-card {
         background: white;
         border-radius: 20px;
@@ -171,6 +205,8 @@
     footer a:hover { text-decoration: underline; }
     @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 </style>
+
+    
 </head>
 <body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
 <header>
@@ -425,4 +461,5 @@ function openExternalLink(url) {
 </script>
 </body>
 </html>
+
 
