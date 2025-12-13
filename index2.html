@@ -365,7 +365,71 @@ async function openPreview(item){
                     margin: 0; 
                     padding: 20px; 
                     font-family: Arial, sans-serif; 
-                    direction: rtl;
+                    direction: ltr;
+                    overflow: auto;
+                    background: #f8f9ff;
+                  }
+                  .excel-container {
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                    overflow: auto;
+                    max-height: 90vh;
+                  }
+                  table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 12px;
+                  }
+                  th, td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: right;
+                    min-width: 80px;
+                  }
+                  th {
+                    background: #5d5fef;
+                    color: white;
+                    font-weight: bold;
+                  }
+                  tr:nth-child(even) { background: #f9f9f9; }
+                  tr:hover { background: #e3f2fd; }
+                </style>
+              </head>
+              <body>
+                <div class="excel-container">
+                  ${htmlTable}
+                </div>
+              </body>
+            </html>`;
+        }
+
+         else if (item.name.endsWith('.xls')){
+            // تحميل مكتبة SheetJS أولاً
+            await loadSheetJS();
+            
+            // تحميل الملف كـ ArrayBuffer
+            let r=await fetch(fileUrl);
+            let arrayBuffer=await r.arrayBuffer();
+            
+            // قراءة الـ Excel
+            let workbook = XLSX.read(arrayBuffer, {type: 'array'});
+            let firstSheetName = workbook.SheetNames[0];
+            let worksheet = workbook.Sheets[firstSheetName];
+            
+            // تحويل الـ Excel لـ HTML table
+            let htmlTable = XLSX.utils.sheet_to_html(worksheet);
+            
+            iframe.srcdoc=`
+            <html>
+              <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                  body { 
+                    margin: 0; 
+                    padding: 20px; 
+                    font-family: Arial, sans-serif; 
+                    direction: ltr;
                     overflow: auto;
                     background: #f8f9ff;
                   }
@@ -466,5 +530,6 @@ function openExternalLink(url) {
 </body>
 
 </html>
+
 
 
