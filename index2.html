@@ -32,7 +32,6 @@
             text-align: center;
             position: relative;
         }
-        /* أيقونات الفيسبوك والواتساب على اليمين فوق */
         .header-social {
             position: absolute;
             right: 20px;
@@ -46,7 +45,6 @@
             transition: 0.3s;
         }
         .header-social a:hover { transform: scale(1.3); }
-
         .tab-bar {
             display: flex;
             background: white;
@@ -67,12 +65,10 @@
         }
         .tab-content {
             flex: 1;
-            overflow-y: auto;
             display: none;
+            flex-direction: column;
         }
-        .tab-content.active { display: block; }
-
-        /* زر الرجوع على الشمال فوق */
+        .tab-content.active { display: flex; }
         .back-btn {
             position: absolute;
             left: 15px;
@@ -84,11 +80,10 @@
             display: none;
             z-index: 10;
         }
-
         .breadcrumbs { padding: 12px 20px; background: white; font-size: 0.95em; color: #666;
-                       border-bottom: 1px solid #eee; white-space: nowrap; overflow-x: auto; }
+                       border-bottom: 1px solid #eee; white-space: nowrap; overflow-x: auto; flex-shrink: 0; }
         .breadcrumbs span { color: var(--primary); font-weight: 600; cursor: pointer; }
-        .content { flex: 1; overflow-y: auto; padding: 20px; }
+        .content { flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
         .item {
             background: white; border-radius: 16px; padding: 20px 16px; text-align: center;
@@ -99,7 +94,6 @@
         .item i { font-size: 2.8em; margin-bottom: 12px; color: var(--primary); }
         .item.folder i { color: #ffa502; }
         .item span { display: block; font-weight: 600; font-size: 1em; word-break: break-word; }
-
         #preview { position: fixed; top:0; left:0; right:0; bottom:0; background: white; z-index: 100;
                    display: none; animation: slideIn 0.4s ease; }
         #preview iframe { width: 100%; height: calc(100% - 60px); border: none; }
@@ -107,8 +101,6 @@
                           display: flex; align-items: center; justify-content: space-between;
                           padding: 0 20px; font-size: 1.2em; font-weight: bold; }
         .close-preview { font-size: 1.8em; cursor: pointer; }
-
-        /* تبويب إضافة الصورة */
         .add-container { padding: 30px 20px; max-width: 420px; margin: 0 auto; }
         .add-card {
             background: white;
@@ -135,8 +127,6 @@
         }
         .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(93,95,239,0.3); }
         #status { margin-top: 20px; font-weight: bold; font-size: 1.1em; }
-
-        /* الفوتر بخط أصغر وأنيق */
         footer {
             background: white;
             padding: 12px;
@@ -145,30 +135,25 @@
             font-size: 0.85em;
             color: #666;
             user-select: none;
+            flex-shrink: 0;
         }
         footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
         footer a:hover { text-decoration: underline; }
-
         @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
     </style>
 </head>
 <body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
-
 <header>
     RECETA
-    <!-- فيسبوك وواتساب على اليمين فوق -->
     <div class="header-social">
         <a href="https://facebook.com/kadinioo" target="_blank"><i class="fab fa-facebook"></i></a>
         <a href="https://wa.me/+201555266002" target="_blank"><i class="fab fa-whatsapp"></i></a>
     </div>
 </header>
-
 <div class="tab-bar">
     <div class="tab-btn active" onclick="openTab('recipes')">RECIPES</div>
     <div class="tab-btn" onclick="openTab('add')">SEND MODIFICATION</div>
 </div>
-
-<!-- تبويب الوصفات -->
 <div id="recipes" class="tab-content active">
     <i class="fas fa-arrow-right back-btn" id="backBtn"></i>
     <div class="breadcrumbs" id="breadcrumbs">RECIPES</div>
@@ -183,8 +168,6 @@
         <iframe id="iframe"></iframe>
     </div>
 </div>
-
-<!-- تبويب إضافة الصورة -->
 <div id="add" class="tab-content">
     <div class="add-container">
         <div class="add-card">
@@ -202,13 +185,10 @@
         </div>
     </div>
 </div>
-
-<!-- الفوتر بخط أصغر -->
 <footer>
     © 2026 <a href="#" onclick="openExternalLink('https://facebook.com/kadinioo')">Ahmed Elkady - Kadysoft Ltd.</a><br>
     <a href="#" onclick="openExternalLink('https://wa.me/201555266002')">الدعم الفني عبر واتساب</a>
 </footer>
-
 <script>
 // تبديل التبويبات
 function openTab(tab) {
@@ -217,8 +197,6 @@ function openTab(tab) {
     document.getElementById(tab).classList.add('active');
     event.target.classList.add('active');
 }
-
-/* ================== كود الوصفات الأصلي (مع دعم html و xlsx كامل) ================== */
 const owner = 'ProgKady', repo = 'Recipes', branch = 'master';
 const api = `https://api.github.com/repos/${owner}/${repo}/contents`;
 const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
@@ -247,27 +225,22 @@ async function loadPath(p=''){
     i.forEach(m=>{
         let d=document.createElement('div');
         d.className='item '+m.type;
-
-        // تحديد الأيقونة حسب نوع الملف
         let icon = 'fa-file';
         if (m.type==='dir') icon = 'fa-folder';
         else if (m.name.endsWith('.ks')) icon = 'fa-file-code';
         else if (m.name.endsWith('.html')) icon = 'fa-file-code-alt';
-        else if (m.name.endsWith('.xlsx')) icon = 'fa-file-excel';
-
+        else if (m.name.endsWith('.xlsx') || m.name.endsWith('.xls')) icon = 'fa-file-excel';
         let displayName = m.name;
         if (m.name.endsWith('.ks')) displayName = m.name.replace('.ks','');
-
         d.innerHTML=`<i class="fas ${icon}"></i><span>${displayName}</span>`;
-        
         d.onclick=()=>{
             if(m.type==='dir'){
                 history.push(m.path);
                 updateBreadcrumbs();
                 loadPath(m.path);
                 backBtn.style.display='block';
-            } 
-            else if (m.name.endsWith('.ks') || m.name.endsWith('.html') || m.name.endsWith('.xlsx')){
+            }
+            else if (m.name.endsWith('.ks') || m.name.endsWith('.html') || m.name.endsWith('.xlsx') || m.name.endsWith('.xls')){
                 openPreview(m);
             }
         };
@@ -299,7 +272,6 @@ backBtn.onclick=()=>{
     }
 }
 
-// تحميل مكتبة SheetJS للـ Excel
 function loadSheetJS() {
     return new Promise((resolve, reject) => {
         if (window.XLSX) {
@@ -318,10 +290,8 @@ async function openPreview(item){
     fileName.textContent=item.name;
     preview.style.display='block';
     iframe.srcdoc=`<h3 style='text-align:center;padding:80px;color:#999'>جارٍ التحميل...</h3>`;
-
     try{
         const fileUrl = `${raw}/${item.path}`;
-
         if (item.name.endsWith('.ks')){
             let r=await fetch(fileUrl);
             let c=await r.text();
@@ -340,81 +310,38 @@ async function openPreview(item){
             let htmlContent=await r.text();
             iframe.srcdoc = htmlContent;
         }
-        
         else if (item.name.endsWith('.xlsx') || item.name.endsWith('.xls')){
-            // تحميل مكتبة SheetJS أولاً (مرة واحدة بس)
             await loadSheetJS();
-            
-            // تحميل الملف كـ ArrayBuffer
             let r = await fetch(fileUrl);
             if (!r.ok) throw new Error('فشل تحميل الملف');
             let arrayBuffer = await r.arrayBuffer();
-            
-            // قراءة الـ Excel (يدعم xlsx و xls تلقائيًا)
             let workbook = XLSX.read(arrayBuffer, {type: 'array'});
-            
-            // عرض أول شيت (أو يمكنك تطويره لعرض تبويبات لكل الشيتات لاحقًا)
             let firstSheetName = workbook.SheetNames[0];
             let worksheet = workbook.Sheets[firstSheetName];
-            
-            // تحويل الشيت لـ HTML table
             let htmlTable = XLSX.utils.sheet_to_html(worksheet, {editable: false});
-            
             iframe.srcdoc = `
             <html>
               <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <style>
-                  body { 
-                    margin: 0; 
-                    padding: 20px; 
-                    font-family: 'Cairo', Arial, sans-serif; 
-                    direction: ltr; 
-                    overflow: auto;
-                    background: #f8f9ff;
-                  }
-                  .excel-container {
-                    background: white;
-                    border-radius: 12px;
-                    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-                    overflow: auto;
-                    max-height: 90vh;
-                  }
-                  table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    font-size: 14px;
-                  }
-                  th, td {
-                    border: 1px solid #ddd;
-                    padding: 10px;
-                    text-align: right;
-                    min-width: 80px;
-                    word-wrap: break-word;
-                  }
-                  th {
-                    background: #5d5fef;
-                    color: white;
-                    font-weight: bold;
-                    position: sticky;
-                    top: 0;
-                    z-index: 1;
-                  }
+                  body { margin: 0; padding: 15px; font-family: 'Cairo', sans-serif; direction: rtl; background: #f8f9ff; overflow: auto; }
+                  .excel-container { background: white; border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.1); overflow: auto; max-width: 100%; margin: 0 auto; }
+                  table { width: 100%; border-collapse: collapse; font-size: 14px; direction: rtl; }
+                  th, td { border: 1px solid #ddd; padding: 10px; text-align: right; word-wrap: break-word; }
+                  th { background: #5d5fef; color: white; font-weight: bold; position: sticky; top: 0; z-index: 1; }
                   tr:nth-child(even) { background: #f9f9f9; }
                   tr:hover { background: #e3f2fd; }
                 </style>
               </head>
               <body>
                 <div class="excel-container">
-                  <h3 style="text-align:center; color:#5d5fef; margin-bottom:20px;">${item.name} - الشيت: ${firstSheetName}</h3>
+                  <h3 style="text-align:center; color:#5d5fef; margin:15px 0;">${item.name} - الشيت: ${firstSheetName}</h3>
                   ${htmlTable}
                 </div>
               </body>
             </html>`;
         }
-         
-
-        // تعطيل النسخ والقوائم السياقية
+        
         setTimeout(()=>{
             try{
                 let d=iframe.contentDocument || iframe.contentWindow.document;
@@ -426,23 +353,20 @@ async function openPreview(item){
                 }
             }catch(e){}
         }, 1000);
-
     }catch(e){
-        console.error('خطأ في تحميل الملف:', e);
-        iframe.srcdoc='<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف<br><small>تفاصيل الخطأ: ' + e.message + '</small></h3>';
+        iframe.srcdoc='<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف<br><small>' + e.message + '</small></h3>';
     }
 }
 
 closePreview.onclick=()=>{
-    preview.style.display='none'; 
-    iframe.src=''; 
+    preview.style.display='none';
+    iframe.src='';
     iframe.srcdoc='';
 }
 
 loadPath();
 updateBreadcrumbs();
 
-/* ================== رفع الصور + جوجل شيت ================== */
 async function submitForm() {
     const name = document.getElementById('userName').value.trim();
     const file = document.getElementById('imageFile').files[0];
@@ -462,22 +386,12 @@ async function submitForm() {
             document.getElementById('userName').value = '';
             document.getElementById('imageFile').value = '';
         } else status.innerHTML = '<span style="color:#e74c3c">فشل الإرسال للشيت</span>';
-    } catch (e) {
-        //status.innerHTML = `<span style="color:#e74c3c">خطأ: ${e.message}</span>`;
-    }
+    } catch (e) {}
 }
 
 function openExternalLink(url) {
     window.location.href = "intent://" + url.replace(/^https?:\/\//, '') + "#Intent;package=com.android.chrome;scheme=https;end;";
 }
 </script>
-
-    
 </body>
-
 </html>
-
-
-
-
-
