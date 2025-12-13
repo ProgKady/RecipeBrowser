@@ -335,7 +335,7 @@ async function openPreview(item){
             let ws=wb.Sheets[sheetName];
             let htmlTable=XLSX.utils.sheet_to_html(ws);
             iframe.srcdoc=`<html><head><meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>html,body{height:100%;overflow:auto;-webkit-overflow-scrolling:touch;font-family:'Cairo',sans-serif;direction:rtl;background:#f8f9ff;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ddd;padding:10px;text-align:right;} th{background:#5d5fef;color:white;} tr:nth-child(even){background:#f9f9f9;}</style></head>
+            <style>html,body{height:100%;overflow:auto;-webkit-overflow-scrolling:touch;font-family:'Cairo',sans-serif;direction:ltr;background:#f8f9ff;} table{width:100%;border-collapse:collapse;} th,td{border:1px solid #ddd;padding:10px;text-align:right;} th{background:#5d5fef;color:white;} tr:nth-child(even){background:#f9f9f9;}</style></head>
             <body><h3 style="text-align:center;color:#5d5fef;margin-bottom:20px;">${item.name} - ${sheetName}</h3>${htmlTable}</body></html>`;
         }
     }catch(e){
@@ -375,3 +375,4 @@ updateBreadcrumbs();
 </script>
 </body>
 </html>
+
