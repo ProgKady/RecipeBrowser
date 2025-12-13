@@ -217,7 +217,8 @@ function openTab(tab) {
     document.getElementById(tab).classList.add('active');
     event.target.classList.add('active');
 }
-/* ================== كود الوصفات الأصلي (مع دعم html و xlsx) ================== */
+
+/* ================== كود الوصفات الأصلي (مع دعم html و xlsx كامل) ================== */
 const owner = 'ProgKady', repo = 'Recipes', branch = 'master';
 const api = `https://api.github.com/repos/${owner}/${repo}/contents`;
 const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
@@ -251,7 +252,7 @@ async function loadPath(p=''){
         let icon = 'fa-file';
         if (m.type==='dir') icon = 'fa-folder';
         else if (m.name.endsWith('.ks')) icon = 'fa-file-code';
-        else if (m.name.endsWith('.html')) icon = 'fa-file-code-alt'; // أو fa-globe
+        else if (m.name.endsWith('.html')) icon = 'fa-file-code-alt';
         else if (m.name.endsWith('.xlsx')) icon = 'fa-file-excel';
 
         let displayName = m.name;
@@ -298,6 +299,21 @@ backBtn.onclick=()=>{
     }
 }
 
+// تحميل مكتبة SheetJS للـ Excel
+function loadSheetJS() {
+    return new Promise((resolve, reject) => {
+        if (window.XLSX) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+    });
+}
+
 async function openPreview(item){
     fileName.textContent=item.name;
     preview.style.display='block';
@@ -325,9 +341,67 @@ async function openPreview(item){
             iframe.srcdoc = htmlContent;
         }
         else if (item.name.endsWith('.xlsx')){
-            // Google Docs Viewer - أفضل حل مستقر لعرض Excel من روابط خام
-            const encodedUrl = encodeURIComponent(fileUrl);
-            iframe.src = `https://docs.google.com/gview?url=${encodedUrl}&embedded=true`;
+            // تحميل مكتبة SheetJS أولاً
+            await loadSheetJS();
+            
+            // تحميل الملف كـ ArrayBuffer
+            let r=await fetch(fileUrl);
+            let arrayBuffer=await r.arrayBuffer();
+            
+            // قراءة الـ Excel
+            let workbook = XLSX.read(arrayBuffer, {type: 'array'});
+            let firstSheetName = workbook.SheetNames[0];
+            let worksheet = workbook.Sheets[firstSheetName];
+            
+            // تحويل الـ Excel لـ HTML table
+            let htmlTable = XLSX.utils.sheet_to_html(worksheet);
+            
+            iframe.srcdoc=`
+            <html>
+              <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                  body { 
+                    margin: 0; 
+                    padding: 20px; 
+                    font-family: Arial, sans-serif; 
+                    direction: rtl;
+                    overflow: auto;
+                    background: #f8f9ff;
+                  }
+                  .excel-container {
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+                    overflow: auto;
+                    max-height: 90vh;
+                  }
+                  table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 12px;
+                  }
+                  th, td {
+                    border: 1px solid #ddd;
+                    padding: 8px;
+                    text-align: right;
+                    min-width: 80px;
+                  }
+                  th {
+                    background: #5d5fef;
+                    color: white;
+                    font-weight: bold;
+                  }
+                  tr:nth-child(even) { background: #f9f9f9; }
+                  tr:hover { background: #e3f2fd; }
+                </style>
+              </head>
+              <body>
+                <div class="excel-container">
+                  ${htmlTable}
+                </div>
+              </body>
+            </html>`;
         }
 
         // تعطيل النسخ والقوائم السياقية
@@ -341,14 +415,19 @@ async function openPreview(item){
                     ["contextmenu","copy","cut","paste","selectstart","dragstart"].forEach(ev=>d.addEventListener(ev,e=>e.preventDefault()));
                 }
             }catch(e){}
-        }, 1000);  // زيادة الوقت شوية عشان Google Viewer
+        }, 1000);
 
     }catch(e){
-        iframe.srcdoc='<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف</h3>';
+        console.error('خطأ في تحميل الملف:', e);
+        iframe.srcdoc='<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف<br><small>تفاصيل الخطأ: ' + e.message + '</small></h3>';
     }
 }
 
-closePreview.onclick=()=>{preview.style.display='none'; iframe.src=''; iframe.srcdoc='';}
+closePreview.onclick=()=>{
+    preview.style.display='none'; 
+    iframe.src=''; 
+    iframe.srcdoc='';
+}
 
 loadPath();
 updateBreadcrumbs();
@@ -382,7 +461,10 @@ function openExternalLink(url) {
     window.location.href = "intent://" + url.replace(/^https?:\/\//, '') + "#Intent;package=com.android.chrome;scheme=https;end;";
 }
 </script>
+
+    
 </body>
 
 </html>
+
 
