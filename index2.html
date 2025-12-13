@@ -217,8 +217,7 @@ function openTab(tab) {
     document.getElementById(tab).classList.add('active');
     event.target.classList.add('active');
 }
-
-/* ================== كود الوصفات الأصلي (بدون أي تغيير) ================== */
+/* ================== كود الوصفات الأصلي (مع دعم html و xlsx) ================== */
 const owner = 'ProgKady', repo = 'Recipes', branch = 'master';
 const api = `https://api.github.com/repos/${owner}/${repo}/contents`;
 const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
@@ -228,35 +227,132 @@ const grid = document.getElementById('grid'), breadcrumbs = document.getElementB
     iframe = document.getElementById('iframe'), fileName = document.getElementById('fileName'),
     closePreview = document.getElementById('closePreview');
 
-function decodeKS(t){return t.replace(/פֿ/g,"9").replace(/כֿ/g,"8").replace(/בֿ/g,"7").replace(/וֹ/g,"6").replace(/תּ/g,"5").replace(/שּ/g,"4").replace(/רּ/g,"3").replace(/קּ/g,"2").replace(/צּ/g,"1").replace(/פּ/g,"0").replace(/ףּ/g,"Z").replace(/סּ/g,"Y").replace(/נּ/g,"X").replace(/מּ/g,"W").replace(/לּ/g,"V").replace(/כּ/g,"U").replace(/ךּ/g,"T").replace(/יּ/g,"S").replace(/טּ/g,"R").replace(/זּ/g,"Q").replace(/וּ/g,"P").replace(/הּ/g,"O").replace(/דּ/g,"N").replace(/גּ/g,"M").replace(/בּ/g,"L").replace(/אּ/g,"K").replace(/אָ/g,"J").replace(/אַ/g,"I").replace(/שּׂ/g,"H").replace(/שּׁ/g,"G").replace(/שׂ/g,"F").replace(/שׁ/g,"E").replace(/﬩/g,"D").replace(/ﬨ/g,"C").replace(/ﬧ/g,"B").replace(/ﬦ/g,"A").replace(/&NBSP;/gi,"").replace(/[\u200B-\u200D\uFEFF]/g,"");}
+function decodeKS(t){
+    return t.replace(/פֿ/g,"9").replace(/כֿ/g,"8").replace(/בֿ/g,"7").replace(/וֹ/g,"6").replace(/תּ/g,"5")
+            .replace(/שּ/g,"4").replace(/רּ/g,"3").replace(/קּ/g,"2").replace(/צּ/g,"1").replace(/פּ/g,"0")
+            .replace(/ףּ/g,"Z").replace(/סּ/g,"Y").replace(/נּ/g,"X").replace(/מּ/g,"W").replace(/לּ/g,"V")
+            .replace(/כּ/g,"U").replace(/ךּ/g,"T").replace(/יּ/g,"S").replace(/טּ/g,"R").replace(/זּ/g,"Q")
+            .replace(/וּ/g,"P").replace(/הּ/g,"O").replace(/דּ/g,"N").replace(/גּ/g,"M").replace(/בּ/g,"L")
+            .replace(/אּ/g,"K").replace(/אָ/g,"J").replace(/אַ/g,"I").replace(/שּׂ/g,"H").replace(/שּׁ/g,"G")
+            .replace(/שׂ/g,"F").replace(/שׁ/g,"E").replace(/﬩/g,"D").replace(/ﬨ/g,"C").replace(/ﬧ/g,"B")
+            .replace(/ﬦ/g,"A").replace(/&NBSP;/gi,"").replace(/[\u200B-\u200D\uFEFF]/g,"");
+}
 
-async function loadPath(p=''){const r=await fetch(`${api}/${p}?ref=${branch}`);let i=await r.json();i.sort((a,b)=>b.type==='dir'?-1:1);grid.innerHTML='';i.forEach(m=>{let d=document.createElement('div');d.className='item '+m.type;d.innerHTML=`<i class="fas ${m.type==='dir'?'fa-folder':'fa-file-code'}"></i><span>${m.name.replace('.ks','')}</span>`;d.onclick=()=>{if(m.type==='dir'){history.push(m.path);updateBreadcrumbs();loadPath(m.path);backBtn.style.display='block'}else if(m.name.endsWith('.ks'))openPreview(m)};grid.appendChild(d)})}
-function updateBreadcrumbs(){let p=history[history.length-1].split('/').filter(x=>x);let h='Recipes',c='';p.forEach(x=>{c+=(c?'/':'')+x;h+=` <i class="fas fa-chevron-left"></i> <span onclick="goTo('${c}')">${x}</span>`});breadcrumbs.innerHTML=h}
-function goTo(p){let i=history.findIndex(x=>x===p);history=history.slice(0,i+1);loadPath(p);backBtn.style.display=history.length>1?'block':'none';updateBreadcrumbs()}
-backBtn.onclick=()=>{if(history.length>1){history.pop();loadPath(history[history.length-1]);updateBreadcrumbs();if(history.length===1)backBtn.style.display='none'}}
+async function loadPath(p=''){
+    const r=await fetch(`${api}/${p}?ref=${branch}`);
+    let i=await r.json();
+    i.sort((a,b)=>b.type==='dir'?-1:1);
+    grid.innerHTML='';
+    i.forEach(m=>{
+        let d=document.createElement('div');
+        d.className='item '+m.type;
+
+        // تحديد الأيقونة حسب نوع الملف
+        let icon = 'fa-file';
+        if (m.type==='dir') icon = 'fa-folder';
+        else if (m.name.endsWith('.ks')) icon = 'fa-file-code';
+        else if (m.name.endsWith('.html')) icon = 'fa-file-code-alt'; // أو fa-globe
+        else if (m.name.endsWith('.xlsx')) icon = 'fa-file-excel';
+
+        let displayName = m.name;
+        if (m.name.endsWith('.ks')) displayName = m.name.replace('.ks','');
+
+        d.innerHTML=`<i class="fas ${icon}"></i><span>${displayName}</span>`;
+        
+        d.onclick=()=>{
+            if(m.type==='dir'){
+                history.push(m.path);
+                updateBreadcrumbs();
+                loadPath(m.path);
+                backBtn.style.display='block';
+            } 
+            else if (m.name.endsWith('.ks') || m.name.endsWith('.html') || m.name.endsWith('.xlsx')){
+                openPreview(m);
+            }
+        };
+        grid.appendChild(d);
+    });
+}
+
+function updateBreadcrumbs(){
+    let p=history[history.length-1].split('/').filter(x=>x);
+    let h='RECIPES',c='';
+    p.forEach(x=>{c+=(c?'/':'')+x;h+=` <i class="fas fa-chevron-left"></i> <span onclick="goTo('${c}')">${x}</span>`});
+    breadcrumbs.innerHTML=h;
+}
+
+function goTo(p){
+    let i=history.findIndex(x=>x===p);
+    history=history.slice(0,i+1);
+    loadPath(p);
+    backBtn.style.display=history.length>1?'block':'none';
+    updateBreadcrumbs();
+}
+
+backBtn.onclick=()=>{
+    if(history.length>1){
+        history.pop();
+        loadPath(history[history.length-1]);
+        updateBreadcrumbs();
+        if(history.length===1) backBtn.style.display='none';
+    }
+}
+
 async function openPreview(item){
     fileName.textContent=item.name;
     preview.style.display='block';
     iframe.srcdoc=`<h3 style='text-align:center;padding:80px;color:#999'>جارٍ التحميل...</h3>`;
+
     try{
-        let r=await fetch(`${raw}/${item.path}`);
-        let c=await r.text();
-        let decoded=decodeKS(c);
-        iframe.srcdoc=`
-        <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=0.1, maximum-scale=5">
-            <style>body{margin:0;padding:0;overflow:auto;}</style>
-          </head>
-          <body>${decoded}</body>
-        </html>`;
-        setTimeout(()=>{try{let d=iframe.contentDocument;let s=d.createElement("style");s.innerHTML=`*{user-select:none !important}body{-webkit-touch-callout:none !important}`;d.head.appendChild(s);["contextmenu","copy","cut","paste","selectstart","dragstart"].forEach(ev=>d.addEventListener(ev,e=>e.preventDefault()))}catch(e){}},300)
+        const fileUrl = `${raw}/${item.path}`;
+
+        if (item.name.endsWith('.ks')){
+            let r=await fetch(fileUrl);
+            let c=await r.text();
+            let decoded=decodeKS(c);
+            iframe.srcdoc=`
+            <html>
+              <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, minimum-scale=0.1, maximum-scale=5">
+                <style>body{margin:0;padding:0;overflow:auto;}</style>
+              </head>
+              <body>${decoded}</body>
+            </html>`;
+        }
+        else if (item.name.endsWith('.html')){
+            // تحميل الـ HTML الخام ووضعه مباشرة في الـ iframe
+            let r=await fetch(fileUrl);
+            let htmlContent=await r.text();
+            iframe.srcdoc = htmlContent;
+        }
+        else if (item.name.endsWith('.xlsx')){
+            // استخدام Microsoft Office Online Viewer
+            const encodedUrl = encodeURIComponent(fileUrl);
+            iframe.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`;
+        }
+
+        // تعطيل النسخ والقوائم السياقية بعد التحميل
+        setTimeout(()=>{
+            try{
+                let d=iframe.contentDocument || iframe.contentWindow.document;
+                if (d) {
+                    let s=d.createElement("style");
+                    s.innerHTML=`*{user-select:none !important}body{-webkit-touch-callout:none !important}`;
+                    d.head.appendChild(s);
+                    ["contextmenu","copy","cut","paste","selectstart","dragstart"].forEach(ev=>d.addEventListener(ev,e=>e.preventDefault()));
+                }
+            }catch(e){}
+        }, 800);
+
     }catch(e){
-        iframe.srcdoc='<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف</h3>'
+        iframe.srcdoc='<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف</h3>';
     }
 }
-closePreview.onclick=()=>{preview.style.display='none'}
-loadPath();updateBreadcrumbs();
+
+closePreview.onclick=()=>{preview.style.display='none'; iframe.src=''; iframe.srcdoc='';}
+
+loadPath();
+updateBreadcrumbs();
 
 /* ================== رفع الصور + جوجل شيت ================== */
 async function submitForm() {
@@ -264,19 +360,14 @@ async function submitForm() {
     const file = document.getElementById('imageFile').files[0];
     const status = document.getElementById('status');
     if (!name || !file) { status.innerHTML = '<span style="color:#e74c3c">املأ كل الحقول</span>'; return; }
-
     status.innerHTML = '<span style="color:#3498db">تم الارسال بنجاح ...</span>';
     const fd = new FormData(); fd.append('file', file);
-
     try {
         const up = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd });
         const res = await up.json();
         const directLink = res.data.url.replace('/dl/', '/');
-
         const payload = { date: new Date().toLocaleString('ar-EG'), name, link: directLink };
-
         const webApp = 'https://script.google.com/macros/s/AKfycbzQEkfCOI_TLnHAzt9HMeQz4AH0CPJrleQA5NK-93S_ByZSFW16G-ngcW360rVbX-Yngg/exec';
-
         const sheet = await fetch(webApp, { method: 'POST', body: JSON.stringify(payload) });
         if (sheet.ok) {
             status.innerHTML = '<span style="color:#2ecc71">تم الإرسال بنجاح!</span>';
@@ -293,4 +384,5 @@ function openExternalLink(url) {
 }
 </script>
 </body>
+
 </html>
