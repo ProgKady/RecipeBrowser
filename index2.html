@@ -122,7 +122,7 @@
             display: none; animation: slideIn 0.4s ease; flex-direction: column;
             width: 100vw;
             height: 100vh;
-            overflow: hidden; /* مهم جدًا للتصوير الصحيح */
+            overflow: hidden;
         }
         #preview iframe { width: 100%; height: calc(100% - 60px); border: none; }
         .preview-header {
@@ -227,8 +227,8 @@
     <a href="#" onclick="openExternalLink('https://wa.me/201555266002')">الدعم الفني عبر واتساب</a>
 </footer>
 
-<!-- مكتبة html2canvas لتحويل الشاشة إلى صورة -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- غيرنا المكتبة إلى dom-to-image-more (أفضل أداءً على الموبايل وفي WebView) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/2.12.0/dom-to-image-more.min.js"></script>
 
 <script>
 function openTab(tab) {
@@ -377,9 +377,8 @@ closePreview.onclick = () => {
     iframe.srcdoc = '';
 }
 
-// الميزة المحدثة: تصوير الـ preview كامل (header + محتوى) بدل الـ iframe فقط
+// الميزة المحدثة بمكتبة dom-to-image-more (أسرع وأخف على الموبايل وWebView في الـ APK)
 sharePreview.onclick = async () => {
-    // طبقة تحميل فوق الـ preview
     const loadingMsg = document.createElement('div');
     loadingMsg.innerHTML = `<h3 style="text-align:center;color:#3498db;font-family:'Cairo',sans-serif;">جاري تحويل العرض إلى صورة...<br>انتظر قليلاً</h3>`;
     loadingMsg.style.position = 'absolute';
@@ -396,52 +395,42 @@ sharePreview.onclick = async () => {
     preview.appendChild(loadingMsg);
 
     try {
-        // نصور الـ preview كامل
-        const canvas = await html2canvas(preview, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff',
-            logging: false,
+        // استخدام domToImage.toBlob بدل html2canvas (أفضل أداء في WebView)
+        const blob = await domtoimage.toBlob(preview, {
+            quality: 0.95,
+            bgcolor: '#ffffff',
             width: preview.scrollWidth,
-            height: preview.scrollHeight,
-            scrollX: 0,
-            scrollY: 0
+            height: preview.scrollHeight
         });
 
-        canvas.toBlob(async (blob) => {
-            if (blob) {
-                const file = new File([blob], `${fileName.textContent.replace(/[^a-zA-Z0-9]/g, '_')}.png`, { type: 'image/png' });
+        const file = new File([blob], `${fileName.textContent.replace(/[^a-zA-Z0-9]/g, '_')}.png`, { type: 'image/png' });
 
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: fileName.textContent,
-                            text: 'وصفة من تطبيق RECETA'
-                        });
-                    } catch (err) {
-                        console.log('تم إلغاء المشاركة');
-                    }
-                } else {
-                    // Fallback: تحميل الصورة + فتح واتساب بنص
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${fileName.textContent.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-
-                    const text = encodeURIComponent(`وصفة: ${fileName.textContent}\nمن تطبيق RECETA`);
-                    window.open(`https://wa.me/?text=${text}`, '_blank');
-                }
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: fileName.textContent,
+                    text: 'وصفة من تطبيق RECETA'
+                });
+            } catch (err) {
+                console.log('تم إلغاء المشاركة');
             }
-            // إزالة طبقة التحميل
-            if (preview.contains(loadingMsg)) preview.removeChild(loadingMsg);
-        }, 'image/png');
+        } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileName.textContent.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            const text = encodeURIComponent(`وصفة: ${fileName.textContent}\nمن تطبيق RECETA`);
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+
+        if (preview.contains(loadingMsg)) preview.removeChild(loadingMsg);
     } catch (err) {
         console.error(err);
-        alert('فشل في تحويل العرض إلى صورة، جرب مرة أخرى أو أعد تحميل الصفحة');
+        alert('فشل في تحويل العرض إلى صورة، جرب مرة أخرى');
         if (preview.contains(loadingMsg)) preview.removeChild(loadingMsg);
     }
 };
