@@ -468,7 +468,7 @@ function openExternalLink(url){ window.location.href = "intent://"+url.replace(/
         }
 
         // إخفاء الجداول التي تحتوي على كلمة TIMER أو COST في الاسم (غير حساس لحالة الأحرف)
-        if(/Audit|Editors|Issues|Users/i.test(tableName)){
+        if(/Audit|Editors|Issues|Users|Notifications/i.test(tableName)){
             container.innerHTML = "<p style='text-align:center;color:#999;padding:40px;'>هذا الجدول مخفي لأسباب أمنية.</p>";
             return;
         }
@@ -572,3 +572,4 @@ function openExternalLink(url){ window.location.href = "intent://"+url.replace(/
 </script>
 </body>
 </html>
+
