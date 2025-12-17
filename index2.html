@@ -120,6 +120,9 @@
         #preview {
             position: fixed; top:0; left:0; right:0; bottom:0; background: white; z-index: 100;
             display: none; animation: slideIn 0.4s ease; flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden; /* مهم جدًا للتصوير الصحيح */
         }
         #preview iframe { width: 100%; height: calc(100% - 60px); border: none; }
         .preview-header {
@@ -224,7 +227,7 @@
     <a href="#" onclick="openExternalLink('https://wa.me/201555266002')">الدعم الفني عبر واتساب</a>
 </footer>
 
-<!-- إضافة مكتبات html2canvas و dom-to-image -->
+<!-- مكتبة html2canvas لتحويل الشاشة إلى صورة -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <script>
@@ -374,23 +377,38 @@ closePreview.onclick = () => {
     iframe.srcdoc = '';
 }
 
-// الميزة الجديدة: تصدير الـ preview كصورة PNG ومشاركتها عبر واتساب
+// الميزة المحدثة: تصوير الـ preview كامل (header + محتوى) بدل الـ iframe فقط
 sharePreview.onclick = async () => {
-    // إظهار رسالة تحميل مؤقتة
-    const oldSrcDoc = iframe.srcdoc;
-    iframe.srcdoc = `<h3 style='text-align:center;padding:100px;color:#3498db'>جاري تحويل العرض إلى صورة...</h3>`;
+    // طبقة تحميل فوق الـ preview
+    const loadingMsg = document.createElement('div');
+    loadingMsg.innerHTML = `<h3 style="text-align:center;color:#3498db;font-family:'Cairo',sans-serif;">جاري تحويل العرض إلى صورة...<br>انتظر قليلاً</h3>`;
+    loadingMsg.style.position = 'absolute';
+    loadingMsg.style.top = '0';
+    loadingMsg.style.left = '0';
+    loadingMsg.style.width = '100%';
+    loadingMsg.style.height = '100%';
+    loadingMsg.style.background = 'rgba(255,255,255,0.95)';
+    loadingMsg.style.zIndex = '101';
+    loadingMsg.style.display = 'flex';
+    loadingMsg.style.alignItems = 'center';
+    loadingMsg.style.justifyContent = 'center';
+    loadingMsg.style.flexDirection = 'column';
+    preview.appendChild(loadingMsg);
 
     try {
-        // استخدام html2canvas لتحويل محتوى الـ iframe إلى canvas
-        const canvas = await html2canvas(iframe.contentDocument.body, {
-            scale: 2, // جودة أعلى
+        // نصور الـ preview كامل
+        const canvas = await html2canvas(preview, {
+            scale: 2,
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff',
-            logging: false
+            logging: false,
+            width: preview.scrollWidth,
+            height: preview.scrollHeight,
+            scrollX: 0,
+            scrollY: 0
         });
 
-        // تحويل الـ canvas إلى Blob
         canvas.toBlob(async (blob) => {
             if (blob) {
                 const file = new File([blob], `${fileName.textContent.replace(/[^a-zA-Z0-9]/g, '_')}.png`, { type: 'image/png' });
@@ -403,10 +421,10 @@ sharePreview.onclick = async () => {
                             text: 'وصفة من تطبيق RECETA'
                         });
                     } catch (err) {
-                        console.log('تم إلغاء المشاركة أو فشل');
+                        console.log('تم إلغاء المشاركة');
                     }
                 } else {
-                    // fallback للأجهزة التي لا تدعم Web Share API مع files (مثل بعض المتصفحات على أندرويد)
+                    // Fallback: تحميل الصورة + فتح واتساب بنص
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
@@ -414,18 +432,17 @@ sharePreview.onclick = async () => {
                     a.click();
                     URL.revokeObjectURL(url);
 
-                    // إذا كان الهدف واتساب تحديدًا، نفتح رابط واتساب مع نص
-                    const text = encodeURIComponent(`وصفة: ${fileName.textContent}\nشاركها معي عبر RECETA`);
+                    const text = encodeURIComponent(`وصفة: ${fileName.textContent}\nمن تطبيق RECETA`);
                     window.open(`https://wa.me/?text=${text}`, '_blank');
                 }
             }
-            // إعادة المحتوى الأصلي
-            iframe.srcdoc = oldSrcDoc;
+            // إزالة طبقة التحميل
+            if (preview.contains(loadingMsg)) preview.removeChild(loadingMsg);
         }, 'image/png');
     } catch (err) {
         console.error(err);
-        alert('فشل في تحويل العرض إلى صورة، جرب مرة أخرى');
-        iframe.srcdoc = oldSrcDoc;
+        alert('فشل في تحويل العرض إلى صورة، جرب مرة أخرى أو أعد تحميل الصفحة');
+        if (preview.contains(loadingMsg)) preview.removeChild(loadingMsg);
     }
 };
 
