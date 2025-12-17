@@ -396,50 +396,52 @@ function openExternalLink(url) {
     window.location.href = "intent://" + url.replace(/^https?:\/\//, '') + "#Intent;package=com.android.chrome;scheme=https;end;";
 }
 </script>
-<script>
-/* =========================
-   EXPORT PREVIEW AS PNG
-   ========================= */
 
+    <script>
 document.getElementById("exportPNG").onclick = async () => {
     try {
-        const iframeEl = document.getElementById("iframe");
-        const iframeDoc = iframeEl.contentDocument || iframeEl.contentWindow.document;
-
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
         if (!iframeDoc || !iframeDoc.body) {
-            alert("لا يوجد محتوى للتصدير");
+            alert("لا يوجد محتوى");
             return;
         }
 
-        // تصوير المحتوى
         const canvas = await html2canvas(iframeDoc.body, {
             scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff"
+            backgroundColor: "#ffffff",
+            useCORS: true
         });
 
-        // تحويل لصورة
-        const imageData = canvas.toDataURL("image/png");
+        const blob = await new Promise(resolve =>
+            canvas.toBlob(resolve, "image/png")
+        );
 
-        // تحميل الصورة
-        const link = document.createElement("a");
-        link.href = imageData;
-        link.download = (fileName.textContent || "preview") + ".png";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // ✅ الحل الحقيقي
+        if (navigator.canShare && navigator.canShare({ files: [new File([blob], "recipe.png", { type: "image/png" })] })) {
+            const file = new File([blob], "recipe.png", { type: "image/png" });
 
-        // فتح واتساب
-        const msg = encodeURIComponent("Recipe Preview 📸");
-        window.open("https://wa.me/?text=" + msg, "_blank");
+            await navigator.share({
+                files: [file],
+                title: "Recipe",
+                text: "Recipe Preview"
+            });
+        } else {
+            // fallback تحميل فقط
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "recipe.png";
+            a.click();
+        }
 
-    } catch (err) {
-        console.error(err);
-        alert("فشل تصدير الصورة");
+    } catch (e) {
+        alert("فشل التصدير");
+        console.error(e);
     }
 };
 </script>
 
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 </html>
+
