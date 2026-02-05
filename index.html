@@ -202,9 +202,11 @@ setInterval(()=>{
 
 <script>
 //const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/AKfycby7KAovv4V1GUEPq_dP-Wg233wdiEpoVhG3sp1fksSZscryGmK3TNc_wXuWTk6HQhq_QQ/exec");
-const API_URL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(
+
+const API_URL = "https://corsproxy.org/?" + encodeURIComponent(
   "https://script.google.com/macros/s/AKfycby7KAovv4V1GUEPq_dP-Wg233wdiEpoVhG3sp1fksSZscryGmK3TNc_wXuWTk6HQhq_QQ/exec"
-);  
+);
+  
 const nameInput = document.getElementById("name");
 const codeInput = document.getElementById("code");
 const btn = document.getElementById("registerBtn");
@@ -270,6 +272,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </body>
 
 </html>
+
 
 
 
