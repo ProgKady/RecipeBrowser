@@ -3,36 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <title>TC Garments</title>
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#000000">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/hrrr_180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   font-family:'Cairo',sans-serif;
-  background:#f5f7fa;
-  color:#1a1a1a;
+  background:#000;
+  color:#fff;
   min-height:100vh;
   display:flex;
   flex-direction:column;
-  justify-content: center;
+  justify-content: center;     /* بدل space-between */
   align-items:center;
   overflow:hidden;
   position:relative;
-  padding:10px 8px;
+  padding:10px 8px;            /* قلّلنا البادينج العام */
 }
 
-/* خلفية الأنيميشن خفيفة وأنيقة */
+/* أنيميشن الخلفية */
 .bg{position:fixed;inset:0;background:transparent;pointer-events:none;z-index:0}
 .dot{
   position:absolute;
   width:5px;height:5px;
-  background:#ff3366;
+  background:#ff0040;
   border-radius:50%;
-  box-shadow:0 0 12px rgba(255,51,102,0.6);
+  box-shadow:0 0 15px #ff0040;
   animation:float 14s infinite linear;
 }
 @keyframes float{
@@ -40,106 +40,104 @@ body{
   100%{transform:translateY(-100px) scale(1);}
 }
 
-/* اللوجو الآن مربع بزوايا منحنية (مش دايرة) */
+/* اللوجو صغّرناه */
 .logo{
-  width:100px;
-  height:100px;
-  border-radius:24px; /* زوايا منحنية حلوة */
+  width:95px;
+  height:95px;
+  border-radius:50%;
   object-fit:cover;
-  border:4px solid #ff3366;
-  box-shadow:0 0 25px rgba(255,51,102,0.4);
-  margin-bottom:12px;
+  border:4px solid #ff0040;
+  box-shadow:0 0 30px rgba(255,0,64,0.7);
+  margin-bottom:12px;          /* قلّلنا المسافة تحت اللوجو */
   z-index:10;
   animation:pulse 4s infinite;
 }
 @keyframes pulse{
-  0%,100%{box-shadow:0 0 25px rgba(255,51,102,0.4);}
-  50%{box-shadow:0 0 50px rgba(255,51,102,0.7);}
+  0%,100%{box-shadow:0 0 30px rgba(255,0,64,0.7);}
+  50%{box-shadow:0 0 60px rgba(255,0,64,1);}
 }
 
+/* الكارت صغّرنا كل حاجة جواه */
 .card{
-  background:rgba(255,255,255,0.92);
+  background:rgba(15,15,15,0.9);
   backdrop-filter:blur(20px);
-  padding:22px 18px;
+  padding:22px 18px;           /* أقل من الأول */
   border-radius:20px;
   width:90%;
-  max-width:310px;
+  max-width:310px;             /* صغّرنا العرض شوية */
   text-align:center;
-  border:1px solid rgba(255,51,102,0.25);
-  box-shadow:0 10px 35px rgba(0,0,0,0.08);
+  border:1px solid rgba(255,0,64,0.3);
+  box-shadow:0 15px 40px rgba(0,0,0,0.8);
   z-index:10;
-  margin-bottom:15px;
+  margin-bottom:15px;          /* مسافة صغيرة قبل الفوتر */
 }
-
 h2{
-  color:#e91e63;
-  font-size:21px;
+  color:#ff3366;
+  font-size:21px;              /* صغّرنا العنوان */
   margin-bottom:12px;
-  text-shadow:0 2px 8px rgba(233,30,99,0.15);
+  text-shadow:0 0 15px #ff0040;
 }
-
 input{
   width:100%;
-  padding:11px 15px;
-  margin:7px 0;
-  background:#ffffff;
-  border:2px solid #e0e0e0;
+  padding:11px 15px;           /* أقل بادينج */
+  margin:7px 0;                /* مسافات أقل */
+  background:#111;
+  border:none;
   border-radius:50px;
-  color:#333;
+  color:#fff;
   font-size:15px;
   outline:none;
+  border:2px solid transparent;
   transition:all .3s;
 }
 input:focus{
-  border:2px solid #ff3366;
-  box-shadow:0 0 20px rgba(255,51,102,0.25);
+  border:2px solid #ff0040;
+  box-shadow:0 0 20px rgba(255,0,64,0.4);
 }
-input::placeholder{color:#999}
-
+input::placeholder{color:#ff336680}
 button{
   width:100%;
   padding:12px;
-  background:linear-gradient(145deg,#ff3366,#e91e63);
+  background:linear-gradient(145deg,#ff0040,#cc0033);
   color:white;
   border:none;
   border-radius:50px;
   font-size:16px;
   font-weight:900;
   cursor:pointer;
-  margin-top:10px;
-  box-shadow:0 8px 25px rgba(255,51,102,0.35);
+  margin-top:10px;             /* مسافة أقل */
+  box-shadow:0 8px 25px rgba(255,0,64,0.5);
   transition:all .3s;
 }
 button:hover:not(:disabled){
   transform:translateY(-4px);
-  box-shadow:0 15px 40px rgba(255,51,102,0.5);
+  box-shadow:0 15px 40px rgba(255,0,64,0.7);
 }
 button:disabled{
-  background:#ccc;
+  background:#333;
   box-shadow:none;
-  cursor:not-allowed;
 }
-
 p#status{
   margin-top:10px;
-  color:#e91e63;
+  color:#ff3366;
   font-weight:bold;
   min-height:20px;
   font-size:14px;
 }
 
+/* الفوتر في الأسفل دايمًا ومش هيحتاج سكرول */
 footer{
-  color:#777;
+  color:#666;
   font-size:12px;
   text-align:center;
   z-index:10;
   width:100%;
   padding:0 10px;
-  position:fixed;
-  bottom:10px;
+  position:fixed;      /* مهم جدًا */
+  bottom:10px;         /* مسافة صغيرة من تحت */
   left:0;
 }
-.footer-link{color:#e91e63;text-decoration:none;font-weight:bold}
+.footer-link{color:#ff0040;text-decoration:none;font-weight:bold}
 .support-btn{
   background:#25d366;
   color:white;
@@ -151,9 +149,9 @@ footer{
   font-size:13px;
 }
 
-/* تكييف للشاشات الصغيرة */
+/* لو الشاشة صغيرة جدًا نصغر أكتر */
 @media (max-height: 680px), (max-width: 360px) {
-  .logo{width:85px;height:85px;border-radius:20px;margin-bottom:8px;}
+  .logo{width:80px;height:80px;margin-bottom:8px;}
   .card{padding:18px 15px;max-width:280px;border-radius:16px;margin-bottom:10px;}
   h2{font-size:19px;margin-bottom:10px;}
   input{padding:10px 12px;font-size:14px;margin:6px 0;}
@@ -164,9 +162,9 @@ footer{
 </style>
 </head>
 <body>
+
 <div class="bg" id="bg"></div>
 
-<!-- اللوجو مربع منحني الزوايا -->
 <img src="hrrr.png" alt="Logo" class="logo">
 
 <div class="card">
@@ -188,23 +186,13 @@ function openExternalLink(url) {
 }
 </script>
 
+<!-- باقي السكربتات زي ما هي -->
 <script>
-// أنيميشن النقاط المتحركة في الخلفية
-setInterval(()=>{
-  const d=document.createElement('div');
-  d.classList.add('dot');
-  d.style.left=Math.random()*100+'vw';
-  d.style.animationDuration=(Math.random()*8+10)+'s';
-  document.getElementById('bg').appendChild(d);
-  setTimeout(()=>d.remove(),20000);
-},350);
+setInterval(()=>{const d=document.createElement('div');d.classList.add('dot');d.style.left=Math.random()*100+'vw';d.style.animationDuration=(Math.random()*8+10)+'s';document.getElementById('bg').appendChild(d);setTimeout(()=>d.remove(),20000);},350);
 </script>
 
 <script>
-const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/AKfycbxmRmgJn3kcFQ6ZCP0yAdWPUVCsykGazat0jhcDCnbHTUoKqCWtFrTGLCJJyTNxMsswxg/exec");
-
-
-  
+const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/AKfycby8B5XNXUvcTgeeQjgd4aHxyonwqQvN21sHQ0Uy4RAn92opu1hxaULfTmaGDhMSMswfDw/exec");
 const nameInput = document.getElementById("name");
 const codeInput = document.getElementById("code");
 const btn = document.getElementById("registerBtn");
@@ -263,18 +251,9 @@ function handleStatus(state) {
 function disableInputs() { nameInput.disabled = codeInput.disabled = btn.disabled = true; }
 function enableInputs() { nameInput.disabled = codeInput.disabled = btn.disabled = false; }
 </script>
-
 <script>
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
+
 </body>
-
 </html>
-
-
-
-
-
-
-
-
