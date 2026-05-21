@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
     <style>
         :root {
             --primary: #5d5fef;
@@ -227,7 +228,7 @@
     </div>
 </header>
 <div class="tab-bar">
-    <div class="tab-btn active" onclick="openTab('recipes')">RECIPES</div>
+    <div class="tab-btn active" onclick="openTab('recipes')">RECIPESsss</div>
     <div class="tab-btn" onclick="openTab('add')">SEND MODIFICATION</div>
     <div class="tab-btn" onclick="openTab('sqlite')">DB VIEWER</div>
 </div>
@@ -627,84 +628,135 @@ function extractPasswordFromKey(longKey) {
     
 
 
-async function derivePasswordKey(password, salt) {
-    const enc = new TextEncoder();
-    const baseKey = await crypto.subtle.importKey(
-        "raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]
-    );
-
-    const derivedBits = await crypto.subtle.deriveBits(
-        { 
-            name: "PBKDF2", 
-            salt: salt, 
-            iterations: 200000, 
-            hash: "SHA-256" 
-        },
-        baseKey,
-        256
-    );
-
-    return await crypto.subtle.importKey(
-        "raw", derivedBits, { name: "AES-CBC" }, false, ["decrypt"]
-    );
-}
-
 async function decryptKSFile(encryptedBuffer, password) {
+
+    // استخراج البيانات من الملف
     const salt = encryptedBuffer.slice(0, 16);
-    const iv   = encryptedBuffer.slice(16, 28);
+
+    const iv = encryptedBuffer.slice(16, 28);
+
     const keySizeBytes = encryptedBuffer.slice(28, 32);
-    const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
-    const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
-    const ciphertext = encryptedBuffer.slice(32 + keySize);
 
-    console.log("🔍 Debug Info:");
-    console.log("   Encrypted Master Key size:", encryptedMasterKey.length);
-    console.log("   Password:", password);
+    const keySize = new DataView(
+        keySizeBytes.buffer
+    ).getUint32(0, false);
 
-    const passwordKey = await derivePasswordKey(password, salt);
+    const encryptedMasterKey =
+        encryptedBuffer.slice(32, 32 + keySize);
 
-    // فك الـ Master Key بلوك بلوك (ECB simulation)
-    console.log("🔄 Decrypting Master Key using ECB block-by-block...");
-    const blockSize = 16;
-    let masterKeyBytes = new Uint8Array(encryptedMasterKey.length);
+    const ciphertext =
+        encryptedBuffer.slice(32 + keySize);
 
-    for (let i = 0; i < encryptedMasterKey.length; i += blockSize) {
-        const block = encryptedMasterKey.slice(i, i + blockSize);
-        try {
-            const decryptedBlock = await crypto.subtle.decrypt(
-                { name: "AES-CBC", iv: new Uint8Array(16).fill(0) },
-                passwordKey,
-                block
-            );
-            masterKeyBytes.set(new Uint8Array(decryptedBlock), i);
-            console.log(`   Block ${i/blockSize + 1} decrypted`);
-        } catch (blockError) {
-            console.error(`Block ${i/blockSize + 1} failed`, blockError);
-            throw blockError;
-        }
-    }
+    console.log("Salt:", salt.length);
+    console.log("IV:", iv.length);
+    console.log("KeySize:", keySize);
+    console.log("EncryptedMasterKey:", encryptedMasterKey.length);
+    console.log("Ciphertext:", ciphertext.length);
 
-    console.log("✅ Master Key decrypted successfully | Length:", masterKeyBytes.byteLength);
+    // اشتقاق مفتاح الباسورد
+    const passwordKey =
+        await derivePasswordKeyRaw(password, salt);
 
-    // تنظيف المفتاح (يجب أن يكون 32 بايت)
-    if (masterKeyBytes.byteLength > 32) {
-        masterKeyBytes = masterKeyBytes.slice(0, 32);
-    }
+    // تحويل المفتاح إلى CryptoJS WordArray
+    const keyWordArray =
+        CryptoJS.lib.WordArray.create(passwordKey);
 
-    const masterKey = await crypto.subtle.importKey(
-        "raw", masterKeyBytes, { name: "AES-GCM" }, false, ["decrypt"]
-    );
+    // تحويل البيانات المشفرة
+    const encryptedWordArray =
+        CryptoJS.lib.WordArray.create(encryptedMasterKey);
 
-    const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: iv, tagLength: 128 },
-        masterKey,
-        ciphertext
-    );
+    // فك تشفير الـ Master Key
+    const decryptedMaster =
+        CryptoJS.AES.decrypt(
+            {
+                ciphertext: encryptedWordArray
+            },
+            keyWordArray,
+            {
+                mode: CryptoJS.mode.ECB,
+                padding: CryptoJS.pad.Pkcs7
+            }
+        );
 
-    console.log("🎉 Full file decrypted successfully!");
+    // تحويل الناتج إلى Uint8Array
+    const masterKeyBytes =
+        wordArrayToUint8Array(decryptedMaster);
+
+    console.log("MasterKeyBytes:", masterKeyBytes.length);
+
+    // استيراد المفتاح لـ AES-GCM
+    const masterKey =
+        await crypto.subtle.importKey(
+            "raw",
+            masterKeyBytes,
+            {
+                name: "AES-GCM"
+            },
+            false,
+            ["decrypt"]
+        );
+
+    // فك تشفير الملف
+    const decrypted =
+        await crypto.subtle.decrypt(
+            {
+                name: "AES-GCM",
+                iv: iv
+            },
+            masterKey,
+            ciphertext
+        );
+
+    // تحويل النص
     return new TextDecoder("utf-8").decode(decrypted);
 }
 
+async function derivePasswordKeyRaw(password, salt) {
+
+    const enc = new TextEncoder();
+
+    const baseKey =
+        await crypto.subtle.importKey(
+            "raw",
+            enc.encode(password),
+            "PBKDF2",
+            false,
+            ["deriveBits"]
+        );
+
+    const bits =
+        await crypto.subtle.deriveBits(
+            {
+                name: "PBKDF2",
+                salt: salt,
+                iterations: 200000,
+                hash: "SHA-256"
+            },
+            baseKey,
+            256
+        );
+
+    return new Uint8Array(bits);
+}
+
+function wordArrayToUint8Array(wordArray) {
+
+    const words = wordArray.words;
+
+    const sigBytes = wordArray.sigBytes;
+
+    const u8 = new Uint8Array(sigBytes);
+
+    for (let i = 0; i < sigBytes; i++) {
+
+        u8[i] =
+            (
+                words[i >>> 2] >> (24 - (i % 4) * 8)
+            ) & 0xff;
+    }
+
+    return u8;
+}
 
 
 
