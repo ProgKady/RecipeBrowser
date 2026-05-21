@@ -227,7 +227,7 @@
     </div>
 </header>
 <div class="tab-bar">
-    <div class="tab-btn active" onclick="openTab('recipes')">RECIPES</div>
+    <div class="tab-btn active" onclick="openTab('recipes')">RECIPESس</div>
     <div class="tab-btn" onclick="openTab('add')">SEND MODIFICATION</div>
     <div class="tab-btn" onclick="openTab('sqlite')">DB VIEWER</div>
 </div>
@@ -628,6 +628,7 @@ async function derivePasswordKey(password, salt) {
         "raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]
     );
 
+    // نحاول أولاً 128 بت (غالباً ده اللي في Java)
     const derivedBits = await crypto.subtle.deriveBits(
         { 
             name: "PBKDF2", 
@@ -636,11 +637,15 @@ async function derivePasswordKey(password, salt) {
             hash: "SHA-256" 
         },
         baseKey,
-        256
+        128   // <-- غيرناه لـ 128 بت
     );
 
     return await crypto.subtle.importKey(
-        "raw", derivedBits, { name: "AES-CBC", length: 256 }, false, ["decrypt"]
+        "raw", 
+        derivedBits, 
+        { name: "AES-CBC" }, 
+        false, 
+        ["decrypt"]
     );
 }
 
@@ -657,18 +662,33 @@ async function decryptKSFile(encryptedBuffer, password) {
     console.log("   IV size:", iv.length);
     console.log("   Encrypted Master Key size:", encryptedMasterKey.length);
     console.log("   Ciphertext size:", ciphertext.length);
+    console.log("   Password:", password);
 
     const passwordKey = await derivePasswordKey(password, salt);
 
-    // فك الـ Master Key (مطابق للـ Java)
-    const masterKeyBytes = await crypto.subtle.decrypt(
-        { name: "AES-CBC", iv: new Uint8Array(16).fill(0) },
-        passwordKey,
-        encryptedMasterKey
-    );
+    let masterKeyBytes;
+    try {
+        console.log("🔄 Trying AES-CBC with Zero IV (ECB simulation)...");
+        masterKeyBytes = await crypto.subtle.decrypt(
+            { 
+                name: "AES-CBC", 
+                iv: new Uint8Array(16).fill(0) 
+            },
+            passwordKey,
+            encryptedMasterKey
+        );
+        console.log("✅ Master Key decrypted successfully");
+    } catch (e1) {
+        console.warn("CBC Zero IV failed:", e1.message);
+        throw new Error("Master Key decryption failed - Wrong password or different derivation");
+    }
 
     const masterKey = await crypto.subtle.importKey(
-        "raw", masterKeyBytes, { name: "AES-GCM" }, false, ["decrypt"]
+        "raw", 
+        masterKeyBytes, 
+        { name: "AES-GCM" }, 
+        false, 
+        ["decrypt"]
     );
 
     const decrypted = await crypto.subtle.decrypt(
