@@ -227,7 +227,7 @@
     </div>
 </header>
 <div class="tab-bar">
-    <div class="tab-btn active" onclick="openTab('recipes')">RECIPES</div>
+    <div class="tab-btn active" onclick="openTab('recipes')">RECIPESyy</div>
     <div class="tab-btn" onclick="openTab('add')">SEND MODIFICATION</div>
     <div class="tab-btn" onclick="openTab('sqlite')">DB VIEWER</div>
 </div>
@@ -658,48 +658,37 @@ async function decryptKSFile(encryptedBuffer, password) {
     const ciphertext = encryptedBuffer.slice(32 + keySize);
 
     console.log("🔍 Debug Info:");
-    console.log("   Salt size:", salt.length);
-    console.log("   IV size:", iv.length);
     console.log("   Encrypted Master Key size:", encryptedMasterKey.length);
-    console.log("   Ciphertext size:", ciphertext.length);
     console.log("   Password:", password);
 
     const passwordKey = await derivePasswordKey(password, salt);
 
     let masterKeyBytes = null;
 
-    // المحاولة الأولى والأهم: AES-CBC with Zero IV (ECB simulation)
     try {
-        console.log("🔄 Attempt 1: AES-CBC Zero IV");
+        console.log("🔄 Trying AES-CBC Zero IV (ECB simulation)...");
         masterKeyBytes = await crypto.subtle.decrypt(
-            { name: "AES-CBC", iv: new Uint8Array(16).fill(0) },
+            { 
+                name: "AES-CBC", 
+                iv: new Uint8Array(16).fill(0) 
+            },
             passwordKey,
             encryptedMasterKey
         );
-        console.log("✅ Success with Attempt 1 - Length:", masterKeyBytes.byteLength);
-    } catch (e1) {
-        console.warn("Attempt 1 failed:", e1.message);
+        console.log("✅ Master Key decrypted successfully | Length:", masterKeyBytes.byteLength);
+    } catch (e) {
+        console.error("Master Key decryption failed:", e.name, e.message);
+        throw new Error("فشل فك الماستر كي - جرب كود تفعيل مختلف أو اتصل بالمبرمج");
     }
 
-    if (!masterKeyBytes) {
-        throw new Error("فشل فك الماستر كي - الباسورد أو الـ derivation مختلف");
-    }
-
-    // التأكد من طول المفتاح (يجب أن يكون 32 بايت)
-    if (masterKeyBytes.byteLength !== 32) {
-        console.warn(`⚠️ Master key length is ${masterKeyBytes.byteLength} bytes, trimming to 32...`);
+    // تنظيف المفتاح (مهم)
+    if (masterKeyBytes.byteLength > 32) {
         masterKeyBytes = masterKeyBytes.slice(0, 32);
     }
 
     const masterKey = await crypto.subtle.importKey(
-        "raw", 
-        masterKeyBytes, 
-        { name: "AES-GCM" }, 
-        false, 
-        ["decrypt"]
+        "raw", masterKeyBytes, { name: "AES-GCM" }, false, ["decrypt"]
     );
-
-    console.log("✅ Master Key imported successfully for AES-GCM");
 
     const decrypted = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: iv, tagLength: 128 },
