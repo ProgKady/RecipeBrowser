@@ -227,7 +227,7 @@
     </div>
 </header>
 <div class="tab-bar">
-    <div class="tab-btn active" onclick="openTab('recipes')">RECIPESyy</div>
+    <div class="tab-btn active" onclick="openTab('recipes')">RECIPES</div>
     <div class="tab-btn" onclick="openTab('add')">SEND MODIFICATION</div>
     <div class="tab-btn" onclick="openTab('sqlite')">DB VIEWER</div>
 </div>
@@ -663,25 +663,30 @@ async function decryptKSFile(encryptedBuffer, password) {
 
     const passwordKey = await derivePasswordKey(password, salt);
 
-    let masterKeyBytes = null;
+    // فك الـ Master Key بلوك بلوك (ECB simulation)
+    console.log("🔄 Decrypting Master Key using ECB block-by-block...");
+    const blockSize = 16;
+    let masterKeyBytes = new Uint8Array(encryptedMasterKey.length);
 
-    try {
-        console.log("🔄 Trying AES-CBC Zero IV (ECB simulation)...");
-        masterKeyBytes = await crypto.subtle.decrypt(
-            { 
-                name: "AES-CBC", 
-                iv: new Uint8Array(16).fill(0) 
-            },
-            passwordKey,
-            encryptedMasterKey
-        );
-        console.log("✅ Master Key decrypted successfully | Length:", masterKeyBytes.byteLength);
-    } catch (e) {
-        console.error("Master Key decryption failed:", e.name, e.message);
-        throw new Error("فشل فك الماستر كي - جرب كود تفعيل مختلف أو اتصل بالمبرمج");
+    for (let i = 0; i < encryptedMasterKey.length; i += blockSize) {
+        const block = encryptedMasterKey.slice(i, i + blockSize);
+        try {
+            const decryptedBlock = await crypto.subtle.decrypt(
+                { name: "AES-CBC", iv: new Uint8Array(16).fill(0) },
+                passwordKey,
+                block
+            );
+            masterKeyBytes.set(new Uint8Array(decryptedBlock), i);
+            console.log(`   Block ${i/blockSize + 1} decrypted`);
+        } catch (blockError) {
+            console.error(`Block ${i/blockSize + 1} failed`, blockError);
+            throw blockError;
+        }
     }
 
-    // تنظيف المفتاح (مهم)
+    console.log("✅ Master Key decrypted successfully | Length:", masterKeyBytes.byteLength);
+
+    // تنظيف المفتاح (يجب أن يكون 32 بايت)
     if (masterKeyBytes.byteLength > 32) {
         masterKeyBytes = masterKeyBytes.slice(0, 32);
     }
@@ -696,7 +701,7 @@ async function decryptKSFile(encryptedBuffer, password) {
         ciphertext
     );
 
-    console.log("🎉 Full decryption successful!");
+    console.log("🎉 Full file decrypted successfully!");
     return new TextDecoder("utf-8").decode(decrypted);
 }
 
