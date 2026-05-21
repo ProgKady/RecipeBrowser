@@ -369,6 +369,7 @@ function loadSheetJS() {
     });
 }
 
+// ====================== openPreview ======================
 async function openPreview(item) {
     fileName.textContent = item.name.replace('.ks', '');
     preview.style.display = 'block';
@@ -376,7 +377,7 @@ async function openPreview(item) {
 
     try {
         let longKey = sessionStorage.getItem('user_activation_code');
-        
+       
         if (!longKey) {
             longKey = prompt("🔑 أدخل كود التفعيل الطويل:");
             if (!longKey) {
@@ -388,9 +389,7 @@ async function openPreview(item) {
 
         const realPassword = extractPasswordFromKey(longKey);
         console.log("🔑 Long Key:", longKey);
-        console.log("🔑 Extracted Password (7 chars):", realPassword);
-        console.log("Encrypted Master Key length:", encryptedMasterKey.length);
-        console.log("Ciphertext length:", ciphertext.length);
+        console.log("🔑 Extracted Password:", realPassword);
 
         const fileUrl = `${raw}/${item.path}`;
         const res = await fetch(fileUrl);
@@ -400,9 +399,9 @@ async function openPreview(item) {
         console.log("📦 File Size:", encryptedData.length, "bytes");
 
         const decryptedText = await decryptKSFile(encryptedData, realPassword);
-        
+       
         let finalHTML = decodeKS(decryptedText);
-
+        
         iframe.srcdoc = `
             <html dir="rtl">
             <head><meta charset="UTF-8">
@@ -410,10 +409,11 @@ async function openPreview(item) {
             </head>
             <body>${finalHTML}</body>
             </html>`;
+
     } catch (e) {
-        console.error("❌ Decryption Error:", e);
+        console.error("❌ Decryption Error:", e.name, "-", e.message);
         sessionStorage.removeItem('user_activation_code');
-        
+       
         iframe.srcdoc = `<h3 style="color:red;text-align:center;padding:100px">
             كود التفعيل غير صحيح<br><br>
             <small>تأكد من إدخال الكود كاملاً</small>
@@ -640,64 +640,45 @@ async function derivePasswordKey(password, salt) {
     );
 
     return await crypto.subtle.importKey(
-        "raw",
-        derivedBits,
-        { name: "AES-CBC", length: 256 },
-        false,
-        ["decrypt"]
+        "raw", derivedBits, { name: "AES-CBC", length: 256 }, false, ["decrypt"]
     );
 }
 
 async function decryptKSFile(encryptedBuffer, password) {
-    try {
-        const salt = encryptedBuffer.slice(0, 16);
-        const iv   = encryptedBuffer.slice(16, 28);        // 12 bytes
-        const keySizeBytes = encryptedBuffer.slice(28, 32);
-        const keySize = new DataView(keySizeBytes.buffer, 0, 4).getUint32(0, false); // Big Endian
-        const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
-        const ciphertext = encryptedBuffer.slice(32 + keySize);
+    const salt = encryptedBuffer.slice(0, 16);
+    const iv   = encryptedBuffer.slice(16, 28);
+    const keySizeBytes = encryptedBuffer.slice(28, 32);
+    const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
+    const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
+    const ciphertext = encryptedBuffer.slice(32 + keySize);
 
-        console.log("🔍 Debug Info:");
-        console.log("Salt:", salt.length, "bytes");
-        console.log("IV:", iv.length, "bytes");
-        console.log("MasterKey Encrypted Size:", encryptedMasterKey.length);
-        console.log("Ciphertext Size:", ciphertext.length);
+    console.log("🔍 Debug Info:");
+    console.log("   Salt size:", salt.length);
+    console.log("   IV size:", iv.length);
+    console.log("   Encrypted Master Key size:", encryptedMasterKey.length);
+    console.log("   Ciphertext size:", ciphertext.length);
 
-        const passwordKey = await derivePasswordKey(password, salt);
+    const passwordKey = await derivePasswordKey(password, salt);
 
-        // فك Master Key بطريقة ECB (مطابقة للـ Java)
-        const masterKeyBytes = await crypto.subtle.decrypt(
-            { 
-                name: "AES-CBC", 
-                iv: new Uint8Array(16).fill(0) 
-            },
-            passwordKey,
-            encryptedMasterKey
-        );
+    // فك الـ Master Key (مطابق للـ Java)
+    const masterKeyBytes = await crypto.subtle.decrypt(
+        { name: "AES-CBC", iv: new Uint8Array(16).fill(0) },
+        passwordKey,
+        encryptedMasterKey
+    );
 
-        const masterKey = await crypto.subtle.importKey(
-            "raw", 
-            masterKeyBytes, 
-            { name: "AES-GCM" }, 
-            false, 
-            ["decrypt"]
-        );
+    const masterKey = await crypto.subtle.importKey(
+        "raw", masterKeyBytes, { name: "AES-GCM" }, false, ["decrypt"]
+    );
 
-        const decrypted = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: iv, tagLength: 128 },
-            masterKey,
-            ciphertext
-        );
+    const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: iv, tagLength: 128 },
+        masterKey,
+        ciphertext
+    );
 
-        console.log("✅ Decryption Successful!");
-        return new TextDecoder("utf-8").decode(decrypted);
-
-    } catch (e) {
-        console.error("❌ Decryption Error:", e.name, e.message);
-        throw e;
-    }
+    return new TextDecoder("utf-8").decode(decrypted);
 }
-
 
     
 
