@@ -389,6 +389,8 @@ async function openPreview(item) {
         const realPassword = extractPasswordFromKey(longKey);
         console.log("🔑 Long Key:", longKey);
         console.log("🔑 Extracted Password (7 chars):", realPassword);
+        console.log("Encrypted Master Key length:", encryptedMasterKey.length);
+        console.log("Ciphertext length:", ciphertext.length);
 
         const fileUrl = `${raw}/${item.path}`;
         const res = await fetch(fileUrl);
@@ -617,58 +619,85 @@ function extractPasswordFromKey(longKey) {
            parts[6].charAt(3);
 }
 
-async function decryptKSFile(encryptedBuffer, password) {
-    const salt = encryptedBuffer.slice(0, 16);
-    const iv = encryptedBuffer.slice(16, 28);
-    const keySizeBytes = encryptedBuffer.slice(28, 32);
-    const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
 
-    const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
-    const ciphertext = encryptedBuffer.slice(32 + keySize);
 
-    console.log("Salt size:", salt.length);
-    console.log("IV size:", iv.length);
-    console.log("Encrypted Master Key size:", encryptedMasterKey.length);
-    console.log("Ciphertext size:", ciphertext.length);
-
-    // Derive key
-    const passwordKey = await derivePasswordKey(password, salt);
-
-    // فك الماستر كي - مهم جداً: Java بيستخدم "AES" (غالباً ECB)
-    const masterKeyBytes = await crypto.subtle.decrypt(
-        { name: "AES-CBC", iv: new Uint8Array(16).fill(0) }, 
-        passwordKey, 
-        encryptedMasterKey
-    );
-
-    const masterKey = await crypto.subtle.importKey(
-        "raw", masterKeyBytes, {name: "AES-GCM"}, false, ["decrypt"]
-    );
-
-    const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: iv },
-        masterKey,
-        ciphertext
-    );
-
-    return new TextDecoder().decode(decrypted);
-}
-
-async function derivePasswordKey(password, salt) {
+    async function derivePasswordKey(password, salt) {
     const enc = new TextEncoder();
     const baseKey = await crypto.subtle.importKey(
-        "raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]
+        "raw", 
+        enc.encode(password), 
+        "PBKDF2", 
+        false, 
+        ["deriveBits"]   // غيرناها لـ deriveBits عشان نتحكم أكتر
     );
 
-    return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+    // PBKDF2 → 256 بت (32 بايت)
+    const derivedBits = await crypto.subtle.deriveBits(
+        { 
+            name: "PBKDF2", 
+            salt: salt, 
+            iterations: 100000, 
+            hash: "SHA-256" 
+        },
         baseKey,
-        { name: "AES-CBC", length: 256 },
+        256
+    );
+
+    return crypto.subtle.importKey(
+        "raw",
+        derivedBits,
+        { name: "AES-CBC" },   // أو AES-ECB لو حابب
         false,
         ["decrypt"]
     );
 }
 
+async function decryptKSFile(encryptedBuffer, password) {
+    try {
+        const salt = encryptedBuffer.slice(0, 16);
+        const iv = encryptedBuffer.slice(16, 28);           // 12 bytes
+        const keySizeBytes = encryptedBuffer.slice(28, 32);
+        const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false); // Big Endian
+        const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
+        const ciphertext = encryptedBuffer.slice(32 + keySize);
+
+        console.log(`Salt: ${salt.length} | IV: ${iv.length} | MasterKeySize: ${keySize}`);
+
+        const passwordKey = await derivePasswordKey(password, salt);
+
+        // === الأهم: فك الـ Master Key بـ AES-ECB (زي Java) ===
+        // Web Crypto API لا يدعم ECB مباشرة، فنستخدم trick بـ CBC + IV=0
+        const masterKeyBytes = await crypto.subtle.decrypt(
+            { 
+                name: "AES-CBC", 
+                iv: new Uint8Array(16).fill(0)   // Zero IV = ECB behavior للبلوك الواحد
+            },
+            passwordKey,
+            encryptedMasterKey
+        );
+
+        console.log("✅ Master Key decrypted successfully");
+
+        const masterKey = await crypto.subtle.importKey(
+            "raw", 
+            masterKeyBytes, 
+            { name: "AES-GCM" }, 
+            false, 
+            ["decrypt"]
+        );
+
+        const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            masterKey,
+            ciphertext
+        );
+
+        return new TextDecoder().decode(decrypted);
+    } catch (e) {
+        console.error("Decryption failed:", e);
+        throw e;
+    }
+}
 
     
     
