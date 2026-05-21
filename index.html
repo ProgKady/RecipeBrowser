@@ -201,6 +201,28 @@ setInterval(()=>{
 </script>
 
 <script>
+
+async function sha256(text) {
+
+  const data =
+    new TextEncoder().encode(text);
+
+  const hashBuffer =
+    await crypto.subtle.digest(
+      "SHA-256",
+      data
+    );
+
+  return Array.from(
+    new Uint8Array(hashBuffer)
+  )
+  .map(b =>
+    b.toString(16).padStart(2, '0')
+  )
+  .join('');
+}
+
+  
 const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/AKfycbxmRmgJn3kcFQ6ZCP0yAdWPUVCsykGazat0jhcDCnbHTUoKqCWtFrTGLCJJyTNxMsswxg/exec");
 const nameInput = document.getElementById("name");
 const codeInput = document.getElementById("code");
@@ -209,7 +231,8 @@ const status = document.getElementById("status");
 
 window.addEventListener("DOMContentLoaded", () => {
   const savedName = localStorage.getItem("name");
-  const savedCode = localStorage.getItem("code");
+  const savedCode =
+localStorage.getItem("real_code");
   if (savedName && savedCode) {
     nameInput.value = savedName;
     codeInput.value = savedCode;
@@ -218,32 +241,70 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 btn.addEventListener("click", async () => {
+
   const name = nameInput.value.trim();
-  const code = codeInput.value.trim();
-  if (!name || !code) { alert("من فضلك أدخل الاسم والكود أولاً."); return; }
+
+  const rawCode =
+    codeInput.value.trim();
+
+  const code =
+    await sha256(rawCode);
+
+  if (!name || !rawCode) {
+    alert("من فضلك أدخل الاسم والكود أولاً.");
+    return;
+  }
+
   btn.disabled = true;
+
   status.textContent = "جارٍ التحقق...";
+
   try {
-    const res = await fetch(`${API_URL}?action=register&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`);
+
+    const res = await fetch(
+      `${API_URL}?action=register&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
+    );
+
     const data = await res.json();
+
     localStorage.setItem("name", name);
-    localStorage.setItem("code", code);
+
+    // نحفظ الكود الحقيقي محليًا فقط
+    localStorage.setItem("real_code", rawCode);
+
     handleStatus(data.status);
+
   } catch (err) {
+
     status.textContent = "فشل الاتصال.";
+
     btn.disabled = false;
   }
 });
 
-async function checkStatus(name, code) {
+async function checkStatus(name, rawCode) {
+
   status.textContent = "جارٍ التحقق...";
+
   disableInputs();
+
+  const code =
+    await sha256(rawCode);
+
   try {
-    const res = await fetch(`${API_URL}?action=check&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`);
+
+    const res = await fetch(
+      `${API_URL}?action=check&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
+    );
+
     const data = await res.json();
+
     handleStatus(data.status);
+
   } catch (err) {
+
     status.textContent = "فشل الاتصال.";
+
     enableInputs();
   }
 }
@@ -254,7 +315,10 @@ function handleStatus(state) {
     status.textContent = "تمت الموافقة! جاري التحويل..."; 
     localStorage.setItem("name", name);
     localStorage.setItem("code", code);
-    sessionStorage.setItem('user_activation_code', code);   // ← أضف هذا السطر
+      sessionStorage.setItem(
+  'user_activation_code',
+  rawCode
+);
     setTimeout(() => location.href = "index2.html", 1000); 
     break;
     case "لا": status.textContent = "تم رفض الطلب."; localStorage.clear(); enableInputs(); break;
