@@ -366,46 +366,42 @@ function loadSheetJS() {
     });
 }
 
-async function openPreview(item){
-    fileName.textContent = item.name;
+async function openPreview(item) {
+    fileName.textContent = item.name.replace('.ks', '');
     preview.style.display = 'block';
-    iframe.srcdoc = `<h3 style='text-align:center;padding:80px;color:#999'>جارٍ التحميل...</h3>`;
+    iframe.srcdoc = `<h3 style='text-align:center;padding:80px;color:#999'>جارٍ فك التشفير...</h3>`;
+
     try {
         const fileUrl = `${raw}/${item.path}`;
-        if (item.name.endsWith('.ks')) {
-            let r = await fetch(fileUrl);
-            let c = await r.text();
-            let decoded = decodeKS(c);
-            iframe.srcdoc = `<html><head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes"><style>body{margin:0;padding:0;overflow:auto;}</style></head><body>${decoded}</body></html>`;
+        const res = await fetch(fileUrl);
+        const encryptedData = new Uint8Array(await res.arrayBuffer());
+
+        // طلب الباسورد (مرة واحدة فقط في الجلسة)
+        let password = sessionStorage.getItem('ks_password');
+        if (!password) {
+            password = prompt("🔑 أدخل كلمة مرور فك التشفير لعرض الملفات:");
+            if (!password) {
+                preview.style.display = 'none';
+                return;
+            }
+            sessionStorage.setItem('ks_password', password);
         }
-        else if (item.name.endsWith('.html')) {
-            let r = await fetch(fileUrl);
-            let htmlContent = await r.text();
-            iframe.srcdoc = htmlContent;
-        }
-        else if (item.name.endsWith('.xlsx') || item.name.endsWith('.xls')) {
-            await loadSheetJS();
-            let r = await fetch(fileUrl);
-            let arrayBuffer = await r.arrayBuffer();
-            let workbook = XLSX.read(arrayBuffer, {type: 'array'});
-            let firstSheetName = workbook.SheetNames[0];
-            let worksheet = workbook.Sheets[firstSheetName];
-            let htmlTable = XLSX.utils.sheet_to_html(worksheet);
-            iframe.srcdoc = `<html><head><meta name="viewport" content="width=device-width, initial-scale=1"><style>body {margin:0;padding:15px;font-family:'Cairo',sans-serif;direction:ltr;background:#f8f9ff;overflow:auto;} table{width:100%;border-collapse:collapse;font-size:14px;} th,td{border:1px solid #ddd;padding:10px;text-align:right;} th{background:#5d5fef;color:white;font-weight:bold;} tr:nth-child(even){background:#f9f9f9;}</style></head><body><h3 style="text-align:center;color:#5d5fef;margin-bottom:20px;">${item.name} - ${firstSheetName}</h3>${htmlTable}</body></html>`;
-        }
-        setTimeout(() => {
-            try {
-                let d = iframe.contentDocument || iframe.contentWindow.document;
-                if(d){
-                    let s = d.createElement("style");
-                    s.innerHTML = `*{user-select:none !important}body{-webkit-touch-callout:none !important}`;
-                    d.head.appendChild(s);
-                    ["contextmenu","copy","cut","paste","selectstart","dragstart"].forEach(ev => d.addEventListener(ev, e => e.preventDefault()));
-                }
-            } catch(e){}
-        }, 1000);
-    } catch(e) {
-        iframe.srcdoc = '<h3 style="color:red;text-align:center;padding:100px">فشل تحميل الملف</h3>';
+
+        const decryptedText = await decryptKSFile(encryptedData, password);
+        
+        // لو لسه بتستخدم decodeKS القديم، طبقها بعد الفك
+        let finalHTML = decodeKS ? decodeKS(decryptedText) : decryptedText;
+
+        iframe.srcdoc = `
+            <html dir="rtl">
+            <head>
+                <meta charset="UTF-8">
+                <style>body{margin:20px; font-family:'Cairo',sans-serif; line-height:1.7;}</style>
+            </head>
+            <body>${finalHTML}</body>
+            </html>`;
+    } catch (e) {
+        iframe.srcdoc = `<h3 style="color:red;text-align:center;padding:100px">خطأ: ${e.message}</h3>`;
     }
 }
 
@@ -569,6 +565,62 @@ function openExternalLink(url){ window.location.href = "intent://"+url.replace(/
         });
     }
 })();
+
+
+// ==================== تشفير وفك تشفير آمن ====================
+async function derivePasswordKey(password, salt) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey(
+        "raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]
+    );
+    
+    return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+    );
+}
+
+async function decryptKSFile(encryptedBuffer, password) {
+    try {
+        const salt = encryptedBuffer.slice(0, 16);
+        const iv   = encryptedBuffer.slice(16, 28);
+        const keySizeBytes = encryptedBuffer.slice(28, 32);
+        const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
+        
+        const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
+        const ciphertext = encryptedBuffer.slice(32 + keySize);
+
+        const passwordKey = await derivePasswordKey(password, salt);
+
+        // فك الماستر كي
+        const masterKeyBytes = await crypto.subtle.decrypt(
+            { name: "AES-CBC", iv: new Uint8Array(16) }, 
+            passwordKey, 
+            encryptedMasterKey
+        );
+
+        const masterKey = await crypto.subtle.importKey(
+            "raw", masterKeyBytes, "AES-GCM", false, ["decrypt"]
+        );
+
+        // فك الملف الفعلي
+        const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            masterKey,
+            ciphertext
+        );
+
+        return new TextDecoder().decode(decrypted);
+    } catch (e) {
+        console.error(e);
+        throw new Error("كلمة المرور خاطئة أو الملف تالف");
+    }
+}
+
+    
 </script>
 </body>
 </html>
