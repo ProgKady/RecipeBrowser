@@ -221,6 +221,9 @@
     <div class="header-social">
         <a href="https://facebook.com/kadinioo" target="_blank"><i class="fab fa-facebook"></i></a>
         <a href="https://wa.me/+201555266002" target="_blank"><i class="fab fa-whatsapp"></i></a>
+        <button onclick="clearActivationCode()" style="margin-right:12px; padding:8px 16px; background:#e74c3c; color:white; border:none; border-radius:8px; cursor:pointer; font-size:0.95em;">
+            🔄 مسح الكود
+        </button>
     </div>
 </header>
 <div class="tab-bar">
@@ -372,36 +375,48 @@ async function openPreview(item) {
     iframe.srcdoc = `<h3 style='text-align:center;padding:80px;color:#999'>جارٍ فك التشفير...</h3>`;
 
     try {
-        const fileUrl = `${raw}/${item.path}`;
-        const res = await fetch(fileUrl);
-        const encryptedData = new Uint8Array(await res.arrayBuffer());
-
-        // طلب الباسورد (مرة واحدة فقط في الجلسة)
-        let password = sessionStorage.getItem('ks_password');
-        if (!password) {
-            password = prompt("🔑 أدخل كلمة مرور فك التشفير لعرض الملفات:");
-            if (!password) {
+        // جلب الكود من تسجيل الدخول
+        let activationCode = sessionStorage.getItem('user_activation_code');
+        
+        if (!activationCode) {
+            activationCode = prompt("🔑 أدخل كود التفعيل الخاص بك:");
+            if (!activationCode) {
                 preview.style.display = 'none';
                 return;
             }
-            sessionStorage.setItem('ks_password', password);
+            sessionStorage.setItem('user_activation_code', activationCode);
         }
 
-        const decryptedText = await decryptKSFile(encryptedData, password);
+        const fileUrl = `${raw}/${item.path}`;
+        const res = await fetch(fileUrl);
+        if (!res.ok) throw new Error("فشل تحميل الملف");
+
+        const encryptedData = new Uint8Array(await res.arrayBuffer());
+
+        const decryptedText = await decryptKSFile(encryptedData, activationCode);
         
-        // لو لسه بتستخدم decodeKS القديم، طبقها بعد الفك
-        let finalHTML = decodeKS ? decodeKS(decryptedText) : decryptedText;
+        // تحتفظ بالدالة القديمة decodeKS
+        let finalHTML = decodeKS(decryptedText);
 
         iframe.srcdoc = `
             <html dir="rtl">
             <head>
                 <meta charset="UTF-8">
-                <style>body{margin:20px; font-family:'Cairo',sans-serif; line-height:1.7;}</style>
+                <style>
+                    body{margin:20px; font-family:'Cairo',sans-serif; line-height:1.7; padding-bottom:50px;}
+                </style>
             </head>
             <body>${finalHTML}</body>
             </html>`;
     } catch (e) {
-        iframe.srcdoc = `<h3 style="color:red;text-align:center;padding:100px">خطأ: ${e.message}</h3>`;
+        console.error(e);
+        iframe.srcdoc = `<h3 style="color:red;text-align:center;padding:100px">
+            كود التفعيل غير صحيح أو منتهي الصلاحية<br>
+            <small>حاول مرة أخرى أو تواصل مع الدعم</small>
+        </h3>`;
+        
+        // لو فشل → نمسح الكود عشان يجرب تاني
+        sessionStorage.removeItem('user_activation_code');
     }
 }
 
@@ -620,6 +635,61 @@ async function decryptKSFile(encryptedBuffer, password) {
     }
 }
 
+
+function clearActivationCode() {
+    if (confirm("هل تريد مسح الكود الحالي؟\nسيطلب منك إدخال الكود مرة أخرى.")) {
+        sessionStorage.removeItem('user_activation_code');
+        alert("✅ تم مسح الكود.\nأعد تحميل الصفحة.");
+        location.reload();
+    }
+}
+
+
+
+async function derivePasswordKey(password, salt) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey(
+        "raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]
+    );
+    return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: salt, iterations: 80000, hash: "SHA-256" },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+    );
+}
+
+async function decryptKSFile(encryptedBuffer, password) {
+    const salt = encryptedBuffer.slice(0, 16);
+    const iv   = encryptedBuffer.slice(16, 28);
+    const keySizeBytes = encryptedBuffer.slice(28, 32);
+    const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
+    
+    const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
+    const ciphertext = encryptedBuffer.slice(32 + keySize);
+
+    const passwordKey = await derivePasswordKey(password, salt);
+
+    const masterKeyBytes = await crypto.subtle.decrypt(
+        { name: "AES-CBC", iv: new Uint8Array(16) },
+        passwordKey,
+        encryptedMasterKey
+    );
+
+    const masterKey = await crypto.subtle.importKey(
+        "raw", masterKeyBytes, "AES-GCM", false, ["decrypt"]
+    );
+
+    const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: iv },
+        masterKey,
+        ciphertext
+    );
+
+    return new TextDecoder().decode(decrypted);
+}
+    
     
 </script>
 </body>
