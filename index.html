@@ -250,7 +250,13 @@ async function checkStatus(name, code) {
 
 function handleStatus(state) {
   switch (state) {
-    case "نعم": status.textContent = "تمت الموافقة! جاري التحويل..."; setTimeout(() => location.href = "index2.html", 1200); break;
+    case "نعم": 
+    status.textContent = "تمت الموافقة! جاري التحويل..."; 
+    localStorage.setItem("name", name);
+    localStorage.setItem("code", code);
+    sessionStorage.setItem('user_activation_code', code);   // ← أضف هذا السطر
+    setTimeout(() => location.href = "index2.html", 1000); 
+    break;
     case "لا": status.textContent = "تم رفض الطلب."; localStorage.clear(); enableInputs(); break;
     case "لسه": status.textContent = "في انتظار الموافقة..."; disableInputs(); break;
     default: status.textContent = "حالة غير معروفة."; localStorage.clear(); enableInputs(); break;
