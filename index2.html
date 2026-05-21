@@ -375,17 +375,19 @@ async function openPreview(item) {
     iframe.srcdoc = `<h3 style='text-align:center;padding:80px;color:#999'>جارٍ فك التشفير...</h3>`;
 
     try {
-        // جلب الكود من تسجيل الدخول
-        let activationCode = sessionStorage.getItem('user_activation_code');
+        let longKey = sessionStorage.getItem('user_activation_code');
         
-        if (!activationCode) {
-            activationCode = prompt("🔑 أدخل كود التفعيل الخاص بك:");
-            if (!activationCode) {
+        if (!longKey) {
+            longKey = prompt("🔑 أدخل كود التفعيل الطويل الخاص بك:");
+            if (!longKey) {
                 preview.style.display = 'none';
                 return;
             }
-            sessionStorage.setItem('user_activation_code', activationCode);
+            sessionStorage.setItem('user_activation_code', longKey);
         }
+
+        // استخراج الباسورد الحقيقي (7 أحرف)
+        const realPassword = extractPasswordFromKey(longKey);
 
         const fileUrl = `${raw}/${item.path}`;
         const res = await fetch(fileUrl);
@@ -393,30 +395,25 @@ async function openPreview(item) {
 
         const encryptedData = new Uint8Array(await res.arrayBuffer());
 
-        const decryptedText = await decryptKSFile(encryptedData, activationCode);
+        const decryptedText = await decryptKSFile(encryptedData, realPassword);
         
-        // تحتفظ بالدالة القديمة decodeKS
-        let finalHTML = decodeKS(decryptedText);
+        let finalHTML = decodeKS(decryptedText);   // تحتفظ بالديكود القديم
 
         iframe.srcdoc = `
             <html dir="rtl">
             <head>
                 <meta charset="UTF-8">
-                <style>
-                    body{margin:20px; font-family:'Cairo',sans-serif; line-height:1.7; padding-bottom:50px;}
-                </style>
+                <style>body{margin:20px; font-family:'Cairo',sans-serif; line-height:1.7;}</style>
             </head>
             <body>${finalHTML}</body>
             </html>`;
     } catch (e) {
         console.error(e);
+        sessionStorage.removeItem('user_activation_code');
         iframe.srcdoc = `<h3 style="color:red;text-align:center;padding:100px">
-            كود التفعيل غير صحيح أو منتهي الصلاحية<br>
-            <small>حاول مرة أخرى أو تواصل مع الدعم</small>
+            ${e.message}<br><br>
+            <small>تأكد من إدخال الكود كاملاً بشكل صحيح</small>
         </h3>`;
-        
-        // لو فشل → نمسح الكود عشان يجرب تاني
-       // sessionStorage.removeItem('user_activation_code');
     }
 }
 
@@ -713,6 +710,36 @@ async function decryptKSFile(encryptedBuffer, password) {
         throw new Error("كود التفعيل غير صحيح");
     }
 }
+
+
+function extractPasswordFromKey(longKey) {
+    try {
+        const trimmed = longKey.trim();
+        const parts = trimmed.split('-');
+        
+        if (parts.length !== 7) {
+            throw new Error("الكود يجب أن يتكون من 7 أجزاء مفصولة بـ (-)");
+        }
+
+        // نفس المنطق الموجود في الجافا بالضبط
+        const extracted = 
+            parts[0].charAt(4) +
+            parts[1].charAt(0) +
+            parts[2].charAt(2) +
+            parts[3].charAt(1) +
+            parts[4].charAt(3) +
+            parts[5].charAt(2) +
+            parts[6].charAt(3);
+
+        console.log("✅ Extracted Password:", extracted);
+        return extracted;
+    } catch (e) {
+        console.error(e);
+        throw new Error("صيغة الكود غير صحيحة");
+    }
+}
+
+
     
     
 </script>
