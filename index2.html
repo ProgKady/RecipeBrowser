@@ -621,17 +621,13 @@ function extractPasswordFromKey(longKey) {
 
 
 
-    async function derivePasswordKey(password, salt) {
+
+async function derivePasswordKey(password, salt) {
     const enc = new TextEncoder();
     const baseKey = await crypto.subtle.importKey(
-        "raw", 
-        enc.encode(password), 
-        "PBKDF2", 
-        false, 
-        ["deriveBits"]   // غيرناها لـ deriveBits عشان نتحكم أكتر
+        "raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]
     );
 
-    // PBKDF2 → 256 بت (32 بايت)
     const derivedBits = await crypto.subtle.deriveBits(
         { 
             name: "PBKDF2", 
@@ -643,10 +639,10 @@ function extractPasswordFromKey(longKey) {
         256
     );
 
-    return crypto.subtle.importKey(
+    return await crypto.subtle.importKey(
         "raw",
         derivedBits,
-        { name: "AES-CBC" },   // أو AES-ECB لو حابب
+        { name: "AES-CBC", length: 256 },
         false,
         ["decrypt"]
     );
@@ -655,28 +651,29 @@ function extractPasswordFromKey(longKey) {
 async function decryptKSFile(encryptedBuffer, password) {
     try {
         const salt = encryptedBuffer.slice(0, 16);
-        const iv = encryptedBuffer.slice(16, 28);           // 12 bytes
+        const iv   = encryptedBuffer.slice(16, 28);        // 12 bytes
         const keySizeBytes = encryptedBuffer.slice(28, 32);
-        const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false); // Big Endian
+        const keySize = new DataView(keySizeBytes.buffer, 0, 4).getUint32(0, false); // Big Endian
         const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
         const ciphertext = encryptedBuffer.slice(32 + keySize);
 
-        console.log(`Salt: ${salt.length} | IV: ${iv.length} | MasterKeySize: ${keySize}`);
+        console.log("🔍 Debug Info:");
+        console.log("Salt:", salt.length, "bytes");
+        console.log("IV:", iv.length, "bytes");
+        console.log("MasterKey Encrypted Size:", encryptedMasterKey.length);
+        console.log("Ciphertext Size:", ciphertext.length);
 
         const passwordKey = await derivePasswordKey(password, salt);
 
-        // === الأهم: فك الـ Master Key بـ AES-ECB (زي Java) ===
-        // Web Crypto API لا يدعم ECB مباشرة، فنستخدم trick بـ CBC + IV=0
+        // فك Master Key بطريقة ECB (مطابقة للـ Java)
         const masterKeyBytes = await crypto.subtle.decrypt(
             { 
                 name: "AES-CBC", 
-                iv: new Uint8Array(16).fill(0)   // Zero IV = ECB behavior للبلوك الواحد
+                iv: new Uint8Array(16).fill(0) 
             },
             passwordKey,
             encryptedMasterKey
         );
-
-        console.log("✅ Master Key decrypted successfully");
 
         const masterKey = await crypto.subtle.importKey(
             "raw", 
@@ -687,17 +684,22 @@ async function decryptKSFile(encryptedBuffer, password) {
         );
 
         const decrypted = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: iv },
+            { name: "AES-GCM", iv: iv, tagLength: 128 },
             masterKey,
             ciphertext
         );
 
-        return new TextDecoder().decode(decrypted);
+        console.log("✅ Decryption Successful!");
+        return new TextDecoder("utf-8").decode(decrypted);
+
     } catch (e) {
-        console.error("Decryption failed:", e);
+        console.error("❌ Decryption Error:", e.name, e.message);
         throw e;
     }
 }
+
+
+    
 
     
     
