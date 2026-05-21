@@ -227,7 +227,7 @@
     </div>
 </header>
 <div class="tab-bar">
-    <div class="tab-btn active" onclick="openTab('recipes')">RECIPESss</div>
+    <div class="tab-btn active" onclick="openTab('recipes')">RECIPES</div>
     <div class="tab-btn" onclick="openTab('add')">SEND MODIFICATION</div>
     <div class="tab-btn" onclick="openTab('sqlite')">DB VIEWER</div>
 </div>
@@ -622,6 +622,11 @@ function extractPasswordFromKey(longKey) {
 
 
 
+
+
+    
+
+
 async function derivePasswordKey(password, salt) {
     const enc = new TextEncoder();
     const baseKey = await crypto.subtle.importKey(
@@ -640,11 +645,7 @@ async function derivePasswordKey(password, salt) {
     );
 
     return await crypto.subtle.importKey(
-        "raw", 
-        derivedBits, 
-        { name: "AES-CBC" }, 
-        false, 
-        ["decrypt"]
+        "raw", derivedBits, { name: "AES-CBC" }, false, ["decrypt"]
     );
 }
 
@@ -667,7 +668,7 @@ async function decryptKSFile(encryptedBuffer, password) {
 
     let masterKeyBytes = null;
 
-    // محاولة 1: AES-CBC + Zero IV (الأكثر شيوعاً)
+    // المحاولة الأولى والأهم: AES-CBC with Zero IV (ECB simulation)
     try {
         console.log("🔄 Attempt 1: AES-CBC Zero IV");
         masterKeyBytes = await crypto.subtle.decrypt(
@@ -675,40 +676,30 @@ async function decryptKSFile(encryptedBuffer, password) {
             passwordKey,
             encryptedMasterKey
         );
-        console.log("✅ Success with Attempt 1 (CBC Zero IV)");
+        console.log("✅ Success with Attempt 1 - Length:", masterKeyBytes.byteLength);
     } catch (e1) {
         console.warn("Attempt 1 failed:", e1.message);
     }
 
-    // محاولة 2: لو فشلت، نحاول تقسيم الـ Master Key يدوياً (لأن Java AES غالباً ECB)
     if (!masterKeyBytes) {
-        try {
-            console.log("🔄 Attempt 2: Manual ECB simulation (block by block)");
-            const blockSize = 16;
-            masterKeyBytes = new Uint8Array(encryptedMasterKey.length);
-            
-            for (let i = 0; i < encryptedMasterKey.length; i += blockSize) {
-                const block = encryptedMasterKey.slice(i, i + blockSize);
-                const decryptedBlock = await crypto.subtle.decrypt(
-                    { name: "AES-CBC", iv: new Uint8Array(16).fill(0) },
-                    passwordKey,
-                    block
-                );
-                masterKeyBytes.set(new Uint8Array(decryptedBlock), i);
-            }
-            console.log("✅ Success with Attempt 2 (Manual ECB)");
-        } catch (e2) {
-            console.warn("Attempt 2 failed:", e2.message);
-        }
+        throw new Error("فشل فك الماستر كي - الباسورد أو الـ derivation مختلف");
     }
 
-    if (!masterKeyBytes) {
-        throw new Error("All attempts to decrypt Master Key failed");
+    // التأكد من طول المفتاح (يجب أن يكون 32 بايت)
+    if (masterKeyBytes.byteLength !== 32) {
+        console.warn(`⚠️ Master key length is ${masterKeyBytes.byteLength} bytes, trimming to 32...`);
+        masterKeyBytes = masterKeyBytes.slice(0, 32);
     }
 
     const masterKey = await crypto.subtle.importKey(
-        "raw", masterKeyBytes, { name: "AES-GCM" }, false, ["decrypt"]
+        "raw", 
+        masterKeyBytes, 
+        { name: "AES-GCM" }, 
+        false, 
+        ["decrypt"]
     );
+
+    console.log("✅ Master Key imported successfully for AES-GCM");
 
     const decrypted = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: iv, tagLength: 128 },
@@ -719,6 +710,11 @@ async function decryptKSFile(encryptedBuffer, password) {
     console.log("🎉 Full decryption successful!");
     return new TextDecoder("utf-8").decode(decrypted);
 }
+
+
+
+
+
 
     
 
