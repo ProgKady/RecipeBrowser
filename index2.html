@@ -378,7 +378,7 @@ async function openPreview(item) {
         let longKey = sessionStorage.getItem('user_activation_code');
         
         if (!longKey) {
-            longKey = prompt("🔑 أدخل كود التفعيل الطويل الخاص بك:");
+            longKey = prompt("🔑 أدخل كود التفعيل الطويل:");
             if (!longKey) {
                 preview.style.display = 'none';
                 return;
@@ -386,33 +386,35 @@ async function openPreview(item) {
             sessionStorage.setItem('user_activation_code', longKey);
         }
 
-        // استخراج الباسورد الحقيقي (7 أحرف)
         const realPassword = extractPasswordFromKey(longKey);
+        console.log("🔑 Long Key:", longKey);
+        console.log("🔑 Extracted Password (7 chars):", realPassword);
 
         const fileUrl = `${raw}/${item.path}`;
         const res = await fetch(fileUrl);
         if (!res.ok) throw new Error("فشل تحميل الملف");
 
         const encryptedData = new Uint8Array(await res.arrayBuffer());
+        console.log("📦 File Size:", encryptedData.length, "bytes");
 
         const decryptedText = await decryptKSFile(encryptedData, realPassword);
         
-        let finalHTML = decodeKS(decryptedText);   // تحتفظ بالديكود القديم
+        let finalHTML = decodeKS(decryptedText);
 
         iframe.srcdoc = `
             <html dir="rtl">
-            <head>
-                <meta charset="UTF-8">
-                <style>body{margin:20px; font-family:'Cairo',sans-serif; line-height:1.7;}</style>
+            <head><meta charset="UTF-8">
+            <style>body{margin:20px;font-family:'Cairo',sans-serif;line-height:1.7;}</style>
             </head>
             <body>${finalHTML}</body>
             </html>`;
     } catch (e) {
-        console.error(e);
+        console.error("❌ Decryption Error:", e);
         sessionStorage.removeItem('user_activation_code');
+        
         iframe.srcdoc = `<h3 style="color:red;text-align:center;padding:100px">
-            ${e.message}<br><br>
-            <small>تأكد من إدخال الكود كاملاً بشكل صحيح</small>
+            كود التفعيل غير صحيح<br><br>
+            <small>تأكد من إدخال الكود كاملاً</small>
         </h3>`;
     }
 }
@@ -579,58 +581,6 @@ function openExternalLink(url){ window.location.href = "intent://"+url.replace(/
 })();
 
 
-// ==================== تشفير وفك تشفير آمن ====================
-async function derivePasswordKey(password, salt) {
-    const enc = new TextEncoder();
-    const baseKey = await crypto.subtle.importKey(
-        "raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]
-    );
-    
-    return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
-        baseKey,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["decrypt"]
-    );
-}
-
-async function decryptKSFile(encryptedBuffer, password) {
-    try {
-        const salt = encryptedBuffer.slice(0, 16);
-        const iv   = encryptedBuffer.slice(16, 28);
-        const keySizeBytes = encryptedBuffer.slice(28, 32);
-        const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
-        
-        const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
-        const ciphertext = encryptedBuffer.slice(32 + keySize);
-
-        const passwordKey = await derivePasswordKey(password, salt);
-
-        // فك الماستر كي
-        const masterKeyBytes = await crypto.subtle.decrypt(
-            { name: "AES-CBC", iv: new Uint8Array(16) }, 
-            passwordKey, 
-            encryptedMasterKey
-        );
-
-        const masterKey = await crypto.subtle.importKey(
-            "raw", masterKeyBytes, "AES-GCM", false, ["decrypt"]
-        );
-
-        // فك الملف الفعلي
-        const decrypted = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: iv },
-            masterKey,
-            ciphertext
-        );
-
-        return new TextDecoder().decode(decrypted);
-    } catch (e) {
-        console.error(e);
-        throw new Error("كلمة المرور خاطئة أو الملف تالف");
-    }
-}
 
 
 function clearActivationCode() {
@@ -642,101 +592,81 @@ function clearActivationCode() {
 }
 
 
-async function derivePasswordKey(password, salt) {
-    const enc = new TextEncoder();
-    const baseKey = await crypto.subtle.importKey(
-        "raw", 
-        enc.encode(password), 
-        "PBKDF2", 
-        false, 
-        ["deriveKey"]
-    );
 
-    return crypto.subtle.deriveKey(
-        { 
-            name: "PBKDF2", 
-            salt: salt, 
-            iterations: 100000,   // حاول نرفعه شوية
-            hash: "SHA-256" 
-        },
-        baseKey,
-        { name: "AES-CBC", length: 256 },   // مهم: CBC
-        false,
-        ["decrypt"]
-    );
-}
 
-async function decryptKSFile(encryptedBuffer, password) {
-    try {
-        const salt = encryptedBuffer.slice(0, 16);
-        const iv   = encryptedBuffer.slice(16, 28);           // 12 bytes
-        const keySizeBytes = encryptedBuffer.slice(28, 32);
-        const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false); // Big Endian
 
-        const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
-        const ciphertext = encryptedBuffer.slice(32 + keySize);
+    
 
-        // Derive Password Key
-        const passwordKey = await derivePasswordKey(password, salt);
 
-        // فك الماستر كي (نستخدم AES-CBC بدون IV أو IV صفري)
-        const masterKeyBytes = await crypto.subtle.decrypt(
-            { 
-                name: "AES-CBC", 
-                iv: new Uint8Array(16).fill(0)   // IV = 0 (مهم جداً)
-            },
-            passwordKey,
-            encryptedMasterKey
-        );
 
-        const masterKey = await crypto.subtle.importKey(
-            "raw", 
-            masterKeyBytes, 
-            "AES-GCM", 
-            false, 
-            ["decrypt"]
-        );
 
-        // فك البيانات الرئيسية
-        const decrypted = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: iv },
-            masterKey,
-            ciphertext
-        );
-
-        return new TextDecoder().decode(decrypted);
-    } catch (e) {
-        console.error("Decryption Error:", e);
-        throw new Error("كود التفعيل غير صحيح");
-    }
-}
 
 
 function extractPasswordFromKey(longKey) {
-    try {
-        const trimmed = longKey.trim();
-        const parts = trimmed.split('-');
-        
-        if (parts.length !== 7) {
-            throw new Error("الكود يجب أن يتكون من 7 أجزاء مفصولة بـ (-)");
-        }
-
-        // نفس المنطق الموجود في الجافا بالضبط
-        const extracted = 
-            parts[0].charAt(4) +
-            parts[1].charAt(0) +
-            parts[2].charAt(2) +
-            parts[3].charAt(1) +
-            parts[4].charAt(3) +
-            parts[5].charAt(2) +
-            parts[6].charAt(3);
-
-        console.log("✅ Extracted Password:", extracted);
-        return extracted;
-    } catch (e) {
-        console.error(e);
-        throw new Error("صيغة الكود غير صحيحة");
+    const trimmed = longKey.trim();
+    const parts = trimmed.split('-');
+    if (parts.length !== 7) {
+        throw new Error("الكود يجب أن يحتوي على 7 أجزاء مفصولة بـ (-)");
     }
+    return parts[0].charAt(4) + 
+           parts[1].charAt(0) + 
+           parts[2].charAt(2) + 
+           parts[3].charAt(1) + 
+           parts[4].charAt(3) + 
+           parts[5].charAt(2) + 
+           parts[6].charAt(3);
+}
+
+async function decryptKSFile(encryptedBuffer, password) {
+    const salt = encryptedBuffer.slice(0, 16);
+    const iv = encryptedBuffer.slice(16, 28);
+    const keySizeBytes = encryptedBuffer.slice(28, 32);
+    const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
+
+    const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
+    const ciphertext = encryptedBuffer.slice(32 + keySize);
+
+    console.log("Salt size:", salt.length);
+    console.log("IV size:", iv.length);
+    console.log("Encrypted Master Key size:", encryptedMasterKey.length);
+    console.log("Ciphertext size:", ciphertext.length);
+
+    // Derive key
+    const passwordKey = await derivePasswordKey(password, salt);
+
+    // فك الماستر كي - مهم جداً: Java بيستخدم "AES" (غالباً ECB)
+    const masterKeyBytes = await crypto.subtle.decrypt(
+        { name: "AES-CBC", iv: new Uint8Array(16).fill(0) }, 
+        passwordKey, 
+        encryptedMasterKey
+    );
+
+    const masterKey = await crypto.subtle.importKey(
+        "raw", masterKeyBytes, {name: "AES-GCM"}, false, ["decrypt"]
+    );
+
+    const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: iv },
+        masterKey,
+        ciphertext
+    );
+
+    return new TextDecoder().decode(decrypted);
+}
+
+async function derivePasswordKey(password, salt) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey(
+        "raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]
+    );
+
+    return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+        baseKey,
+        { name: "AES-CBC", length: 256 },
+        false,
+        ["decrypt"]
+    );
 }
 
 
