@@ -645,49 +645,73 @@ function clearActivationCode() {
 }
 
 
-
 async function derivePasswordKey(password, salt) {
     const enc = new TextEncoder();
     const baseKey = await crypto.subtle.importKey(
-        "raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]
+        "raw", 
+        enc.encode(password), 
+        "PBKDF2", 
+        false, 
+        ["deriveKey"]
     );
+
     return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: salt, iterations: 80000, hash: "SHA-256" },
+        { 
+            name: "PBKDF2", 
+            salt: salt, 
+            iterations: 100000,   // حاول نرفعه شوية
+            hash: "SHA-256" 
+        },
         baseKey,
-        { name: "AES-GCM", length: 256 },
+        { name: "AES-CBC", length: 256 },   // مهم: CBC
         false,
         ["decrypt"]
     );
 }
 
 async function decryptKSFile(encryptedBuffer, password) {
-    const salt = encryptedBuffer.slice(0, 16);
-    const iv   = encryptedBuffer.slice(16, 28);
-    const keySizeBytes = encryptedBuffer.slice(28, 32);
-    const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
-    
-    const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
-    const ciphertext = encryptedBuffer.slice(32 + keySize);
+    try {
+        const salt = encryptedBuffer.slice(0, 16);
+        const iv   = encryptedBuffer.slice(16, 28);           // 12 bytes
+        const keySizeBytes = encryptedBuffer.slice(28, 32);
+        const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false); // Big Endian
 
-    const passwordKey = await derivePasswordKey(password, salt);
+        const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
+        const ciphertext = encryptedBuffer.slice(32 + keySize);
 
-    const masterKeyBytes = await crypto.subtle.decrypt(
-        { name: "AES-CBC", iv: new Uint8Array(16) },
-        passwordKey,
-        encryptedMasterKey
-    );
+        // Derive Password Key
+        const passwordKey = await derivePasswordKey(password, salt);
 
-    const masterKey = await crypto.subtle.importKey(
-        "raw", masterKeyBytes, "AES-GCM", false, ["decrypt"]
-    );
+        // فك الماستر كي (نستخدم AES-CBC بدون IV أو IV صفري)
+        const masterKeyBytes = await crypto.subtle.decrypt(
+            { 
+                name: "AES-CBC", 
+                iv: new Uint8Array(16).fill(0)   // IV = 0 (مهم جداً)
+            },
+            passwordKey,
+            encryptedMasterKey
+        );
 
-    const decrypted = await crypto.subtle.decrypt(
-        { name: "AES-GCM", iv: iv },
-        masterKey,
-        ciphertext
-    );
+        const masterKey = await crypto.subtle.importKey(
+            "raw", 
+            masterKeyBytes, 
+            "AES-GCM", 
+            false, 
+            ["decrypt"]
+        );
 
-    return new TextDecoder().decode(decrypted);
+        // فك البيانات الرئيسية
+        const decrypted = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv: iv },
+            masterKey,
+            ciphertext
+        );
+
+        return new TextDecoder().decode(decrypted);
+    } catch (e) {
+        console.error("Decryption Error:", e);
+        throw new Error("كود التفعيل غير صحيح");
+    }
 }
     
     
