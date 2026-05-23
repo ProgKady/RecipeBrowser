@@ -170,7 +170,7 @@ footer{
 <img src="hrrr.png" alt="Logo" class="logo">
 
 <div class="card">
-  <h2>ddتسجيل الدخول</h2>
+  <h2>تسجيل الدخول</h2>
   <input type="text" id="name" placeholder="الاسم الكامل">
   <input type="text" id="code" placeholder="الكود الخاص">
   <button id="registerBtn">دخول</button>
@@ -317,20 +317,60 @@ async function checkStatus(name, rawCode) {
 }
 
 function handleStatus(state) {
+
   switch (state) {
-    case "نعم": 
-    status.textContent = "تمت الموافقة! جاري التحويل..."; 
-    localStorage.setItem("name", name);
-    localStorage.setItem("code", code);
+
+    case "نعم":
+
+      status.textContent =
+        "تمت الموافقة! جاري التحويل...";
+
+      // نجيب الكود الحقيقي من الانبوت
+      const rawCode =
+        codeInput.value.trim();
+
+      // نخزن الكود الحقيقي للجلسة
       sessionStorage.setItem(
-  'user_activation_code',
-  rawCode
-);
-    setTimeout(() => location.href = "index2.html", 1000); 
-    break;
-    case "لا": status.textContent = "تم رفض الطلب."; localStorage.clear(); enableInputs(); break;
-    case "لسه": status.textContent = "في انتظار الموافقة..."; disableInputs(); break;
-    default: status.textContent = "حالة غير معروفة."; localStorage.clear(); enableInputs(); break;
+        'user_activation_code',
+        rawCode
+      );
+
+      setTimeout(() => {
+        location.href = "index2.html";
+      }, 1000);
+
+      break;
+
+    case "لا":
+
+      status.textContent =
+        "تم رفض الطلب.";
+
+      localStorage.clear();
+
+      enableInputs();
+
+      break;
+
+    case "لسه":
+
+      status.textContent =
+        "في انتظار الموافقة...";
+
+      disableInputs();
+
+      break;
+
+    default:
+
+      status.textContent =
+        "حالة غير معروفة.";
+
+      localStorage.clear();
+
+      enableInputs();
+
+      break;
   }
 }
 
