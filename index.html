@@ -170,7 +170,7 @@ footer{
 <img src="hrrr.png" alt="Logo" class="logo">
 
 <div class="card">
-  <h2>تسجيل الدخول</h2>
+  <h2>ddتسجيل الدخول</h2>
   <input type="text" id="name" placeholder="الاسم الكامل">
   <input type="text" id="code" placeholder="الكود الخاص">
   <button id="registerBtn">دخول</button>
@@ -230,12 +230,19 @@ const btn = document.getElementById("registerBtn");
 const status = document.getElementById("status");
 
 window.addEventListener("DOMContentLoaded", () => {
-  const savedName = localStorage.getItem("name");
+
+  const savedName =
+    localStorage.getItem("name");
+
   const savedCode =
-localStorage.getItem("real_code");
+    localStorage.getItem("real_code");
+
   if (savedName && savedCode) {
+
     nameInput.value = savedName;
+
     codeInput.value = savedCode;
+
     checkStatus(savedName, savedCode);
   }
 });
@@ -288,10 +295,10 @@ async function checkStatus(name, rawCode) {
 
   disableInputs();
 
-  const code =
-    await sha256(rawCode);
-
   try {
+
+    const code =
+      await sha256(rawCode);
 
     const res = await fetch(
       `${API_URL}?action=check&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
