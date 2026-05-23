@@ -230,7 +230,7 @@
 <div class="tab-bar">
     <div class="tab-btn active" onclick="openTab('recipes')">RECIPES</div>
     <div class="tab-btn" onclick="openTab('add')">SEND MODIFICATION</div>
-    <div class="tab-btn" onclick="openTab('sqlite')">DB VIEWER</div>
+    <div class="tab-btn" onclick="openTab('sqlite')">DATA VIEWER</div>
 </div>
 <div id="recipes" class="tab-content active">
     <i class="fas fa-arrow-right back-btn" id="backBtn"></i>
@@ -266,7 +266,7 @@
 <div id="sqlite" class="tab-content">
     <div class="add-container">
         <div class="add-card">
-            <h2>عرض قاعدة البيانات</h2>
+            <h2>عرض البيانات</h2>
             <div class="input-group">
                 <select id="tablesSelect"><option value="">اختر جدول</option></select>
             </div>
@@ -374,13 +374,13 @@ function loadSheetJS() {
 async function openPreview(item) {
     fileName.textContent = item.name.replace('.ks', '');
     preview.style.display = 'block';
-    iframe.srcdoc = `<h3 style='text-align:center;padding:80px;color:#999'>جارٍ فك التشفير...</h3>`;
+    iframe.srcdoc = `<h3 style='text-align:center;padding:80px;color:#999'>جار عرض الريسيبي ...</h3>`;
 
     try {
         let longKey = sessionStorage.getItem('user_activation_code');
        
         if (!longKey) {
-            longKey = prompt("🔑 أدخل كود التفعيل الطويل:");
+            longKey = prompt("أدخل كود التفعيل ولو مش معاك اتواصل واتساب 🔑");
             if (!longKey) {
                 preview.style.display = 'none';
                 return;
@@ -417,7 +417,7 @@ async function openPreview(item) {
        
         iframe.srcdoc = `<h3 style="color:red;text-align:center;padding:100px">
             كود التفعيل غير صحيح<br><br>
-            <small>تأكد من إدخال الكود كاملاً</small>
+            <small>تأكد من إدخال الكود الصحيح</small>
         </h3>`;
     }
 }
