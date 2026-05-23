@@ -201,28 +201,6 @@ setInterval(()=>{
 </script>
 
 <script>
-
-async function sha256(text) {
-
-  const data =
-    new TextEncoder().encode(text);
-
-  const hashBuffer =
-    await crypto.subtle.digest(
-      "SHA-256",
-      data
-    );
-
-  return Array.from(
-    new Uint8Array(hashBuffer)
-  )
-  .map(b =>
-    b.toString(16).padStart(2, '0')
-  )
-  .join('');
-}
-
-  
 const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/AKfycbxmRmgJn3kcFQ6ZCP0yAdWPUVCsykGazat0jhcDCnbHTUoKqCWtFrTGLCJJyTNxMsswxg/exec");
 const nameInput = document.getElementById("name");
 const codeInput = document.getElementById("code");
@@ -230,166 +208,52 @@ const btn = document.getElementById("registerBtn");
 const status = document.getElementById("status");
 
 window.addEventListener("DOMContentLoaded", () => {
-
-  const savedName =
-    localStorage.getItem("name");
-
-  const savedCode =
-    localStorage.getItem("real_code");
-
+  const savedName = localStorage.getItem("name");
+  const savedCode = localStorage.getItem("code");
   if (savedName && savedCode) {
-
     nameInput.value = savedName;
-
     codeInput.value = savedCode;
-
     checkStatus(savedName, savedCode);
   }
 });
 
 btn.addEventListener("click", async () => {
-
-  const name =
-    nameInput.value.trim();
-
-  const rawCode =
-    codeInput.value.trim();
-
-  if (!name || !rawCode) {
-
-    alert("من فضلك أدخل الاسم والكود أولاً.");
-
-    return;
-  }
-
+  const name = nameInput.value.trim();
+  const code = codeInput.value.trim();
+  if (!name || !code) { alert("من فضلك أدخل الاسم والكود أولاً."); return; }
   btn.disabled = true;
-
   status.textContent = "جارٍ التحقق...";
-
   try {
-
-    const code =
-      await sha256(rawCode);
-
-    // نفحص الأول
-    let res = await fetch(
-      `${API_URL}?action=check&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
-    );
-
-    let data = await res.json();
-
-    // لو غير موجود نسجل
-    if (data.status === "غير موجود") {
-
-      res = await fetch(
-        `${API_URL}?action=register&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
-      );
-
-      data = await res.json();
-    }
-
-    // حفظ محلي
+    const res = await fetch(`${API_URL}?action=register&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`);
+    const data = await res.json();
     localStorage.setItem("name", name);
-
-    localStorage.setItem(
-      "real_code",
-      rawCode
-    );
-
+    localStorage.setItem("code", code);
     handleStatus(data.status);
-
   } catch (err) {
-
-    console.error(err);
-
-    status.textContent =
-      "فشل الاتصال.";
-
-    enableInputs();
+    status.textContent = "فشل الاتصال.";
+    btn.disabled = false;
   }
 });
-async function checkStatus(name, rawCode) {
 
+async function checkStatus(name, code) {
   status.textContent = "جارٍ التحقق...";
-
   disableInputs();
-
   try {
-
-    const code =
-      await sha256(rawCode);
-
-    const res = await fetch(
-      `${API_URL}?action=check&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
-    );
-
+    const res = await fetch(`${API_URL}?action=check&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`);
     const data = await res.json();
-
     handleStatus(data.status);
-
   } catch (err) {
-
     status.textContent = "فشل الاتصال.";
-
     enableInputs();
   }
 }
 
 function handleStatus(state) {
-
   switch (state) {
-
-    case "نعم":
-
-      status.textContent =
-        "تمت الموافقة! جاري التحويل...";
-
-      // نجيب الكود الحقيقي من الانبوت
-      const rawCode =
-        codeInput.value.trim();
-
-      // نخزن الكود الحقيقي للجلسة
-      sessionStorage.setItem(
-        'user_activation_code',
-        rawCode
-      );
-
-      setTimeout(() => {
-        location.href = "index2.html";
-      }, 1000);
-
-      break;
-
-    case "لا":
-
-      status.textContent =
-        "تم رفض الطلب.";
-
-      localStorage.clear();
-
-      enableInputs();
-
-      break;
-
-    case "لسه":
-
-      status.textContent =
-        "في انتظار الموافقة...";
-
-      disableInputs();
-
-      break;
-
-    default:
-
-      status.textContent =
-        "حالة غير معروفة.";
-
-      localStorage.clear();
-
-      enableInputs();
-
-      break;
+    case "نعم": status.textContent = "تمت الموافقة! جاري التحويل..."; setTimeout(() => location.href = "index2.html", 1200); break;
+    case "لا": status.textContent = "تم رفض الطلب."; localStorage.clear(); enableInputs(); break;
+    case "لسه": status.textContent = "في انتظار الموافقة..."; disableInputs(); break;
+    default: status.textContent = "حالة غير معروفة."; localStorage.clear(); enableInputs(); break;
   }
 }
 
@@ -402,5 +266,4 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 </body>
 </html>
-
 
