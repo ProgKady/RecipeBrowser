@@ -170,7 +170,7 @@ footer{
 <img src="hrrr.png" alt="Logo" class="logo">
 
 <div class="card">
-  <h2>تسجيل الدخول</h2>
+  <h2>ssتسجيل الدخول</h2>
   <input type="text" id="name" placeholder="الاسم الكامل">
   <input type="text" id="code" placeholder="الكود الخاص">
   <button id="registerBtn">دخول</button>
@@ -249,16 +249,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
 btn.addEventListener("click", async () => {
 
-  const name = nameInput.value.trim();
+  const name =
+    nameInput.value.trim();
 
   const rawCode =
     codeInput.value.trim();
 
-  const code =
-    await sha256(rawCode);
-
   if (!name || !rawCode) {
+
     alert("من فضلك أدخل الاسم والكود أولاً.");
+
     return;
   }
 
@@ -268,27 +268,46 @@ btn.addEventListener("click", async () => {
 
   try {
 
-    const res = await fetch(
-      `${API_URL}?action=register&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
+    const code =
+      await sha256(rawCode);
+
+    // نفحص الأول
+    let res = await fetch(
+      `${API_URL}?action=check&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
     );
 
-    const data = await res.json();
+    let data = await res.json();
 
+    // لو غير موجود نسجل
+    if (data.status === "غير موجود") {
+
+      res = await fetch(
+        `${API_URL}?action=register&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`
+      );
+
+      data = await res.json();
+    }
+
+    // حفظ محلي
     localStorage.setItem("name", name);
 
-    // نحفظ الكود الحقيقي محليًا فقط
-    localStorage.setItem("real_code", rawCode);
+    localStorage.setItem(
+      "real_code",
+      rawCode
+    );
 
     handleStatus(data.status);
 
   } catch (err) {
 
-    status.textContent = "فشل الاتصال.";
+    console.error(err);
 
-    btn.disabled = false;
+    status.textContent =
+      "فشل الاتصال.";
+
+    enableInputs();
   }
 });
-
 async function checkStatus(name, rawCode) {
 
   status.textContent = "جارٍ التحقق...";
