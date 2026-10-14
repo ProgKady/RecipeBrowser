@@ -26,26 +26,17 @@
   --stroke:rgba(255,255,255,.1); --txt:#eaf0ff; --muted:#98a4c4;
   --ok:#22c55e; --err:#ef4444;
   --r:18px;
-  /* ارتفاع هيدر تطبيق أندرويد (لو الـ WebView جوه أبلكيشن)
-     غيّره من الرابط: index2.html?top=56 */
-  --app-top:0px;
-  --safe-top:env(safe-area-inset-top,0px);
 }
 @media (prefers-color-scheme: light){
   :root{ --bg:#eef1fb; --panel:rgba(255,255,255,.78); --stroke:rgba(15,23,42,.09);
          --txt:#0f172a; --muted:#5b6b8c; }
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{height:100%;overflow:hidden;overscroll-behavior:none;overscroll-behavior-y:none}
 body{
   font-family:'Cairo',system-ui,'Segoe UI',sans-serif;
   background:var(--bg); color:var(--txt);
-  height:100%; height:100dvh;
-  padding-top:var(--app-top);
-  display:flex; flex-direction:column;
+  min-height:100dvh; display:flex; flex-direction:column;
   overflow:hidden; -webkit-font-smoothing:antialiased;
-  overscroll-behavior:none;overscroll-behavior-y:none;
-  touch-action:manipulation;
 }
 body::before{
   content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
@@ -63,9 +54,7 @@ header{
   position:relative;flex-shrink:0;
   background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
   border-bottom:1px solid var(--stroke);
-  /* الهيدر نفسه بيزيد المسافة اللي فوقه (أمان + هيدر الأبلكيشن) */
-  padding-top:calc(14px + var(--safe-top));
-  padding-inline:16px; padding-bottom:13px;
+  padding:calc(14px + env(safe-area-inset-top)) 16px 13px;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
 }
 .brand{display:flex;align-items:center;gap:11px;min-width:0}
@@ -135,15 +124,8 @@ header{
   display:none;padding:4px;flex-shrink:0;
 }
 
-/* منطقة السكرول — لازم min-height:0 عشان تقدر تصغر جوه الـ flex */
-.content{
-  flex:1 1 auto; min-height:0;
-  overflow-y:auto; overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;overscroll-behavior-y:contain;
-  touch-action:pan-y;
-  padding:18px 14px calc(24px + env(safe-area-inset-bottom));
-}
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:18px 14px calc(24px + env(safe-area-inset-bottom))}
 
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px}
 .item{
@@ -186,7 +168,6 @@ header{
 /* ======================= Recipe Viewer (LTR) ======================= */
 #preview{
   position:fixed;inset:0;z-index:100;background:var(--bg);
-  padding-top:var(--app-top);                 /* تحت هيدر الأبلكيشن */
   display:none;flex-direction:column;direction:ltr;
   font-family:'Inter','Cairo',system-ui,'Segoe UI',sans-serif;
   animation:slide .3s cubic-bezier(.2,.9,.3,1);
@@ -197,7 +178,7 @@ header{
 .pv-top{
   flex-shrink:0;direction:ltr;
   display:flex;align-items:center;gap:4px;
-  padding:calc(9px + var(--safe-top)) 10px 9px;
+  padding:calc(9px + env(safe-area-inset-top)) 10px 9px;
   background:var(--panel);
   backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
   border-bottom:1px solid var(--stroke);
@@ -373,7 +354,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
 
 /* Toast */
 #toast{
-  position:fixed;inset-inline:0;top:calc(14px + var(--safe-top));margin:auto;
+  position:fixed;inset-inline:0;top:calc(14px + env(safe-area-inset-top));margin:auto;
   width:max-content;max-width:90vw;z-index:999;padding:11px 20px;border-radius:999px;
   font-size:.82em;font-weight:800;background:rgba(16,20,34,.95);color:#fff;
   border:1px solid var(--stroke);box-shadow:0 14px 36px rgba(0,0,0,.45);
@@ -383,7 +364,6 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
 /* ============ بوابة الحماية ============ */
 #gate{
   position:fixed;inset:0;z-index:500;background:var(--bg);
-  padding-top:var(--app-top);                 /* تحت هيدر الأبلكيشن */
   display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;text-align:center}
 #gate.show{display:flex}
 #gate .gbox{max-width:360px;width:100%}
@@ -395,8 +375,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
 .dlg-scrim{
   position:fixed;inset:0;z-index:900;background:rgba(4,6,12,.62);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  opacity:0;pointer-events:none;transition:opacity .22s ease;
-  padding:calc(16px + var(--app-top)) 16px 16px;
+  opacity:0;pointer-events:none;transition:opacity .22s ease;padding:16px;
   display:flex;align-items:center;justify-content:center;overflow:auto;
 }
 .dlg-scrim.open{opacity:1;pointer-events:auto}
@@ -479,7 +458,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
 @keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
 @keyframes dlgIn{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
 @media (max-width:430px){
-  .dlg-scrim{align-items:flex-end;padding:calc(var(--app-top) + 0px) 0 0}
+  .dlg-scrim{align-items:flex-end;padding:0}
   .dlg{max-width:none;border-radius:24px 24px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom));
        animation:pop .3s ease both}
   .dlg-actions{flex-direction:column-reverse}
@@ -601,9 +580,66 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
         </button>
         <span class="pv-name" id="fileName">recipe</span>
       </div>
-      <div class="pv-spacer"></div>
+
+      <div class="pv-sep"></div>
+
       <div class="pv-group">
-        <span class="pv-hint" style="opacity:.75;font-size:.75em;padding:0 8px">pinch · drag</span>
+        <button class="pv-btn" id="pvRotL" title="Rotate left"><i class="fas fa-rotate-left"></i></button>
+        <button class="pv-btn" id="pvRotR" title="Rotate right"><i class="fas fa-rotate-right"></i></button>
+      </div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="pvDir" title="Text direction (RTL / LTR)">
+          <i class="fas fa-align-right"></i>
+        </button>
+      </div>
+
+      <div class="pv-spacer"></div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="pvZOut" title="Zoom out (Ctrl + −)">
+          <i class="fas fa-magnifying-glass-minus"></i>
+        </button>
+        <input  class="pv-range" id="pvSlider" type="range" min="30" max="300" step="5"
+                value="100" title="Zoom" aria-label="Zoom">
+        <button class="pv-btn" id="pvZoomVal" title="Reset to 100%">
+          <span id="pvZoomTxt">100%</span>
+        </button>
+        <button class="pv-btn" id="pvZIn" title="Zoom in (Ctrl + +)">
+          <i class="fas fa-magnifying-glass-plus"></i>
+        </button>
+      </div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn on" id="pvFitW" title="Fit width (F)">
+          <i class="fas fa-arrows-left-right"></i>
+        </button>
+        <button class="pv-btn" id="pvFitP" title="Fit page — show whole recipe (P)">
+          <i class="fas fa-arrows-up-down-left-right"></i>
+        </button>
+      </div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="pvPrint" title="Export to PDF (Ctrl + P)">
+          <i class="fas fa-file-pdf"></i><span>PDF</span>
+        </button>
+        <button class="pv-btn" id="pvDL" title="Download source file">
+          <i class="fas fa-download"></i>
+        </button>
+        <button class="pv-btn" id="pvNewTab" title="Open in new tab">
+          <i class="fas fa-arrow-up-right-from-square"></i>
+        </button>
+        <button class="pv-btn" id="pvFull" title="Fullscreen">
+          <i class="fas fa-expand"></i>
+        </button>
       </div>
     </div>
 
@@ -685,30 +721,8 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
 /* ==========================================================================
    ثوابت
    ========================================================================== */
-
-/* ---------- إزاحة هيدر الأبلكيشن (أندرويد WebView) ----------
-   لو الصفحة جوه أبلكيشن عامله هيدر خاص، افتحها كده:
-       index2.html?top=56
-   الرقم = ارتفاع الهيدر بالبكسل. بيتحفظ بعد أول مرة.            */
-(function applyAppTop(){
-  const qs = new URLSearchParams(location.search);
-  const v  = qs.get('top');
-  if (v !== null){
-    const n = Math.max(0, parseInt(v, 10) || 0);
-    Prefs.set('appTop', n);
-    document.documentElement.style.setProperty('--app-top', n + 'px');
-  } else {
-    const saved = Prefs.get('appTop', 0);
-    if (saved) document.documentElement.style.setProperty('--app-top', saved + 'px');
-  }
-  window.TC_SET_TOP = function(px){
-    const n = Math.max(0, parseInt(px, 10) || 0);
-    Prefs.set('appTop', n);
-    document.documentElement.style.setProperty('--app-top', n + 'px');
-  };
-})();
 const API_BASE =
-  "https://script.google.com/macros/s/AKfycbyUfO-1UM8ahCyk9vknyCdOrkzT7v0omsROByXWxslARDeTE2XEpyMNhmxH86LdvU5XaA/exec";
+  "https://script.google.com/macros/s/AKfycbxmRmgJn3kcFQ6ZCP0yAdWPUVCsykGazat0jhcDCnbHTUoKqCWtFrTGLCJJyTNxMsswxg/exec";
 
 const LS_NAME = "tc.name", LS_CODE = "tc.code";
 const LOGIN_PAGE = "./index.html";
@@ -821,32 +835,21 @@ const Dialog = (function(){
         field.classList.remove('err');
       }
 
-      let settled = false;
       function done(val){
-        if (settled) return;
-        settled = true;
         close();
         resolve(val);
       }
 
-      okBtn.addEventListener('click', (e) => {
-        try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
+      okBtn.addEventListener('click', () => {
         if (!input){ done(true); return; }
-        const v = (input.value || '').trim();
+        const v = input.value.trim();
         if (d.validate){
-          try {
-            const err = d.validate(v);
-            if (err) return fail(err);
-          } catch (ex) {
-            return fail(String(ex && ex.message || 'error'));
-          }
+          const err = d.validate(v);
+          if (err) return fail(err);
         }
         done(v || true);
       });
-      if (canBtn) canBtn.addEventListener('click', (e) => {
-        try{ e.preventDefault(); e.stopPropagation(); }catch(_){}
-        done(null);
-      });
+      if (canBtn) canBtn.addEventListener('click', () => done(null));
 
       if (input){
         input.addEventListener('input', clearErr);
@@ -870,9 +873,9 @@ const Dialog = (function(){
       document.addEventListener('keydown', onKey, true);
       stack.push({ onKey, done, outside });
 
-      // إغلاق عند الضغط على الخلفية فقط (مش على الديالوج)
+      // كليك بره النافذة يقفل
+      scrim.addEventListener('mousedown', outside);
       function outside(e){ if (e.target === scrim) done(null); }
-      scrim.addEventListener('click', outside);
     });
   }
 
@@ -882,7 +885,7 @@ const Dialog = (function(){
     scrim.setAttribute('aria-hidden', 'true');
     if (top){
       document.removeEventListener('keydown', top.onKey, true);
-      scrim.removeEventListener('click', top.outside);
+      scrim.removeEventListener('mousedown', top.outside);
     }
     setTimeout(() => { if (!stack.length) scrim.innerHTML = ''; }, 240);
   }
@@ -959,68 +962,34 @@ const KeyVault = (function(){
     } catch(e){ return ''; }
   }
 
-  /* أقل طول لكل جزء — محسوب بالظبط من اللي extractPasswordFromKey بيقرأه:
-   parts[0].charAt(4) → 5    parts[1].charAt(0) → 1
-   parts[2].charAt(2) → 3    parts[3].charAt(1) → 2
-   parts[4].charAt(3) → 4    parts[5].charAt(2) → 3
-   parts[6].charAt(3) → 4                                      */
-const KEY_MIN = [5, 1, 3, 2, 4, 3, 4];
-  let memVault = null;
-
-  function normalizeKey(k){
-    if (typeof k !== 'string') return '';
-    return k.trim().replace(/\s*-\s*/g, '-').replace(/\s+/g, '');
-  }
-  function keyParts(k){
-    if (typeof k !== 'string') return [];
-    return normalizeKey(k).split('-');
-  }
   function looksValid(k){
-    const p = keyParts(k);
-    if (p.length !== 7) return false;
-    for (let i = 0; i < 7; i++){
-      if (!/^[A-Za-z0-9_#]+$/.test(p[i])) return false;
-      if (p[i].length < KEY_MIN[i]) return false;
-    }
-    return true;
-  }
-  function keyProblem(k){
-    const p = keyParts(k);
-    if (!p.length || p.every(x => !x)) return I18n.t('key.err.empty');
-    if (p.length !== 7) return I18n.t('key.err.count', { n: p.length });
-    for (let i = 0; i < 7; i++){
-      if (!/^[A-Za-z0-9_#]+$/.test(p[i])) return I18n.t('key.err.chars');
-      if (p[i].length < KEY_MIN[i]) return I18n.t('key.err.short', { i: i + 1, n: KEY_MIN[i] });
-    }
-    return '';
+    if (typeof k !== 'string') return false;
+    const t = k.trim();
+    if (!/^[A-Za-z0-9]{7,}(-[A-Za-z0-9]{7,}){5,}$/.test(t)) return false;
+    return t.split('-').length === 7;
   }
 
   return {
     looksValid,
-    normalizeKey,
-    keyProblem,
 
     save(k){
-      const nk = normalizeKey(k);
-      if (!looksValid(nk)) return false;
-      memVault = nk;
-      try{ sessionStorage.setItem(SKEY, b64(mask(nk))); }catch(e){}
-      return true;
+      if (!looksValid(k)) return false;
+      try{
+        sessionStorage.setItem(SKEY, b64(mask(k.trim())));
+        return true;
+      } catch(e){ return false; }
     },
 
     load(){
       try{
         const raw = sessionStorage.getItem(SKEY);
-        if (raw){
-          const k = mask(unb64(raw));
-          if (looksValid(k)){ memVault = k; return k; }
-        }
-      } catch(e){}
-      return (memVault && looksValid(memVault)) ? memVault : null;
+        if (!raw) return null;
+        const k = mask(unb64(raw));
+        return looksValid(k) ? k : null;   // لو معدّى فيها → نعتبرها فاضية
+      } catch(e){ return null; }
     },
 
     clear(){
-      memVault = null;
       try{ sessionStorage.removeItem(SKEY); }catch(e){}
     },
 
@@ -1086,15 +1055,18 @@ async function askActivationKey(){
     format: I18n.t('key.fmt'),
     submitText: I18n.t(saved ? 'key.update' : 'key.save'),
     cancelText: I18n.t(saved ? 'key.cancel' : 'key.later'),
-    validate(val){ return KeyVault.keyProblem(val); }
+    validate(val){
+      if (!val) return I18n.t('key.err.empty');
+      if (!KeyVault.looksValid(val)) return I18n.t('key.err.shape');
+      return '';
+    }
   });
 
-  if (v === null || v === true) return null;
-  const nk = KeyVault.normalizeKey(String(v));
-  if (!KeyVault.save(nk)) return null;
+  if (v === null) return null;                 // إلغاء / خروج
+  KeyVault.save(v);
   KeyVault.resetFails();
   refreshKeyChip();
-  return nk;
+  return v;
 }
 
 /* ==========================================================================
@@ -1176,32 +1148,6 @@ function openTab(tab, save){
 I18n.init();
 mountLangSwitch('#langBtn',     () => { refreshKeyChip(); });
 mountLangSwitch('#langBtnGate', () => { $('#gateMsg').textContent = I18n.t('gate.default'); });
-
-(function isolateScroll(){
-  let startY=0, el=null;
-  function findScroll(node){
-    let n=node;
-    while(n && n!==document.body && n!==document.documentElement){
-      const s=window.getComputedStyle(n), oy=s.overflowY;
-      if((oy==='auto'||oy==='scroll'||oy==='overlay') && n.scrollHeight>n.clientHeight+2) return n;
-      n=n.parentElement;
-    }
-    return document.querySelector('.tab-content.active .content');
-  }
-  document.addEventListener('touchstart', e=>{
-    if(e.touches.length!==1) return;
-    startY=e.touches[0].clientY; el=findScroll(e.target);
-  }, {passive:true, capture:true});
-  document.addEventListener('touchmove', e=>{
-    if(e.touches.length!==1||!el) return;
-    if(document.getElementById('dlgScrim')?.classList.contains('open')) return;
-    if(document.getElementById('preview')?.style.display==='flex') return;
-    const dy=e.touches[0].clientY-startY;
-    if(el.scrollTop<=0 && dy>0){ e.preventDefault(); return; }
-    if(el.scrollTop+el.clientHeight>=el.scrollHeight-1 && dy<0) e.preventDefault();
-  }, {passive:false, capture:true});
-  document.addEventListener('touchend', ()=>{ el=null; }, {passive:true, capture:true});
-})();
 
 /* ==========================================================================
    3) روابط خارجية آمنة
@@ -1393,34 +1339,24 @@ function pvShowLoad(on){
 }
 function pvSetZoomUI(z){
   const pct = Math.round(z * 100);
-  try{
-    const a=$('#pvZoomTxt'), b=$('#pvFootZoom'), c=$('#pvSlider');
-    if(a) a.textContent = pct + '%';
-    if(b) b.textContent = pct + '%';
-    if(c) c.value = Math.max(30, Math.min(300, pct));
-  }catch(_){}
+  $('#pvZoomTxt').textContent = pct + '%';
+  $('#pvFootZoom').textContent = pct + '%';
+  $('#pvSlider').value = Math.max(30, Math.min(300, pct));
   V.zoom = z;
   Prefs.set('pvZoom', z);
 }
 function pvSetMode(m){
   V.mode = m;
-  try{
-    const a=$('#pvFitW'), b=$('#pvFitP'), c=$('#pvFootMode');
-    if(a) a.classList.toggle('on', m === 'fitW');
-    if(b) b.classList.toggle('on', m === 'fitP');
-    if(c) c.textContent = m === 'fitW' ? 'Fit width' : m === 'fitP' ? 'Fit page' : 'Manual';
-  }catch(_){}
+  $('#pvFitW').classList.toggle('on', m === 'fitW');
+  $('#pvFitP').classList.toggle('on', m === 'fitP');
+  $('#pvFootMode').textContent = m === 'fitW' ? 'Fit width' : m === 'fitP' ? 'Fit page' : 'Manual';
   Prefs.set('pvMode', m);
 }
 function pvSetRot(deg){
   V.rot = ((deg % 360) + 360) % 360;
-  try{
-    const chip = $('#pvFootRot');
-    if(chip){
-      chip.style.display = V.rot ? 'flex' : 'none';
-      chip.innerHTML = 'Rot <b>' + V.rot + '&deg;</b>';
-    }
-  }catch(_){}
+  const chip = $('#pvFootRot');
+  chip.style.display = V.rot ? 'flex' : 'none';
+  chip.innerHTML = 'Rot <b>' + V.rot + '&deg;</b>';
   Prefs.set('pvRot', V.rot);
 }
 function pvSetDir(d){
@@ -1445,30 +1381,27 @@ function buildPreviewDoc(recipeHTML){
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#454b5c;
-    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#454b5c}
   #stage{
     position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;
-    touch-action:none;background:#454b5c;
+    touch-action:none;
   }
   #sheet{
-    width:max-content;min-width:min(860px,94vw);max-width:none;
+    width:840px;max-width:none;
     background:#fff;color:#15181f;
-    padding:28px 22px 36px;
-    border-radius:4px;
+    padding:62px 70px 96px;
+    border-radius:3px;
     box-shadow:0 16px 60px rgba(0,0,0,.5);
     transform-origin:center center;
     will-change:transform;
     font-family:'Cairo','Segoe UI',system-ui,sans-serif;
-    font-size:15px;line-height:1.7;overflow-wrap:break-word;word-break:break-word;
-    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
   }
   #sheet img{max-width:100%;height:auto;border-radius:8px;display:block;margin:14px auto}
   #sheet a{color:#6d5efc;word-break:break-all}
-  #sheet table{border-collapse:collapse;margin:12px 0;width:auto;max-width:none;font-size:13px;background:#fff}
-  #sheet td,#sheet th{border:1px solid #c8ccd6;padding:6px 10px;vertical-align:top;white-space:normal;color:#15181f;background:#fff}
-  #sheet th{background:#eef0f5;font-weight:800}
-  #sheet tr:nth-child(even) td{background:#fafbfc}
+  #sheet table{max-width:100%;border-collapse:collapse;margin:16px auto}
+  #sheet td,#sheet th{border:1px solid #d5d8e0;padding:9px 12px}
   #sheet pre{white-space:pre-wrap;background:#f4f5f8;padding:14px;border-radius:8px;overflow-x:auto}
   #sheet blockquote{margin:14px 0;padding:6px 18px;border-inline-start:4px solid #6d5efc;
                     background:#f7f7fc;border-radius:0 8px 8px 0}
@@ -1495,10 +1428,17 @@ function buildPreviewDoc(recipeHTML){
 <script>
 (function(){
   var sheet=document.getElementById('sheet'), stage=document.getElementById('stage');
-  var MIN=0.2, MAX=5, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
-  var natural={w:200,h:40};
+  var MIN=0.3, MAX=3, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
+  var natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
 
   function apply(){
+    var vw=stage.clientWidth, vh=stage.clientHeight;
+    var rotated=(Math.abs(rot/90)%2)===1;
+    var aw = rotated ? vh : vw;
+    var ah = rotated ? vw : vh;
+    if(mode==='fitW')      z = aw / natural.w;
+    else if(mode==='fitP') z = Math.min(aw/natural.w, ah/natural.h);
+    z = Math.max(MIN, Math.min(MAX, z));
     sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
     report();
   }
@@ -1507,120 +1447,96 @@ function buildPreviewDoc(recipeHTML){
       nw:natural.w,nh:natural.h,vw:stage.clientWidth,vh:stage.clientHeight},'*'); }catch(e){}
   }
   function measure(){
-    natural={
-      w: Math.max(sheet.scrollWidth||0, sheet.offsetWidth||0, 200),
-      h: Math.max(sheet.scrollHeight||0, sheet.offsetHeight||0, 40)
-    };
-    if(!isFinite(natural.w)||natural.w<1) natural.w=200;
-    if(!isFinite(natural.h)||natural.h<1) natural.h=40;
-    var vw=stage.clientWidth, vh=stage.clientHeight;
-    var fit = Math.min(vw/Math.max(natural.w,1), vh/Math.max(natural.h,1));
-    if(!isFinite(fit)||fit<=0) fit=1;
-    // مصغّر عشان يظهر كامل جوّه الشاشة
-    z = Math.max(MIN, Math.min(1, fit * 0.96));
-    mode='fitP'; tx=0; ty=0;
+    natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
     apply();
   }
   function applyDir(){ document.documentElement.dir = dir; }
 
+  /* ---- أوامر من الصفحة الأم ---- */
   window.addEventListener('message', function(ev){
     var d=ev.data; if(!d||!d.__pvHost) return;
     switch(d.cmd){
-      case 'in':    mode='manual'; z=Math.min(MAX,z*1.22); apply(); break;
-      case 'out':   mode='manual'; z=Math.max(MIN,z/1.22); apply(); break;
-      case 'zoom':  mode='manual'; z=Number(d.v)||z; apply(); break;
-      case 'fitW':  mode='fitW'; tx=ty=0;
-        z=Math.max(MIN,Math.min(MAX, stage.clientWidth/Math.max(natural.w,1))); apply(); break;
-      case 'fitP':  measure(); break;
+      case 'in':    mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.22); apply(); break;
+      case 'out':   mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.22); apply(); break;
+      case 'zoom':  mode='manual'; tx=ty=0; z=Number(d.v); apply(); break;
+      case 'fitW':  mode='fitW'; tx=ty=0; apply(); break;
+      case 'fitP':  mode='fitP'; tx=ty=0; apply(); break;
       case 'rotL':  rot=(rot-90+360)%360; apply(); break;
-      case 'rotR':  rot=(rot+90)%360; apply(); break;
+      case 'rotR':  rot=(rot+90)%360;     apply(); break;
       case 'rot':   rot=((Number(d.v)||0)%360+360)%360; apply(); break;
       case 'dir':   dir=d.v; applyDir(); apply(); break;
+      case 'print': doPrint(); break;
+      case 'full':
+        if(document.fullscreenElement) document.exitFullscreen();
+        else stage.requestFullscreen && stage.requestFullscreen();
+        break;
       case 'measure': measure(); break;
     }
   });
 
-  /* ---- صورة: سحب بإصبع · زوم بإصبعين ---- */
-  var gMode=null, lastX=0, lastY=0, startTx=0, startTy=0, startDist=0, startZ=1;
-
-  function tDist(a,b){
-    var dx=a.clientX-b.clientX, dy=a.clientY-b.clientY;
-    return Math.sqrt(dx*dx+dy*dy)||1;
-  }
-
-  stage.addEventListener('touchstart', function(e){
-    if(e.touches.length===1){
-      gMode='pan';
-      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
-      startTx=tx; startTy=ty;
-    } else if(e.touches.length>=2){
-      gMode='pinch';
-      startDist=tDist(e.touches[0], e.touches[1]);
-      startZ=z; startTx=tx; startTy=ty;
-    }
-  }, {passive:true});
-
-  stage.addEventListener('touchmove', function(e){
-    e.preventDefault();
-    if(gMode==='pan' && e.touches.length===1){
-      mode='manual';
-      tx = startTx + (e.touches[0].clientX - lastX);
-      ty = startTy + (e.touches[0].clientY - lastY);
-      apply();
-    } else if(e.touches.length>=2){
-      gMode='pinch'; mode='manual';
-      var d=tDist(e.touches[0], e.touches[1]);
-      var nz = startZ * (d / startDist);
-      if(isFinite(nz)) z = Math.max(MIN, Math.min(MAX, nz));
-      apply();
-    }
-  }, {passive:false});
-
-  stage.addEventListener('touchend', function(e){
-    if(e.touches.length===0) gMode=null;
-    else if(e.touches.length===1){
-      gMode='pan';
-      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
-      startTx=tx; startTy=ty;
-    }
-  }, {passive:true});
-
-  /* عجلة الماوس = زوم */
+  /* ---- زوم بالماوس / لمس / سحب ---- */
+  var wheelT=null;
   stage.addEventListener('wheel', function(e){
-    e.preventDefault();
-    mode='manual';
-    z = Math.max(MIN, Math.min(MAX, z * (e.deltaY<0 ? 1.12 : 1/1.12)));
-    apply();
+    if(e.ctrlKey||e.metaKey){
+      e.preventDefault();
+      mode='manual'; tx=ty=0;
+      z = e.deltaY<0 ? Math.min(MAX,z*1.1) : Math.max(MIN,z/1.1);
+      apply();
+    } else if(z>1.0001){
+      e.preventDefault(); ty-=e.deltaY; tx-=e.deltaX;
+      sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
+    }
   }, {passive:false});
 
-  /* سحب بالماوس */
   var drag=null;
   stage.addEventListener('pointerdown', function(e){
-    if(e.pointerType==='touch') return;
+    if(e.target.closest('a,button')) return;
     drag={x:e.clientX,y:e.clientY,tx:tx,ty:ty};
-    try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+    stage.setPointerCapture(e.pointerId);
   });
   stage.addEventListener('pointermove', function(e){
     if(!drag) return;
-    mode='manual';
     tx=drag.tx+(e.clientX-drag.x);
     ty=drag.ty+(e.clientY-drag.y);
-    apply();
+    sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
   });
-  stage.addEventListener('pointerup', function(){ drag=null; });
+  stage.addEventListener('pointerup',     function(){ drag=null; });
   stage.addEventListener('pointercancel', function(){ drag=null; });
 
-  stage.addEventListener('dblclick', function(){ measure(); });
+  stage.addEventListener('dblclick', function(e){
+    if(e.target.closest('a')) return;
+    if(mode!=='fitP'){ mode='fitP'; tx=ty=0; } else { mode='manual'; tx=ty=0; z=1; }
+    apply();
+  });
 
-  function boot(){
-    measure();
-    setTimeout(measure, 100);
-    setTimeout(measure, 350);
-    setTimeout(measure, 800);
+  /* ---- الطباعة / PDF ---- */
+  function doPrint(){
+    document.body.classList.add('printing');
+    try{ window.print(); }catch(e){}
+    setTimeout(function(){ document.body.classList.remove('printing'); }, 700);
   }
-  if(document.readyState==='complete') boot();
-  else window.addEventListener('load', boot);
-  requestAnimationFrame(function(){ setTimeout(boot, 40); });
+
+  /* ---- إعادة القياس لما الصور تحمّل أو الشاشة تتغير ---- */
+  if(window.ResizeObserver){
+    var ro=new ResizeObserver(function(){ natural={w:sheet.offsetWidth,h:sheet.offsetHeight}; apply(); });
+    ro.observe(sheet);
+  }
+  Array.prototype.forEach.call(sheet.images, function(im){
+    if(!im.complete) im.addEventListener('load', measure, {once:true});
+  });
+  window.addEventListener('resize', function(){ apply(); });
+  window.addEventListener('load', function(){ setTimeout(measure, 60); });
+
+  document.addEventListener('keydown', function(e){
+    var k=e.key;
+    if(k==='+'||k==='='){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.2); apply(); }
+    if(k==='-'||k==='_'){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.2); apply(); }
+    if(k==='0'){ e.preventDefault(); mode='manual'; tx=ty=0; z=1; apply(); }
+  });
+
+  // مبدئياً: الورقة كاملة من غير سكرول
+  document.documentElement.dir=dir;
+  requestAnimationFrame(function(){ setTimeout(measure,40); });
   parent.postMessage({__pv:1,ready:1},'*');
 })();
 <\/script>
@@ -1676,27 +1592,20 @@ async function openPreview(item){
       throw new Error('EMPTY');
     }
 
-    KeyVault.resetFails();
+    KeyVault.resetFails();               // نجح → صفّر العدّاد
     V.html = String(finalHTML);
-    let loaded = false;
-    function afterLoad(){
-      if (loaded) return;
-      loaded = true;
-      pvShowLoad(false);
-      try {
-        // fit page أولاً عشان يظهر كامل مصغّر
-        pvCmd('fitP');
-        if (V.rot) pvCmd('rot', V.rot);
-        pvCmd('dir', V.dir || 'ltr');
-        pvCmd('measure');
-        setTimeout(()=>{ pvCmd('fitP'); pvCmd('measure'); }, 150);
-        setTimeout(()=>{ pvCmd('measure'); }, 400);
-        setTimeout(()=>{ pvCmd('measure'); }, 900);
-      } catch(_){}
-    }
-    iframe.onload = afterLoad;
     iframe.srcdoc = buildPreviewDoc(V.html);
-    setTimeout(afterLoad, 1200);
+
+    iframe.addEventListener('load', function onLoad(){
+      setTimeout(() => {
+        pvShowLoad(false);
+        // رجّع المود المحفوظ جوه الإطار
+        pvCmd(Prefs.get('pvMode', 'fitP') === 'fitW' ? 'fitW' : 'fitP');
+        if (V.rot) pvCmd('rot', V.rot);
+        pvCmd('dir', V.dir);
+        pvCmd('measure');
+      }, 80);
+    }, { once: true });
 
   } catch (e){
     const wrongKey = e && (e.name === 'OperationError' || e.message === 'EMPTY');
@@ -1752,15 +1661,74 @@ window.addEventListener('message', function(ev){
 
 /* ----- أزرار الـ toolbar ----- */
 $('#pvClose').addEventListener('click', pvClose);
+$('#pvZIn').addEventListener('click',   () => pvCmd('in'));
+$('#pvZOut').addEventListener('click',  () => pvCmd('out'));
+$('#pvZoomVal').addEventListener('click', () => pvCmd('zoom', 1));
+$('#pvFitW').addEventListener('click',  () => pvCmd('fitW'));
+$('#pvFitP').addEventListener('click',  () => pvCmd('fitP'));
+$('#pvRotL').addEventListener('click',  () => pvCmd('rotL'));
+$('#pvRotR').addEventListener('click',  () => pvCmd('rotR'));
+$('#pvDir').addEventListener('click',   () => pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'));
+$('#pvPrint').addEventListener('click', () => pvCmd('print'));
+$('#pvFull').addEventListener('click',  () => pvCmd('full'));
+$('#pvNewTab').addEventListener('click', () => {
+  if (!V.html) return;
+  const doc = buildPreviewDoc(V.html);
+  const url = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
+  window.open(url, '_blank', 'noopener,noreferrer');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+});
+$('#pvDL').addEventListener('click', () => {
+  if (!V.html) return;
+  const name = (V.item ? V.item.name : 'recipe').replace(/\.ks$/i, '') + '.html';
+  const url = URL.createObjectURL(new Blob([V.html], { type: 'text/html;charset=utf-8' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  toast('⬇️ ' + name);
+});
 
+$('#pvSlider').addEventListener('input', e => {
+  const v = Number(e.target.value);
+  pvSetZoomUI(v / 100);
+  pvCmd('zoom', v / 100);
+});
+
+/* ----- سحب لتكبير على الموبايل (pinch) ----- */
+(function pinch(){
+  let dist = 0;
+  pvStage.addEventListener('touchstart', e => {
+    if (e.touches.length === 2){
+      dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+    }
+  }, { passive: true });
+  pvStage.addEventListener('touchmove', e => {
+    if (e.touches.length !== 2 || !dist) return;
+    const nd = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY);
+    if (Math.abs(nd - dist) > 6){
+      pvCmd(nd > dist ? 'in' : 'out');
+      dist = nd;
+    }
+  }, { passive: true });
+  pvStage.addEventListener('touchend', () => { dist = 0; }, { passive: true });
+})();
 
 /* ----- اختصارات الكيبورد ----- */
 document.addEventListener('keydown', e => {
   if (preview.style.display !== 'flex') return;
   const k = e.key;
   if (k === 'Escape'){ e.preventDefault(); pvClose(); return; }
+  if (e.ctrlKey && k.toLowerCase() === 'p'){ e.preventDefault(); pvCmd('print'); return; }
   if (e.ctrlKey && (k === '=' || k === '+')){ e.preventDefault(); pvCmd('in'); return; }
   if (e.ctrlKey && (k === '-' || k === '_')){ e.preventDefault(); pvCmd('out'); return; }
+  if (k.toLowerCase() === 'f'){ pvCmd('fitW'); return; }
+  if (k.toLowerCase() === 'p'){ pvCmd('fitP'); return; }
+  if (k.toLowerCase() === 'r'){ pvCmd('rotR'); return; }
+  if (k.toLowerCase() === 'd'){ pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'); return; }
 });
 
 /* ----- استرجاع تفضيلات المشاهد المحفوظة (مرة واحدة عند الإقلاع) ----- */
@@ -1799,33 +1767,31 @@ async function onKeyChipClick(){
     scrim.innerHTML = '';
     scrim.appendChild(d);
     scrim.classList.add('open');
-    let settledMenu = false;
-    function finishMenu(action){
-      if (settledMenu) return;
-      settledMenu = true;
-      scrim.classList.remove('open');
-      scrim.innerHTML = '';
-      resolve(action);
-    }
     d.querySelectorAll('[data-a]').forEach(b =>
-      b.addEventListener('click', e => {
-        e.preventDefault(); e.stopPropagation();
-        finishMenu(b.dataset.a);
+      b.addEventListener('click', () => {
+        scrim.classList.remove('open');
+        setTimeout(() => { scrim.innerHTML = ''; }, 240);
+        resolve(b.dataset.a);
       }));
-    scrim.addEventListener('click', function out(e){
+    scrim.addEventListener('mousedown', function out(e){
       if (e.target !== scrim) return;
-      finishMenu('cancel');
+      scrim.removeEventListener('mousedown', out);
+      scrim.classList.remove('open');
+      setTimeout(() => { scrim.innerHTML = ''; }, 240);
+      resolve('cancel');
     });
     document.addEventListener('keydown', function onk(e){
       if (e.key !== 'Escape') return;
       document.removeEventListener('keydown', onk);
-      finishMenu('cancel');
+      scrim.classList.remove('open');
+      setTimeout(() => { scrim.innerHTML = ''; }, 240);
+      resolve('cancel');
     });
   });
 
   if (choice === 'change'){
-    const nv = await askActivationKey();
-    if (nv) toast('🔑 ' + I18n.t('key.updated'));
+    await askActivationKey();
+    toast('🔑 ' + I18n.t('key.updated'));
   } else if (choice === 'clear'){
     const yes = await Dialog.confirm({
       icon: 'del',

@@ -31,9 +31,6 @@
   --txt:#eaf0ff;
   --muted:#9aa8c7;
   --r:20px;
-  /* ارتفاع هيدر تطبيق أندرويد — غيّره من الرابط: index.html?top=56 */
-  --app-top:0px;
-  --safe-top:env(safe-area-inset-top,0px);
 }
 @media (prefers-color-scheme: light){
   :root{ --bg:#eef2f9; --card:rgba(255,255,255,.72); --stroke:rgba(15,23,42,.1);
@@ -46,13 +43,10 @@ body{
   font-family:'Cairo',system-ui,'Segoe UI',sans-serif;
   background:var(--bg);
   color:var(--txt);
-  height:100%; height:100dvh;
-  padding-top:var(--app-top);
+  min-height:100dvh;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:12px;padding-inline:14px;
-  padding-bottom:calc(18px + env(safe-area-inset-bottom));
+  gap:18px;padding:24px 16px calc(24px + env(safe-area-inset-bottom));
   overflow-x:hidden;position:relative;isolation:isolate;
-  overscroll-behavior:none;
 }
 
 /* ===== خلفية متحركة (Canvas واحد بدل مئات الـ DOM) ===== */
@@ -68,46 +62,46 @@ body{
 
 /* ===== الشعار ===== */
 .logo{
-  width:78px;height:78px;border-radius:20px;object-fit:cover;
-  border:2.5px solid rgba(255,255,255,.18);
-  box-shadow:0 12px 32px rgba(255,46,99,.38);
+  width:104px;height:104px;border-radius:28px;object-fit:cover;
+  border:3px solid rgba(255,255,255,.18);
+  box-shadow:0 18px 45px rgba(255,46,99,.42);
   animation:breathe 4.5s ease-in-out infinite;
 }
-@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.04)}}
+@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.05)}}
 
 /* ===== الكارت ===== */
 .card{
-  width:100%;max-width:320px;
+  width:100%;max-width:370px;
   background:var(--card);
   backdrop-filter:blur(26px) saturate(150%);
   -webkit-backdrop-filter:blur(26px) saturate(150%);
   border:1px solid var(--stroke);
-  border-radius:16px;
-  padding:20px 16px 16px;
-  box-shadow:0 16px 44px rgba(0,0,0,.30);
+  border-radius:var(--r);
+  padding:28px 22px 22px;
+  box-shadow:0 22px 60px rgba(0,0,0,.34);
   animation:rise .55s cubic-bezier(.2,.9,.25,1) both;
 }
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 
-.brand-top{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:16px}
-.brand-top h1{font-size:17px;font-weight:900;letter-spacing:.2px}
-.brand-top p{font-size:11px;color:var(--muted);text-align:center}
+.brand-top{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px}
+.brand-top h1{font-size:21px;font-weight:900;letter-spacing:.2px}
+.brand-top p{font-size:12.5px;color:var(--muted);text-align:center}
 
-.field{position:relative;margin-bottom:11px}
+.field{position:relative;margin-bottom:14px}
 .field label{
-  display:block;font-size:11px;font-weight:700;color:var(--muted);
-  margin:0 4px 5px;
+  display:block;font-size:12px;font-weight:700;color:var(--muted);
+  margin:0 4px 7px;
 }
 .control{position:relative;display:flex;align-items:center}
 .control .ic{
-  position:absolute;inset-inline-start:12px;font-size:13px;
+  position:absolute;inset-inline-start:14px;font-size:15px;
   color:var(--muted);pointer-events:none;transition:color .25s;
 }
 .control input{
-  width:100%;padding:11px 40px 11px 38px;
+  width:100%;padding:14px 46px 14px 44px;
   background:rgba(255,255,255,.05);
-  border:1.5px solid var(--stroke);border-radius:12px;
-  color:var(--txt);font-size:13.5px;font-family:inherit;
+  border:1.6px solid var(--stroke);border-radius:14px;
+  color:var(--txt);font-size:15px;font-family:inherit;
   outline:none;transition:border-color .25s, box-shadow .25s, background .25s;
 }
 @media (prefers-color-scheme: light){
@@ -133,15 +127,15 @@ body{
 
 /* ===== تذكّرني ===== */
 .remember{
-  display:flex;align-items:center;gap:8px;margin:2px 2px 2px;cursor:pointer;
-  font-size:11.5px;font-weight:700;color:var(--muted);user-select:none;
+  display:flex;align-items:center;gap:10px;margin:2px 2px 4px;cursor:pointer;
+  font-size:12.5px;font-weight:700;color:var(--muted);user-select:none;
 }
 .remember input{position:absolute;opacity:0;pointer-events:none}
 .remember .box{
-  width:17px;height:17px;border-radius:5px;border:1.6px solid var(--stroke);
+  width:19px;height:19px;border-radius:6px;border:1.8px solid var(--stroke);
   display:grid;place-items:center;flex-shrink:0;transition:.2s;background:rgba(255,255,255,.05);
 }
-.remember .box i{font-size:9px;color:#fff;opacity:0;transform:scale(.4);transition:.2s}
+.remember .box i{font-size:10px;color:#fff;opacity:0;transform:scale(.4);transition:.2s}
 .remember input:checked + .box{background:linear-gradient(135deg,var(--brand),var(--brand-2));border-color:transparent}
 .remember input:checked + .box i{opacity:1;transform:none}
 .remember:hover .box{border-color:var(--brand)}
@@ -149,41 +143,41 @@ body{
 
 /* ===== زر اللغة ===== */
 .lang-btn{
-  position:fixed;top:calc(10px + var(--safe-top));inset-inline-end:10px;z-index:60;
-  display:inline-flex;align-items:center;gap:6px;
-  padding:7px 12px;border-radius:999px;border:1px solid var(--stroke);
+  position:fixed;top:calc(14px + env(safe-area-inset-top));inset-inline-end:14px;z-index:60;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 15px;border-radius:999px;border:1px solid var(--stroke);
   background:rgba(255,255,255,.07);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  color:var(--txt);font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;
-  transition:.22s;box-shadow:0 6px 18px rgba(0,0,0,.2);
+  color:var(--txt);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
+  transition:.22s;box-shadow:0 8px 24px rgba(0,0,0,.22);
 }
 .lang-btn:hover{border-color:var(--brand);transform:translateY(-2px)}
-.lang-btn i{font-size:12px;color:var(--brand)}
-@media (max-width:360px){ .lang-btn{padding:6px 10px;font-size:11px} }
+.lang-btn i{font-size:13px;color:var(--brand)}
+@media (max-width:360px){ .lang-btn{padding:8px 12px;font-size:11.5px} }
 
 /* ===== الزر ===== */
 .btn{
-  width:100%;margin-top:6px;padding:12px;border:0;border-radius:12px;
+  width:100%;margin-top:8px;padding:15px;border:0;border-radius:14px;
   background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  color:#fff;font-family:inherit;font-size:14.5px;font-weight:900;
+  color:#fff;font-family:inherit;font-size:16px;font-weight:900;
   cursor:pointer;position:relative;overflow:hidden;
-  box-shadow:0 10px 24px rgba(255,46,99,.32);
+  box-shadow:0 12px 30px rgba(255,46,99,.34);
   transition:transform .18s, box-shadow .25s, filter .25s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
 }
-.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 34px rgba(255,46,99,.42)}
+.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 18px 42px rgba(255,46,99,.46)}
 .btn:active:not(:disabled){transform:translateY(0) scale(.985)}
 .btn:disabled{cursor:not-allowed;filter:grayscale(.55) brightness(.85);box-shadow:none}
 .btn .spin{
-  width:15px;height:15px;border:2.5px solid rgba(255,255,255,.35);
+  width:17px;height:17px;border:2.5px solid rgba(255,255,255,.35);
   border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== الرسائل ===== */
 .msg{
-  margin-top:11px;padding:10px 12px;border-radius:11px;
-  font-size:12px;font-weight:700;text-align:center;
-  display:none;align-items:center;justify-content:center;gap:7px;line-height:1.55;
+  margin-top:14px;padding:13px 15px;border-radius:13px;
+  font-size:13.5px;font-weight:700;text-align:center;
+  display:none;align-items:center;justify-content:center;gap:8px;line-height:1.6;
 }
 .msg.show{display:flex;animation:pop .3s ease both}
 @keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
@@ -196,35 +190,24 @@ body{
 @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
                    30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
 
-/* ===== سطر التشخيص ===== */
-.diag{
-  margin-top:12px;padding:11px 13px;border-radius:12px;
-  font-size:11px;font-weight:700;line-height:1.75;text-align:start;
-  background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.26);color:#fca5a5;
-}
-.diag[hidden]{display:none}
-.diag.good{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.22);color:#86efac}
-.diag b{color:#fff;font-weight:800}
-.diag code{font-family:ui-monospace,monospace;font-size:10px;opacity:.85;
-  word-break:break-all;display:block;margin-top:4px}
-
 /* ===== الفوتر ===== */
 footer{
-  text-align:center;font-size:10.5px;color:var(--muted);
-  line-height:1.8;width:100%;max-width:320px;
+  text-align:center;font-size:11.5px;color:var(--muted);
+  line-height:1.9;width:100%;max-width:370px;
 }
 footer a{color:var(--brand);text-decoration:none;font-weight:700}
 footer a:hover{text-decoration:underline}
 .support{
-  display:inline-block;margin-top:6px;padding:7px 16px;border-radius:999px;
-  background:#25d366;color:#fff;text-decoration:none;font-weight:800;font-size:11.5px;
-  box-shadow:0 6px 16px rgba(37,211,102,.28);transition:transform .2s;
+  display:inline-block;margin-top:8px;padding:9px 20px;border-radius:999px;
+  background:#25d366;color:#fff;text-decoration:none;font-weight:800;font-size:12.5px;
+  box-shadow:0 8px 22px rgba(37,211,102,.32);transition:transform .2s;
 }
 .support:active{transform:scale(.95)}
 
 /* ===== Toast ===== */
 #toast{
-  position:fixed;inset-inline:0;top:calc(14px + var(--safe-top));margin:auto;width:max-content;max-width:90vw;z-index:999;
+  position:fixed;inset-inline:0;top:calc(14px + env(safe-area-inset-top));
+  margin:auto;width:max-content;max-width:90vw;z-index:999;
   padding:11px 20px;border-radius:999px;font-size:13px;font-weight:800;
   background:rgba(20,25,38,.94);color:#fff;border:1px solid var(--stroke);
   box-shadow:0 12px 34px rgba(0,0,0,.4);
@@ -234,11 +217,11 @@ footer a:hover{text-decoration:underline}
 #toast.show{opacity:1;transform:none}
 
 @media (max-width:360px){
-  .logo{width:68px;height:68px;border-radius:18px}
-  .card{padding:16px 14px 14px;border-radius:14px;max-width:300px}
-  .brand-top h1{font-size:16px}
-  .control input{padding:10px 38px 10px 34px;font-size:13px}
-  .btn{padding:11px;font-size:13.5px}
+  .logo{width:86px;height:86px;border-radius:22px}
+  .card{padding:22px 16px 18px;border-radius:18px}
+  .brand-top h1{font-size:19px}
+  .control input{padding:12px 44px;font-size:14.5px}
+  .btn{padding:13px;font-size:15px}
 }
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
@@ -252,7 +235,7 @@ footer a:hover{text-decoration:underline}
 <div class="blob b2" aria-hidden="true"></div>
 <div class="blob b3" aria-hidden="true"></div>
 
-<img src="./hrrr.png" alt="TC Garments" class="logo" width="78" height="78">
+<img src="./hrrr.png" alt="TC Garments" class="logo" width="104" height="104">
 
 <button class="lang-btn" id="langBtn" type="button"></button>
 
@@ -297,9 +280,6 @@ footer a:hover{text-decoration:underline}
   </form>
 
   <div class="msg" id="msg" role="status" aria-live="polite"></div>
-
-  <!-- سطر التشخيص: بيقولك بدقة فين المشكلة بدل ما تتموت بصمت -->
-  <div class="diag" id="diag" hidden></div>
 </main>
 
 <footer>
@@ -309,25 +289,7 @@ footer a:hover{text-decoration:underline}
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="./core.js"
-        onerror="window.__noCore=true"></script>
-<script>
-/* لو core.js مقدرش يتحمّل (مثلاً كاش قديم / نت ضعيف)
-   بنوقف الصفحة برسالة واضحة بدل ما تموت في صمت */
-if (window.__noCore || typeof window.I18n === 'undefined'){
-  document.addEventListener('DOMContentLoaded', function(){
-    var m = document.getElementById('msg');
-    if (m){
-      m.className = 'msg show err';
-      m.innerHTML = '<span>⚠️</span><span>'
-        + 'تعذّر تحميل ملف core.js — حدّث الصفحة (Ctrl+Shift+R) وامسح الكاش.'
-        + '</span>';
-    }
-    var b = document.getElementById('btn');
-    if (b){ b.disabled = true; b.style.opacity = .5; }
-  });
-}
-</script>
+<script src="./core.js"></script>
 <script>
 /* =====================================================================
    1) إعدادات الـ API
@@ -339,26 +301,7 @@ if (window.__noCore || typeof window.I18n === 'undefined'){
    Access-Control-Allow-Origin: * فمفيش حاجة تحتاج proxy.
    ===================================================================== */
 const API_BASE =
-  "https://script.google.com/macros/s/AKfycbyUfO-1UM8ahCyk9vknyCdOrkzT7v0omsROByXWxslARDeTE2XEpyMNhmxH86LdvU5XaA/exec";
-
-/* نسخة الكود — لو شُفت الرقم ده على الشاشة فأنت شغّال على أحدث نسخة */
-const BUILD = '2026-10-14b';
-window.TC_BUILD = BUILD;
-
-/* فحص الاتصال بالسيرفر مرة واحدة عند فتح الصفحة —
-   لو رجّع ✅ يبقى كل حاجة تمام، ولو رجّع خطأ هنعرف فين بالظبط */
-async function checkApi(){
-  try {
-    const ctl = new AbortController();
-    const t = setTimeout(() => ctl.abort(), 12000);
-    const r = await fetch(`${API_BASE}?action=ping`, { signal: ctl.signal, cache: 'no-store' });
-    clearTimeout(t);
-    const j = await r.json();
-    return { ok: j && j.success === true, data: j };
-  } catch (e) {
-    return { ok: false, err: e };
-  }
-}
+  "https://script.google.com/macros/s/AKfycbxmRmgJn3kcFQ6ZCP0yAdWPUVCsykGazat0jhcDCnbHTUoKqCWtFrTGLCJJyTNxMsswxg/exec";
 
 const TARGET_PAGE = "./index2.html";
 
@@ -373,8 +316,8 @@ const el = {
 /* ---------- تشغيل اللغة قبل أي رسم ---------- */
 I18n.init();
 mountLangSwitch('#langBtn', () => {
+  paintBtn();
   applyStaticText();
-  repaintMsg();          // أعد رسم الرسالة الظاهرة باللغة الجديدة
 });
 
 function applyStaticText(){
@@ -385,89 +328,39 @@ function paintBtn(){
   el.btnText.textContent = I18n.t('login.submit');
 }
 
-/* ---------- إزاحة هيدر الأبلكيشن (أندرويد WebView) ----------
-   افتح: index.html?top=56   (56 = ارتفاع الهيدر بالبكسل) */
-(function applyAppTop(){
-  const qs = new URLSearchParams(location.search);
-  const v  = qs.get('top');
-  if (v !== null){
-    const n = Math.max(0, parseInt(v, 10) || 0);
-    Prefs.set('appTop', n);
-    document.documentElement.style.setProperty('--app-top', n + 'px');
-  } else {
-    const saved = Prefs.get('appTop', 0);
-    if (saved) document.documentElement.style.setProperty('--app-top', saved + 'px');
-  }
-  window.TC_SET_TOP = function(px){
-    const n = Math.max(0, parseInt(px, 10) || 0);
-    Prefs.set('appTop', n);
-    document.documentElement.style.setProperty('--app-top', n + 'px');
-  };
-})();
-
 /* ---------- طلب واحد مع مهلة + إعادة محاولة ---------- */
-const API_TIMEOUT = 15000;
-
-async function apiCall(action, name, code, { retries = 1 } = {}) {
+async function apiCall(action, name, code, { retries = 2 } = {}) {
   const url = `${API_BASE}?action=${encodeURIComponent(action)}`
             + `&name=${encodeURIComponent(name)}`
             + `&code=${encodeURIComponent(code)}`;
 
-  let lastErr;
   for (let i = 0; i <= retries; i++) {
     const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), API_TIMEOUT);
+    const timer = setTimeout(() => ctl.abort(), 20000);
     try {
-      const res = await fetch(url, {
-        method: 'GET', signal: ctl.signal,
-        redirect: 'follow', cache: 'no-store', mode: 'cors'
-      });
+      const res  = await fetch(url, { method: 'GET', signal: ctl.signal, redirect: 'follow', cache: 'no-store' });
       clearTimeout(timer);
       if (!res.ok) throw new Error(I18n.t('login.http') + ' ' + res.status);
-
-      const raw = await res.text();
-      let data;
-      try { data = JSON.parse(raw); }
-      catch { throw new Error(I18n.t('login.err.badJson')); }
-      if (!data || typeof data !== 'object') throw new Error(I18n.t('login.err.badJson'));
+      const data = await res.json();
+      if (typeof data !== 'object' || data === null) throw new Error(I18n.t('login.err.badJson'));
       return data;
     } catch (err) {
       clearTimeout(timer);
-      lastErr = err;
-      if (err.name === 'AbortError') lastErr = new Error(I18n.t('login.err.timeout'));
-      if (i < retries) await sleep(900);
+      if (err.name === 'AbortError') throw new Error(I18n.t('login.err.timeout'));
+      if (i === retries) throw new Error(I18n.t('login.err.net'));
+      await sleep(700 * (i + 1));
     }
   }
-  throw lastErr || new Error(I18n.t('login.err.net'));
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* ---------- واجهة الرسائل ---------- */
 const ICONS = { ok:'✅', err:'⚠️', wait:'⏳', info:'ℹ️' };
-
-/* بنحفظ آخر رسالة كـ (نوع + مفتاح ترجمة) عشان نقدر نعيد رسمها
-   بلغة تانية لو المستخدم بدّل اللغة وإنها ظاهرة على الشاشة */
-let lastMsg = null;                       // { kind, key, vars, raw }
-
 function showMsg(kind, text){
-  el.msg.className = 'msg show ' + kind;
+  el.msg.className = 'msg ' + kind;
   el.msg.innerHTML = `<span>${ICONS[kind] || ''}</span><span>${text}</span>`;
 }
-/** showMsg بمفتاح ترجمة — بيتحدّث لوحده لما اللغة تتبدّل */
-function showMsgKey(kind, key, vars){
-  lastMsg = { kind, key, vars: vars || {} };
-  showMsg(kind, I18n.t(key, vars));
-}
-function clearMsg(){ el.msg.className = 'msg'; el.msg.innerHTML = ''; lastMsg = null; }
-
-/* إعادة رسم الرسالة الحالية باللغة الجديدة */
-function repaintMsg(){
-  if (!lastMsg) return;
-  showMsg(lastMsg.kind, I18n.t(lastMsg.key, lastMsg.vars));
-  el.btnText = $('#btnText', el.btn) || el.btnText;
-  if (el.btnText) el.btnText.textContent = I18n.t('login.submit');
-}
-
+function clearMsg(){ el.msg.className = 'msg'; el.msg.innerHTML = ''; }
 function shake(){
   el.msg.classList.remove('shake'); void el.msg.offsetWidth; el.msg.classList.add('shake');
 }
@@ -479,35 +372,13 @@ function toast(text){
   toastT = setTimeout(() => el.toast.classList.remove('show'), 2600);
 }
 
-/* عدّاد تنازلي يخلّي المستخدم يشوف إيه اللي بيحصل */
-let tickT = null;
-let tickLeft = 0;
-function startTick(totalSec){
-  stopTick();
-  tickLeft = totalSec;
-  tick();
-  function tick(){
-    stopTick();
-    if (el.msg.classList.contains('info') || el.msg.classList.contains('wait')){
-      lastMsg = { kind: el.msg.classList.contains('wait') ? 'wait' : 'info',
-                  key: 'login.trying', vars: { n: tickLeft } };
-      el.msg.className = 'msg show ' + lastMsg.kind;
-      el.msg.innerHTML = `<span>${ICONS.info}</span><span>${I18n.t('login.trying', { n: tickLeft })}</span>`;
-    }
-    if (tickLeft-- > 0) tickT = setTimeout(tick, 1000);
-  }
-}
-function stopTick(){ if (tickT){ clearTimeout(tickT); tickT = null; } }
-
 function setLoading(on){
   el.btn.disabled = on;
   el.name.disabled = on;
   el.code.disabled = on;
-  el.remember.disabled = on;
   el.btn.innerHTML = on
     ? `<span class="spin"></span><span>${I18n.t('login.checking')}</span>`
     : `<span id="btnText">${I18n.t('login.submit')}</span>`;
-  el.btnText = $('#btnText', el.btn) || el.btnText;   // مرجع جديد بعد إعادة البناء
 }
 
 /* ---------- عرض الكود / إخفاءه ---------- */
@@ -542,12 +413,14 @@ el.name.addEventListener('input', clearMsg);
 
 /* ---------- حفظ / مسح الجلسة ---------- */
 function saveSession(name, code){
-  // الاسم بيتحفظ دايماً — الكود بس لو "تذكّرني" مفعّلة
-  localStorage.setItem('tc.name', name);
-  if (el.remember.checked){
+  const keep = el.remember.checked;
+  if (keep){
+    localStorage.setItem('tc.name', name);
     localStorage.setItem('tc.code', code);
     localStorage.setItem('tc.remember', '1');
   } else {
+    // الاسم فقط — الكود مايتحفظش
+    localStorage.setItem('tc.name', name);
     localStorage.removeItem('tc.code');
     localStorage.setItem('tc.remember', '0');
   }
@@ -558,119 +431,50 @@ function clearSession(){
 }
 el.remember.checked = localStorage.getItem('tc.remember') !== '0';
 
-/* ---------- استقبال الموافقة تلقائياً ---------- */
-let pollTimer = null, pollLeft = 0;
-
-function goIn(){
-  stopTick();
-  setLoading(true);
-  showMsgKey('ok', 'login.ok.approved');
-  setTimeout(() => { location.href = TARGET_PAGE; }, 900);
-}
-
-function stopPoll(){
-  if (pollTimer){ clearTimeout(pollTimer); pollTimer = null; }
-  pollLeft = 0;
-}
-
-/** لو لسه في انتظار الموافقة → بنسأل السيرفر كل 5 ثواني لحد دقيقة */
-function startPoll(name, code){
-  stopPoll();
-  pollLeft = 12;                                   // ≈ دقيقة
-  el.name.disabled = el.code.disabled = el.btn.disabled = true;
-
-  (function tick(){
-    if (pollLeft <= 0){
-      stopPoll();
-      setLoading(false);
-      showMsgKey('wait', 'login.wait.pending');
-      // سيب المستخدم يدوس دخول تاني لو حب
-      return;
-    }
-    // الرسالة بتتحدّث مع العدّاد ومع اللغة
-    lastMsg = { kind: 'wait', key: 'login.wait.polling', vars: { n: pollLeft * 5 } };
-    showMsg('wait', I18n.t('login.wait.polling', { n: pollLeft * 5 }));
-    pollLeft--;
-
-    apiCall('check', name, code, { retries: 0 })
-      .then(d => {
-        if (d && d.status === 'نعم'){ goIn(); return; }
-        pollTimer = setTimeout(tick, 5000);
-      })
-      .catch(() => { pollTimer = setTimeout(tick, 5000); });
-  })();
-}
-
 /* ---------- منطق تسجيل الدخول ---------- */
 el.form.addEventListener('submit', async e => {
   e.preventDefault();
-  stopPoll();
 
   const name = el.name.value.trim();
   const code = el.code.value.trim();
 
-  if (!name)          { showMsgKey('err', 'login.err.nameReq'); el.name.focus(); shake(); return; }
-  if (name.length < 2){ showMsgKey('err', 'login.err.nameShort'); el.name.focus(); shake(); return; }
-  if (!code)          { showMsgKey('err', 'login.err.codeReq'); el.code.focus(); shake(); return; }
+  if (!name)          { showMsg('err', I18n.t('login.err.nameReq')); el.name.focus(); shake(); return; }
+  if (name.length < 2){ showMsg('err', I18n.t('login.err.nameShort')); el.name.focus(); shake(); return; }
+  if (!code)          { showMsg('err', I18n.t('login.err.codeReq')); el.code.focus(); shake(); return; }
 
   setLoading(true);
   clearMsg();
-  showMsgKey('info', 'login.err.connecting');
+  showMsg('info', I18n.t('login.err.connecting'));
 
   try {
     const data = await apiCall('register', name, code);
-
-    if (data.success === false){
-      stopTick();
-      showMsgKey('err', serverErrKey(data));
-      shake();
-      setLoading(false);
-      return;
-    }
-
-    const status = (data.status || '').trim();
-
-    if (status === 'نعم'){
-      saveSession(name, code);
-      goIn();
-      return;
-    }
-
-    // لسه / لا — نحفظ الاسم عشان ميكررش، والكود لو تذكّرني مفعّلة
-    saveSession(name, code);
     applyResult(data);
 
-    if (status === 'لسه') startPoll(name, code);
-    else { stopTick(); setLoading(false); }
-
+    if (data.status === 'نعم') {
+      saveSession(name, code);
+      setTimeout(() => { location.href = TARGET_PAGE; }, 1100);
+    } else {
+      clearSession();
+    }
   } catch (err) {
-    stopTick();
     showMsg('err', err.message);
     shake();
+  } finally {
     setLoading(false);
   }
 });
 
 function applyResult(data){
-  stopTick();
+  if (data && data.success === false){
+    showMsg('err', data.message || I18n.t('login.err.unknown'));
+    shake();
+    return;
+  }
   const s = (data && data.status) || '';
-  if (s === 'نعم')       { showMsgKey('ok', 'login.ok.approved'); return; }
-  if (s === 'لا')        { showMsgKey('err', 'login.err.rejected'); shake(); return; }
-  if (s === 'لسه')       { showMsgKey('wait', 'login.wait.pending'); return; }
-  showMsgKey('err', 'login.err.status');
-  shake();
-}
-
-/* السيرفر بيرجّع رسائله بالعربي — بنحوّطها لمفاتيح مترجمة بدل ما نعرض
-   نص عربي للمستخدم اللي مختار إنجليزي. */
-function serverErrKey(data){
-  const code = (data && data.code) || '';
-  if (code === 'RATE_LIMIT')   return 'login.err.rate';
-  if (code === 'MISSING_FIELDS')return 'login.err.fields';
-  if (code === 'BAD_NAME')     return 'login.err.nameShort';
-  if (code === 'UNKNOWN_ACTION')return 'login.err.action';
-  if (code === 'SERVER_ERROR') return 'login.err.server';
-  return 'login.err.unknown';
+  if (s === 'نعم')       showMsg('ok', '✅ ' + I18n.t('login.ok.approved'));
+  else if (s === 'لا')   { showMsg('err', '❌ ' + I18n.t('login.err.rejected')); shake(); }
+  else if (s === 'لسه') showMsg('wait', '⏳ ' + I18n.t('login.wait.pending'));
+  else                   { showMsg('err', I18n.t('login.err.status')); shake(); }
 }
 
 /* ---------- استعادة الجلسة ---------- */
@@ -678,22 +482,6 @@ function serverErrKey(data){
   $('#yr').textContent = new Date().getFullYear();
   paintBtn();
   paintEye();
-
-  // فحص الاتصال بالسيرفر — بيوضح أي مشكلة فوراً
-  (async function diag(){
-    const d = $('#diag');
-    const r = await checkApi();
-    if (r.ok){
-      d.className = 'diag good';
-      d.innerHTML = '✅ ' + I18n.t('diag.ok') + ' <code>' + BUILD + '</code>';
-      setTimeout(() => { d.hidden = true; }, 6000);
-    } else {
-      const name = r.err && r.err.name ? r.err.name : 'Error';
-      d.className = 'diag';
-      d.innerHTML = I18n.t('diag.fail');
-      d.hidden = false;
-    }
-  })();
 
   const n = localStorage.getItem('tc.name');
   if (n) el.name.value = n;
@@ -706,38 +494,22 @@ function serverErrKey(data){
   paintEye();
 
   setLoading(true);
-  showMsgKey('info', 'login.err.restore');
+  showMsg('info', I18n.t('login.err.restore'));
 
   apiCall('check', n, c)
     .then(data => {
-      if (data.success === false){
-        showMsgKey('err', serverErrKey(data));
-        setLoading(false);
-        return;
-      }
-      const status = (data.status || '').trim();
-
-      if (status === 'نعم'){ goIn(); return; }
-
-      if (status === 'لسه'){
-        showMsgKey('wait', 'login.wait.pending');
-        startPoll(n, c);                    // لوحده يكمّل ويقفل أول ما توافق
-        return;
-      }
-
-      // غير موجود / مرفوض → امسح ونجيبه يدخل تاني
       applyResult(data);
-      clearSession();
-      el.code.value = '';
-      el.code.type = 'password';
-      paintEye();
-      setLoading(false);
+      if (data && data.status === 'نعم') {
+        setTimeout(() => { location.href = TARGET_PAGE; }, 900);
+      } else {
+        clearSession();
+        el.code.value = '';
+        el.code.type = 'password';
+        paintEye();
+      }
     })
-    .catch(err => {
-      stopTick();
-      showMsg('err', err.message + ' — ' + I18n.t('login.err.tryManual'));
-      setLoading(false);
-    });
+    .catch(err => { showMsg('err', err.message); })
+    .finally(() => setLoading(false));
 })();
 
 /* ---------- روابط خارجية آمنة (شغّالة على كل الأجهزة) ---------- */
@@ -801,34 +573,9 @@ document.addEventListener('click', e => {
 </script>
 
 <script>
-// تسجيل Service Worker مع تنظيف الكاش القديم
-// (بيمنع إني أعرضلك نسخة قديمة من الكود بعد أي تعديل)
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const reg = await navigator.serviceWorker.register('./sw.js');
-      // لو في نسخة قديمة شغّالة → حدّثها فوراً
-      reg.addEventListener('updatefound', () => {
-        const nw = reg.installing;
-        if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-            nw.postMessage('SKIP_WAITING');
-          }
-        });
-      });
-    } catch (e) { /* مش مهم */ }
-
-    // تنظيف الكاشات القديمة مرة واحدة كل 24 ساعة
-    try {
-      const last = Number(localStorage.getItem('tc.swClean') || 0);
-      if (Date.now() - last > 864e5) {
-        localStorage.setItem('tc.swClean', String(Date.now()));
-        const keys = await caches.keys();
-        await Promise.all(keys.filter(k => !/^tc-(v|code-v|img-v)5$/.test(k))
-                              .map(k => caches.delete(k)));
-      }
-    } catch (e) {}
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
 </script>
