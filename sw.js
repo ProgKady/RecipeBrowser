@@ -1,12 +1,12 @@
 /* ==========================================================================
    Service Worker — TC Garments / RECETA
    الاستراتيجية:
-   - الصفحات (HTML)   : Network-first مع fallback للكاش (وضع offline)
-   - الأصول الساكنة   : Cache-first مع تحديث في الخلفية
-   - طلبات الـ API    : Network بس — ما بنكاشّها أبداً (عشان الداتا تفضل سليمة)
+   - الصفحات + ملفات الموقع نفسه (html/js/css/json) : Network-first مع fallback للكاش
+   - الصور                                        : Cache-first
+   - طلبات الـ API والخدمات الخارجية               : Network بس — ما بنكاشّها أبداً
    ========================================================================== */
 
-const VERSION   = 'tc-v4';
+const VERSION   = 'tc-v5';
 const PRECACHE  = [
   './',
   './index.html',
@@ -16,8 +16,8 @@ const PRECACHE  = [
   './hrrr.png',
   './manifest.json'
 ];
-const CODE_CACHE = 'tc-code-v4';
-const IMG_CACHE  = 'tc-img-v4';
+const CODE_CACHE = 'tc-code-v5';
+const IMG_CACHE  = 'tc-img-v5';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -45,17 +45,17 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const req = e.request;
 
-  if (req.method !== 'GET') return;                 // مبنخزّنش POST/PUT
-  if (!req.url.startsWith('http')) return;           // chrome-extension://
+  if (req.method !== 'GET') return;
+  if (!req.url.startsWith('http')) return;
 
   const url = new URL(req.url);
 
-  // 1) طلبات الـ API والخدمات الخارجية: الشبكة دايماً (بدون كاش)
+  // 1) الـ API والخدمات الخارجية: الشبكة دايماً (بدون كاش)
   if (/script\.google|googleusercontent|api\.github|raw\.githubusercontent|corsproxy|tmpfiles|cloudflare|jsdelivr/i.test(url.hostname + url.pathname)) {
-    return; // نسيبه للمتصفح مباشرة
+    return;
   }
 
-  // 2) لو مفيش نت وراجع offline
+  // 2) الصفحات: الشبكة الأول، ولو مفيش نت → الكاش → صفحة offline
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req)
@@ -79,7 +79,17 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // 4) باقي الأصول: Cache-first مع تحديث خلفي
+  // 4) ملفات الموقع نفسه (js/css/json): الشبكة الأول عشان التحديثات توصل فوراً
+  if (url.origin === self.location.origin) {
+    e.respondWith(
+      fetch(req)
+        .then(res => { if (res.ok) cachePut(CODE_CACHE, req, res.clone()); return res; })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // 5) باقي الأصول الخارجية: Cache-first مع تحديث خلفي
   e.respondWith(
     caches.match(req).then(hit => {
       const net = fetch(req)
