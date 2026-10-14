@@ -670,7 +670,7 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
       <span class="pv-chip">Mode <b id="pvFootMode">Fit width</b></span>
       <span class="pv-chip">Size <b id="pvFootSize">—</b></span>
       <span class="pv-chip" id="pvFootRot" style="display:none">Rot <b>0°</b></span>
-      <span class="pv-hint">Pinch / Ctrl + scroll = zoom · Double-tap = fit page</span>
+      <span class="pv-hint">Pinch / Ctrl + scroll = zoom · F = fit width · P = fit page</span>
     </div>
   </div>
 </section>
@@ -985,7 +985,7 @@ const KeyVault = (function(){
   /* تنضيف الكود: شيل أي مسافات/رموز مخفية، وحوّل الشرطات الطويلة لـ - */
   function norm(k){
     return String(k == null ? '' : k)
-      .replace(/[\s ​-‏‪-‮⁠﻿]+/g, '')
+      .replace(/[\s ​-‏‪-‮⁠﻿]+/g, '')
       .replace(/[‐-―−﹘﹣－]/g, '-')
       .replace(/-{2,}/g, '-');
   }
@@ -1356,7 +1356,7 @@ $('#refreshBtn').addEventListener('click', () => {
 
 const V = {
   item: null, html: '', rawBytes: null, rawUrl: null,
-  zoom: 1, mode: 'fitP', rot: 0, dir: 'ltr', busy: false
+  zoom: 1, mode: 'manual', rot: 0, dir: 'rtl', busy: false
 };
 
 function pvShowLoad(on){
@@ -1374,7 +1374,7 @@ function pvSetMode(m){
   V.mode = m;
   $('#pvFitW').classList.toggle('on', m === 'fitW');
   $('#pvFitP').classList.toggle('on', m === 'fitP');
-  $('#pvFootMode').textContent = m === 'fitW' ? 'Fit width' : m === 'fitP' ? 'Fit page' : 'Manual';
+  $('#pvFootMode').textContent = m === 'fitW' ? 'Fit width' : m === 'fitP' ? 'Fit page' : 'Scroll';
   Prefs.set('pvMode', m);
 }
 function pvSetRot(deg){
@@ -1403,202 +1403,156 @@ function pvCmd(cmd, val){
     iframe.contentWindow.postMessage({ __pvHost: 1, cmd: cmd, v: val }, '*');
 }
 
-/* ----- بناء مستند البريفيو (ورقة A4 + محرّك زوم داخلي) ----- */
-function buildPreviewDoc(recipeHTML){
-  const safe = String(recipeHTML).replace(/<\/script/gi, '<\\/script');
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+/* ----- بناء مستند البريفيو -----
+   نفس عرض الملف القديم: الريسيبي مستند عادي يتمرر بالحجم الطبيعي (اتجاه عربي).
+   Fit page مش الافتراضي — هو اللي كان بيصغّر الصفحة كلها جوّه الإطار
+   فتبان مستطيل أبيض صغير من غير سكرول. */
+function buildPreviewDoc(recipeHTML, opt){
+  opt = opt || {};
+  const html = String(recipeHTML);
+  const mode = (opt.mode === 'fitW' || opt.mode === 'fitP' || opt.mode === 'manual') ? opt.mode : 'manual';
+  const rot = ((Number(opt.rot) || 0) % 360 + 360) % 360;
+  const dir = opt.dir === 'ltr' ? 'ltr' : 'rtl';
+  const zoom = Number(opt.zoom);
+  const z0 = (mode === 'manual' && isFinite(zoom) && zoom > 0) ? zoom : 1;
+
+  return `<!DOCTYPE html><html lang="${dir === 'rtl' ? 'ar' : 'en'}" dir="${dir}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Recipe</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#454b5c}
-  #stage{
-    position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;
-    touch-action:none;
-  }
-  #sheet{
-    width:840px;max-width:none;
-    background:#fff;color:#15181f;
-    padding:62px 70px 96px;
-    border-radius:3px;
-    box-shadow:0 16px 60px rgba(0,0,0,.5);
-    transform-origin:center center;
-    will-change:transform;
-    font-family:'Cairo','Segoe UI',system-ui,sans-serif;
-    font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;
-    -webkit-print-color-adjust:exact;print-color-adjust:exact;
-  }
-  #sheet img{max-width:100%;height:auto;border-radius:8px;display:block;margin:14px auto}
-  #sheet a{color:#6d5efc;word-break:break-all}
-  #sheet table{max-width:100%;border-collapse:collapse;margin:16px auto}
-  #sheet td,#sheet th{border:1px solid #d5d8e0;padding:9px 12px}
-  #sheet pre{white-space:pre-wrap;background:#f4f5f8;padding:14px;border-radius:8px;overflow-x:auto}
-  #sheet blockquote{margin:14px 0;padding:6px 18px;border-inline-start:4px solid #6d5efc;
-                    background:#f7f7fc;border-radius:0 8px 8px 0}
-  #sheet h1,#sheet h2,#sheet h3{line-height:1.5}
-
+  html,body{background:#fff;color:#15181f}
+  body{margin:20px;font-family:'Cairo','Segoe UI',system-ui,sans-serif;line-height:1.7}
   @media print{
-    @page{ size:A4; margin:14mm; }
-    html,body{overflow:visible !important;height:auto !important;background:#fff !important}
-    #stage{position:static !important;display:block !important;overflow:visible !important;
-           background:#fff !important;place-items:unset !important}
-    #sheet{
-      transform:none !important;width:auto !important;max-width:none !important;
-      margin:0 !important;padding:0 !important;border-radius:0 !important;
-      box-shadow:none !important;position:static !important;
-    }
-    #sheet img{max-width:100% !important;page-break-inside:avoid}
-    #sheet table,#sheet pre,#sheet blockquote{page-break-inside:avoid}
-    #sheet h1,#sheet h2,#sheet h3,#sheet p{page-break-after:auto}
+    @page{size:A4;margin:14mm}
+    html,body{background:#fff !important}
+    body{margin:0 !important;transform:none !important}
+    html{zoom:1 !important}
   }
-</style></head><body>
-<div id="stage"><div id="sheet">${safe}</div></div>
+</style>
 <script>
 (function(){
-  var sheet=document.getElementById('sheet'), stage=document.getElementById('stage');
-  var MIN=0.3, MAX=3, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
-  var natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
-
-  function tf(){
-    sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
+  var mode = ${JSON.stringify(mode)};
+  var rot = ${rot};
+  var z = ${z0};
+  var MIN = 0.2, MAX = 3;
+  function post(extra){
+    var msg = { __pv:1, z:z, rot:rot, mode:mode };
+    if (extra) for (var k in extra) msg[k] = extra[k];
+    try { parent.postMessage(msg, '*'); } catch (e) {}
+  }
+  function clamp(n){
+    if (!isFinite(n) || n <= 0) n = 1;
+    return Math.max(MIN, Math.min(MAX, n));
+  }
+  function natural(){
+    var doc = document.documentElement, b = document.body;
+    var prev = doc.style.zoom;
+    doc.style.zoom = '1';
+    var w = Math.max(doc.scrollWidth, b ? b.scrollWidth : 0, 1);
+    var h = Math.max(doc.scrollHeight, b ? b.scrollHeight : 0, 1);
+    doc.style.zoom = prev;
+    return { w:w, h:h };
   }
   function apply(){
-    var vw=stage.clientWidth, vh=stage.clientHeight;
-    var rotated=(Math.abs(rot/90)%2)===1;
-    var aw = rotated ? vh : vw;
-    var ah = rotated ? vw : vh;
-    if(mode==='fitW')      z = aw / natural.w;
-    else if(mode==='fitP') z = Math.min(aw/natural.w, ah/natural.h);
-    z = Math.max(MIN, Math.min(MAX, z));
-    tf();
-    report();
+    var box = null;
+    if (mode === 'fitW' || mode === 'fitP'){
+      box = natural();
+      var iw = window.innerWidth || 1, ih = window.innerHeight || 1;
+      z = mode === 'fitW' ? (iw / box.w) : Math.min(iw / box.w, ih / box.h);
+      if ((Math.abs(z - 1) < 0.04)) z = 1;
+    }
+    z = clamp(z);
+    document.documentElement.style.zoom = (Math.abs(z - 1) < 0.001) ? '' : String(z);
+    if (document.body){
+      document.body.style.transform = rot ? ('rotate(' + rot + 'deg)') : '';
+      document.body.style.transformOrigin = 'top center';
+    }
+    var msg = {};
+    if (box){ msg.nw = Math.round(box.w); msg.nh = Math.round(box.h); }
+    post(msg);
   }
-  function report(){
-    try{ parent.postMessage({__pv:1,z:z,rot:rot,mode:mode,
-      nw:natural.w,nh:natural.h,vw:stage.clientWidth,vh:stage.clientHeight},'*'); }catch(e){}
-  }
-  function measure(){
-    natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
-    apply();
-  }
-  function applyDir(){
-    document.documentElement.dir = dir;
-    sheet.setAttribute('dir', dir);
-  }
-  function toggleFit(){
-    if(mode!=='fitP'){ mode='fitP'; tx=ty=0; } else { mode='manual'; tx=ty=0; z=1; }
-    apply();
-  }
-
-  /* ---- أوامر من الصفحة الأم ---- */
   window.addEventListener('message', function(ev){
-    var d=ev.data; if(!d||!d.__pvHost) return;
-    switch(d.cmd){
-      case 'in':    mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.22); apply(); break;
-      case 'out':   mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.22); apply(); break;
-      case 'zoom':  mode='manual'; tx=ty=0; z=Number(d.v); apply(); break;
-      case 'fitW':  mode='fitW'; tx=ty=0; apply(); break;
-      case 'fitP':  mode='fitP'; tx=ty=0; apply(); break;
-      case 'rotL':  rot=(rot-90+360)%360; apply(); break;
-      case 'rotR':  rot=(rot+90)%360;     apply(); break;
-      case 'rot':   rot=((Number(d.v)||0)%360+360)%360; apply(); break;
-      case 'dir':   dir=d.v; applyDir(); measure(); break;
-      case 'print': try{ window.print(); }catch(e){} break;
-      case 'measure': measure(); break;
+    var d = ev.data;
+    if (!d || !d.__pvHost) return;
+    switch (d.cmd){
+      case 'in': mode = 'manual'; z = clamp(z * 1.22); apply(); break;
+      case 'out': mode = 'manual'; z = clamp(z / 1.22); apply(); break;
+      case 'zoom': mode = 'manual'; z = clamp(Number(d.v) || 1); apply(); break;
+      case 'fitW': mode = 'fitW'; apply(); break;
+      case 'fitP': mode = 'fitP'; apply(); break;
+      case 'rotL': rot = (rot + 270) % 360; apply(); break;
+      case 'rotR': rot = (rot + 90) % 360; apply(); break;
+      case 'rot': rot = ((Number(d.v) || 0) % 360 + 360) % 360; apply(); break;
+      case 'dir':
+        var next = d.v === 'ltr' ? 'ltr' : 'rtl';
+        document.documentElement.setAttribute('dir', next);
+        if (document.body) document.body.setAttribute('dir', next);
+        post();
+        break;
+      case 'print': try { window.print(); } catch (e) {} break;
+      case 'measure': apply(); break;
     }
   });
-
-  /* ---- زوم بالماوس ---- */
-  stage.addEventListener('wheel', function(e){
-    if(e.ctrlKey||e.metaKey){
-      e.preventDefault();
-      mode='manual'; tx=ty=0;
-      z = e.deltaY<0 ? Math.min(MAX,z*1.1) : Math.max(MIN,z/1.1);
-      apply();
-    } else if(z>1.0001){
-      e.preventDefault(); ty-=e.deltaY; tx-=e.deltaX; tf();
-    }
-  }, {passive:false});
-
-  /* ---- سحب بإصبع/ماوس + pinch بإصبعين + دبل-تاب ---- */
-  var ptrs={}, drag=null, pinch=null, lastTap=0;
-  function cnt(){ return Object.keys(ptrs).length; }
-  function pdist(){
-    var k=Object.keys(ptrs), a=ptrs[k[0]], b=ptrs[k[1]];
-    return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+  window.addEventListener('wheel', function(e){
+    if (!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    mode = 'manual';
+    z = clamp(e.deltaY < 0 ? z * 1.1 : z / 1.1);
+    apply();
+  }, { passive:false });
+  var pts = {}, pinch = null;
+  function dist(){
+    var ks = Object.keys(pts);
+    if (ks.length < 2) return 0;
+    var a = pts[ks[0]], b = pts[ks[1]];
+    var dx = a.x - b.x, dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
   }
-  stage.addEventListener('pointerdown', function(e){
-    if(e.target.closest && e.target.closest('a,button')) return;
-    ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
-    try{ stage.setPointerCapture(e.pointerId); }catch(_){}
-    if(cnt()===2){ drag=null; pinch={d:pdist()||1, z:z}; mode='manual'; }
-    else if(cnt()===1){ drag={x:e.clientX,y:e.clientY,tx:tx,ty:ty}; }
-  });
-  stage.addEventListener('pointermove', function(e){
-    if(!ptrs[e.pointerId]) return;
-    ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
-    if(pinch && cnt()>=2){
-      z=Math.max(MIN,Math.min(MAX,pinch.z*pdist()/pinch.d));
-      apply();
-      return;
-    }
-    if(drag){
-      tx=drag.tx+(e.clientX-drag.x);
-      ty=drag.ty+(e.clientY-drag.y);
-      tf();
+  document.addEventListener('pointerdown', function(e){
+    pts[e.pointerId] = { x:e.clientX, y:e.clientY };
+    if (Object.keys(pts).length === 2){
+      pinch = { d: dist() || 1, z:z };
+      mode = 'manual';
     }
   });
-  function endPtr(e){
-    if(!ptrs[e.pointerId]) return;
-    var wasSingle = (cnt()===1 && !pinch);
-    var moved = drag && (Math.abs(e.clientX-drag.x)>8 || Math.abs(e.clientY-drag.y)>8);
-    delete ptrs[e.pointerId];
-    if(cnt()<2) pinch=null;
-    if(cnt()===1){
-      var k=Object.keys(ptrs)[0], p=ptrs[k];
-      drag={x:p.x,y:p.y,tx:tx,ty:ty};
-    } else { drag=null; }
-    if(e.type==='pointerup' && wasSingle && !moved){
-      var now=Date.now();
-      if(now-lastTap<320){ lastTap=0; toggleFit(); } else { lastTap=now; }
-    }
+  document.addEventListener('pointermove', function(e){
+    if (!pts[e.pointerId]) return;
+    pts[e.pointerId] = { x:e.clientX, y:e.clientY };
+    if (!pinch || Object.keys(pts).length < 2) return;
+    e.preventDefault();
+    z = clamp(pinch.z * (dist() / pinch.d));
+    apply();
+  }, { passive:false });
+  function endP(e){
+    delete pts[e.pointerId];
+    if (Object.keys(pts).length < 2) pinch = null;
   }
-  stage.addEventListener('pointerup',     endPtr);
-  stage.addEventListener('pointercancel', endPtr);
-
-  /* ---- إعادة القياس لما الصور تحمّل أو الشاشة تتغير ---- */
-  if(window.ResizeObserver){
-    var ro=new ResizeObserver(function(){ natural={w:sheet.offsetWidth,h:sheet.offsetHeight}; apply(); });
-    ro.observe(sheet);
-  }
-  Array.prototype.forEach.call(sheet.images, function(im){
-    if(!im.complete) im.addEventListener('load', measure, {once:true});
-  });
-  window.addEventListener('resize', function(){ apply(); });
-  window.addEventListener('load', function(){ setTimeout(measure, 60); });
-
-  /* ---- كيبورد: الزوم محلياً، والباقي بيروح للصفحة الأم ---- */
+  document.addEventListener('pointerup', endP);
+  document.addEventListener('pointercancel', endP);
   document.addEventListener('keydown', function(e){
-    var k=e.key, c=e.ctrlKey||e.metaKey;
-    if(k==='+'||k==='='){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.2); apply(); return; }
-    if(k==='-'||k==='_'){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.2); apply(); return; }
-    if(k==='0'){ e.preventDefault(); mode='manual'; tx=ty=0; z=1; apply(); return; }
-    if(k==='Escape' || (!c && /^[fprdFPRD]$/.test(k)) || (c && (k==='p'||k==='P'))){
-      if(c) e.preventDefault();
-      try{ parent.postMessage({__pvKey:1,key:k,ctrl:!!c},'*'); }catch(_){}
+    var k = e.key, c = e.ctrlKey || e.metaKey;
+    if (k === '+' || k === '='){ e.preventDefault(); mode = 'manual'; z = clamp(z * 1.2); apply(); return; }
+    if (k === '-' || k === '_'){ e.preventDefault(); mode = 'manual'; z = clamp(z / 1.2); apply(); return; }
+    if (k === '0' && !c){ e.preventDefault(); mode = 'manual'; z = 1; apply(); return; }
+    if (k === 'Escape' || (!c && /^[fprdFPRD]$/.test(k)) || (c && (k === 'p' || k === 'P'))){
+      if (c) e.preventDefault();
+      try { parent.postMessage({ __pvKey:1, key:k, ctrl:!!c }, '*'); } catch (err) {}
     }
   });
-
-  document.documentElement.dir=dir;
-  requestAnimationFrame(function(){ setTimeout(measure,40); });
-  parent.postMessage({__pv:1,ready:1},'*');
+  window.addEventListener('resize', function(){
+    if (mode === 'fitW' || mode === 'fitP') apply();
+  });
+  function boot(){ apply(); post({ ready:1 }); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  window.addEventListener('load', function(){
+    if (mode !== 'manual') setTimeout(apply, 40);
+  });
 })();
 <\/script>
-</body></html>`;
+</head><body>${html}</body></html>`;
 }
 
-/* ----- مستند التصدير (من غير زوم/دوران — عرض ثابت 700px = مساحة صفحة A4 بالهوامش) ----- */
 function buildExportDoc(recipeHTML, dir){
   const safe = String(recipeHTML).replace(/<\/script/gi, '<\\/script');
   return `<!DOCTYPE html><html lang="en" dir="${dir}"><head><meta charset="utf-8">
@@ -1641,10 +1595,11 @@ function pvClose(){
 async function openPreview(item){
   V.item = item;
   fileName.textContent = item.name.replace(/\.ks$/i, '');
-  pvSetMode(Prefs.get('pvMode', 'fitP'));
+  pvSetMode(Prefs.get('pvMode', 'manual') === 'fitW' ? 'fitW'
+            : Prefs.get('pvMode', 'manual') === 'fitP' ? 'fitP' : 'manual');
   pvSetRot(Prefs.get('pvRot', 0));
-  pvSetDir(Prefs.get('pvDir', 'ltr'));
-  pvSetZoomUI(Prefs.get('pvZoom', 1));
+  pvSetDir(Prefs.get('pvDir', 'rtl') === 'ltr' ? 'ltr' : 'rtl');
+  pvSetZoomUI(Number(Prefs.get('pvZoom', 1)) || 1);
   pvOpen();
 
   let longKey = KeyVault.load();
@@ -1675,15 +1630,14 @@ async function openPreview(item){
     KeyVault.resetFails();
     V.html = String(finalHTML);
     iframe.addEventListener('load', function onLoad(){
-      setTimeout(() => {
-        pvShowLoad(false);
-        pvCmd(Prefs.get('pvMode', 'fitP') === 'fitW' ? 'fitW' : 'fitP');
-        if (V.rot) pvCmd('rot', V.rot);
-        pvCmd('dir', V.dir);
-        pvCmd('measure');
-      }, 80);
+      setTimeout(() => pvShowLoad(false), 60);
     }, { once: true });
-    iframe.srcdoc = buildPreviewDoc(V.html);
+    iframe.srcdoc = buildPreviewDoc(V.html, {
+      mode: V.mode,
+      rot: V.rot,
+      dir: V.dir,
+      zoom: V.zoom
+    });
 
   } catch (e){
     const wrongKey = e && (e.name === 'OperationError' || e.message === 'EMPTY');
@@ -1731,7 +1685,7 @@ window.addEventListener('message', function(ev){
   if (d.__pvKey){ pvHandleKey(d.key, !!d.ctrl); return; }
 
   if (!d.__pv) return;
-  if (d.ready){ pvCmd('measure'); return; }
+  if (d.ready) pvShowLoad(false);
   if (typeof d.z === 'number') pvSetZoomUI(d.z);
   if (d.mode !== V.mode) pvSetMode(d.mode);
   if (d.rot !== V.rot) pvSetRot(d.rot);
@@ -1946,7 +1900,7 @@ $('#pvFull').addEventListener('click',  pvToggleFull);
 
 $('#pvNewTab').addEventListener('click', () => {
   if (!V.html) return;
-  const doc = buildPreviewDoc(V.html);
+  const doc = buildPreviewDoc(V.html, { mode: V.mode, rot: V.rot, dir: V.dir, zoom: V.zoom });
   const url = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
   const w = window.open(url, '_blank');
   if (!w) toast('⚠️ New tab is blocked here — use Full view instead');
@@ -1992,11 +1946,23 @@ document.addEventListener('keydown', e => {
   pvHandleKey(k, ctrl);
 });
 
-/* ----- استرجاع تفضيلات المشاهد المحفوظة ----- */
-pvSetDir(Prefs.get('pvDir', 'ltr'));
-pvSetMode(Prefs.get('pvMode', 'fitP'));
+/* ----- استرجاع تفضيلات المشاهد المحفوظة -----
+   مرة واحدة: النسخة اللي كانت بتفتح على Fit page + LTR كانت بتحفظ الافتراضي ده
+   حتى لو المستخدم مدوسش، فبنرجّع 100% و RTL زي العرض القديم. */
+try {
+  if (!localStorage.getItem('tc.pv.fix2')) {
+    localStorage.setItem('tc.pv.fix2', '1');
+    Prefs.set('pvMode', 'manual');
+    Prefs.set('pvZoom', 1);
+    Prefs.set('pvDir', 'rtl');
+    Prefs.set('pvRot', 0);
+  }
+} catch (e) {}
+pvSetDir(Prefs.get('pvDir', 'rtl') === 'ltr' ? 'ltr' : 'rtl');
+pvSetMode(Prefs.get('pvMode', 'manual') === 'fitW' ? 'fitW'
+          : Prefs.get('pvMode', 'manual') === 'fitP' ? 'fitP' : 'manual');
 pvSetRot(Prefs.get('pvRot', 0));
-pvSetZoomUI(Prefs.get('pvZoom', 1));
+pvSetZoomUI(Number(Prefs.get('pvZoom', 1)) || 1);
 
 /* ==========================================================================
    5c) شريحة كود التفعيل — إدخال / تغيير / مسح
