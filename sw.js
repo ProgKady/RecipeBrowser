@@ -6,7 +6,7 @@
    - طلبات الـ API    : Network بس — ما بنكاشّها أبداً (عشان الداتا تفضل سليمة)
    ========================================================================== */
 
-const VERSION   = 'tc-v4';
+const VERSION   = 'tc-v5';
 const PRECACHE  = [
   './',
   './index.html',
@@ -16,8 +16,8 @@ const PRECACHE  = [
   './hrrr.png',
   './manifest.json'
 ];
-const CODE_CACHE = 'tc-code-v4';
-const IMG_CACHE  = 'tc-img-v4';
+const CODE_CACHE = 'tc-code-v5';
+const IMG_CACHE  = 'tc-img-v5';
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -55,11 +55,18 @@ self.addEventListener('fetch', e => {
     return; // نسيبه للمتصفح مباشرة
   }
 
-  // 2) لو مفيش نت وراجع offline
+  // 2) الصفحات: الشبكة الأول (عشان ماتفتحش نسخة قديمة بعد أي تعديل)،
+  //    ولو مفيش نت بنرجع للكاش
   if (req.mode === 'navigate') {
     e.respondWith(
       fetch(req)
-        .then(res => { cachePut(CODE_CACHE, req, res.clone()); return res; })
+        .then(res => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(VERSION).then(c => c.put(req, copy)).catch(() => {});
+          }
+          return res;
+        })
         .catch(async () => {
           const cache = await caches.match(req);
           return cache || caches.match('./offline.html') || caches.match('./index.html');
@@ -79,17 +86,15 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // 4) باقي الأصول: Cache-first مع تحديث خلفي
+  // 4) باقي الأصول (core.js manifest …): الشبكة الأول مع fallback للكاش.
+  //    الـ assets بتتغير مع كل تحديث، فالكاش القديم لازم ما يغلبش الشبكة.
   e.respondWith(
-    caches.match(req).then(hit => {
-      const net = fetch(req)
-        .then(res => {
-          if (res.ok) cachePut(CODE_CACHE, req, res.clone());
-          return res;
-        })
-        .catch(() => hit);
-      return hit || net;
-    })
+    fetch(req)
+      .then(res => {
+        if (res && res.ok) cachePut(CODE_CACHE, req, res.clone());
+        return res;
+      })
+      .catch(() => caches.match(req))
   );
 });
 

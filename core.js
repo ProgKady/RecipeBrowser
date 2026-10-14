@@ -85,9 +85,16 @@ const DICT = {
     'login.err.badJson'    : 'رد غير صالح من السيرفر',
     'login.err.unknown'    : 'حدث خطأ غير متوقع',
     'login.err.status'     : 'تعذر تحديد الحالة — حاول تاني',
+    'login.err.tryManual'  : 'اضغط دخول وتعبّي البيانات يدوي.',
+    'login.err.rate'       : 'محاولات كثيرة — استنى شوية وجرّب تاني.',
+    'login.err.fields'     : 'البيانات ناقصة — املأ الاسم والكود.',
+    'login.err.action'     : 'خطأ في الاتصال بالسيرفر — جرّب كود النشر من جديد.',
+    'login.err.server'     : 'خطأ في السيرفر — حاول تاني بعد قليل.',
+    'login.trying'         : 'جارٍ الاتصال بالسيرفر… ({n} ثانية)',
     'login.ok.approved'    : 'تمت الموافقة — جارٍ التحويل...',
     'login.err.rejected'   : 'تم رفض الطلب من الإدارة',
     'login.wait.pending'   : 'طلبك قيد المراجعة — في انتظار موافقة RECETA',
+    'login.wait.polling'   : '⏳ في انتظار موافقة RECETA — الصفحة هتفتح لوحدها (تبقى {n} ثانية)',
     'login.http'           : 'خطأ في السيرفر',
 
     /* ---------- اللوحة ---------- */
@@ -224,9 +231,16 @@ const DICT = {
     'login.err.badJson'    : 'Invalid response from server',
     'login.err.unknown'    : 'Something went wrong',
     'login.err.status'     : 'Could not read status — try again',
+    'login.err.tryManual'  : 'Press sign in and fill in the details manually.',
+    'login.err.rate'       : 'Too many attempts — wait a moment and try again.',
+    'login.err.fields'     : 'Missing details — fill in both name and code.',
+    'login.err.action'     : 'Server connection error — check the deployment URL.',
+    'login.err.server'     : 'Server error — please try again shortly.',
+    'login.trying'         : 'Connecting to server… ({n}s)',
     'login.ok.approved'    : 'Approved! Redirecting…',
     'login.err.rejected'   : 'Your request was rejected',
     'login.wait.pending'   : 'Your request is under review — waiting for RECETA',
+    'login.wait.polling'   : '⏳ Waiting for RECETA approval — this page will open automatically ({n}s left)',
     'login.http'           : 'Server error',
 
     /* ---------- board ---------- */

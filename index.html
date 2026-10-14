@@ -289,7 +289,25 @@ footer a:hover{text-decoration:underline}
 
 <div id="toast" role="status" aria-live="polite"></div>
 
-<script src="./core.js"></script>
+<script src="./core.js"
+        onerror="window.__noCore=true"></script>
+<script>
+/* لو core.js مقدرش يتحمّل (مثلاً كاش قديم / نت ضعيف)
+   بنوقف الصفحة برسالة واضحة بدل ما تموت في صمت */
+if (window.__noCore || typeof window.I18n === 'undefined'){
+  document.addEventListener('DOMContentLoaded', function(){
+    var m = document.getElementById('msg');
+    if (m){
+      m.className = 'msg show err';
+      m.innerHTML = '<span>⚠️</span><span>'
+        + 'تعذّر تحميل ملف core.js — حدّث الصفحة (Ctrl+Shift+R) وامسح الكاش.'
+        + '</span>';
+    }
+    var b = document.getElementById('btn');
+    if (b){ b.disabled = true; b.style.opacity = .5; }
+  });
+}
+</script>
 <script>
 /* =====================================================================
    1) إعدادات الـ API
@@ -316,8 +334,8 @@ const el = {
 /* ---------- تشغيل اللغة قبل أي رسم ---------- */
 I18n.init();
 mountLangSwitch('#langBtn', () => {
-  paintBtn();
   applyStaticText();
+  repaintMsg();          // أعد رسم الرسالة الظاهرة باللغة الجديدة
 });
 
 function applyStaticText(){
@@ -329,38 +347,68 @@ function paintBtn(){
 }
 
 /* ---------- طلب واحد مع مهلة + إعادة محاولة ---------- */
-async function apiCall(action, name, code, { retries = 2 } = {}) {
+const API_TIMEOUT = 15000;
+
+async function apiCall(action, name, code, { retries = 1 } = {}) {
   const url = `${API_BASE}?action=${encodeURIComponent(action)}`
             + `&name=${encodeURIComponent(name)}`
             + `&code=${encodeURIComponent(code)}`;
 
+  let lastErr;
   for (let i = 0; i <= retries; i++) {
     const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 20000);
+    const timer = setTimeout(() => ctl.abort(), API_TIMEOUT);
     try {
-      const res  = await fetch(url, { method: 'GET', signal: ctl.signal, redirect: 'follow', cache: 'no-store' });
+      const res = await fetch(url, {
+        method: 'GET', signal: ctl.signal,
+        redirect: 'follow', cache: 'no-store', mode: 'cors'
+      });
       clearTimeout(timer);
       if (!res.ok) throw new Error(I18n.t('login.http') + ' ' + res.status);
-      const data = await res.json();
-      if (typeof data !== 'object' || data === null) throw new Error(I18n.t('login.err.badJson'));
+
+      const raw = await res.text();
+      let data;
+      try { data = JSON.parse(raw); }
+      catch { throw new Error(I18n.t('login.err.badJson')); }
+      if (!data || typeof data !== 'object') throw new Error(I18n.t('login.err.badJson'));
       return data;
     } catch (err) {
       clearTimeout(timer);
-      if (err.name === 'AbortError') throw new Error(I18n.t('login.err.timeout'));
-      if (i === retries) throw new Error(I18n.t('login.err.net'));
-      await sleep(700 * (i + 1));
+      lastErr = err;
+      if (err.name === 'AbortError') lastErr = new Error(I18n.t('login.err.timeout'));
+      if (i < retries) await sleep(900);
     }
   }
+  throw lastErr || new Error(I18n.t('login.err.net'));
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* ---------- واجهة الرسائل ---------- */
 const ICONS = { ok:'✅', err:'⚠️', wait:'⏳', info:'ℹ️' };
+
+/* بنحفظ آخر رسالة كـ (نوع + مفتاح ترجمة) عشان نقدر نعيد رسمها
+   بلغة تانية لو المستخدم بدّل اللغة وإنها ظاهرة على الشاشة */
+let lastMsg = null;                       // { kind, key, vars, raw }
+
 function showMsg(kind, text){
-  el.msg.className = 'msg ' + kind;
+  el.msg.className = 'msg show ' + kind;
   el.msg.innerHTML = `<span>${ICONS[kind] || ''}</span><span>${text}</span>`;
 }
-function clearMsg(){ el.msg.className = 'msg'; el.msg.innerHTML = ''; }
+/** showMsg بمفتاح ترجمة — بيتحدّث لوحده لما اللغة تتبدّل */
+function showMsgKey(kind, key, vars){
+  lastMsg = { kind, key, vars: vars || {} };
+  showMsg(kind, I18n.t(key, vars));
+}
+function clearMsg(){ el.msg.className = 'msg'; el.msg.innerHTML = ''; lastMsg = null; }
+
+/* إعادة رسم الرسالة الحالية باللغة الجديدة */
+function repaintMsg(){
+  if (!lastMsg) return;
+  showMsg(lastMsg.kind, I18n.t(lastMsg.key, lastMsg.vars));
+  el.btnText = $('#btnText', el.btn) || el.btnText;
+  if (el.btnText) el.btnText.textContent = I18n.t('login.submit');
+}
+
 function shake(){
   el.msg.classList.remove('shake'); void el.msg.offsetWidth; el.msg.classList.add('shake');
 }
@@ -372,13 +420,35 @@ function toast(text){
   toastT = setTimeout(() => el.toast.classList.remove('show'), 2600);
 }
 
+/* عدّاد تنازلي يخلّي المستخدم يشوف إيه اللي بيحصل */
+let tickT = null;
+let tickLeft = 0;
+function startTick(totalSec){
+  stopTick();
+  tickLeft = totalSec;
+  tick();
+  function tick(){
+    stopTick();
+    if (el.msg.classList.contains('info') || el.msg.classList.contains('wait')){
+      lastMsg = { kind: el.msg.classList.contains('wait') ? 'wait' : 'info',
+                  key: 'login.trying', vars: { n: tickLeft } };
+      el.msg.className = 'msg show ' + lastMsg.kind;
+      el.msg.innerHTML = `<span>${ICONS.info}</span><span>${I18n.t('login.trying', { n: tickLeft })}</span>`;
+    }
+    if (tickLeft-- > 0) tickT = setTimeout(tick, 1000);
+  }
+}
+function stopTick(){ if (tickT){ clearTimeout(tickT); tickT = null; } }
+
 function setLoading(on){
   el.btn.disabled = on;
   el.name.disabled = on;
   el.code.disabled = on;
+  el.remember.disabled = on;
   el.btn.innerHTML = on
     ? `<span class="spin"></span><span>${I18n.t('login.checking')}</span>`
     : `<span id="btnText">${I18n.t('login.submit')}</span>`;
+  el.btnText = $('#btnText', el.btn) || el.btnText;   // مرجع جديد بعد إعادة البناء
 }
 
 /* ---------- عرض الكود / إخفاءه ---------- */
@@ -413,14 +483,12 @@ el.name.addEventListener('input', clearMsg);
 
 /* ---------- حفظ / مسح الجلسة ---------- */
 function saveSession(name, code){
-  const keep = el.remember.checked;
-  if (keep){
-    localStorage.setItem('tc.name', name);
+  // الاسم بيتحفظ دايماً — الكود بس لو "تذكّرني" مفعّلة
+  localStorage.setItem('tc.name', name);
+  if (el.remember.checked){
     localStorage.setItem('tc.code', code);
     localStorage.setItem('tc.remember', '1');
   } else {
-    // الاسم فقط — الكود مايتحفظش
-    localStorage.setItem('tc.name', name);
     localStorage.removeItem('tc.code');
     localStorage.setItem('tc.remember', '0');
   }
@@ -431,50 +499,119 @@ function clearSession(){
 }
 el.remember.checked = localStorage.getItem('tc.remember') !== '0';
 
+/* ---------- استقبال الموافقة تلقائياً ---------- */
+let pollTimer = null, pollLeft = 0;
+
+function goIn(){
+  stopTick();
+  setLoading(true);
+  showMsgKey('ok', 'login.ok.approved');
+  setTimeout(() => { location.href = TARGET_PAGE; }, 900);
+}
+
+function stopPoll(){
+  if (pollTimer){ clearTimeout(pollTimer); pollTimer = null; }
+  pollLeft = 0;
+}
+
+/** لو لسه في انتظار الموافقة → بنسأل السيرفر كل 5 ثواني لحد دقيقة */
+function startPoll(name, code){
+  stopPoll();
+  pollLeft = 12;                                   // ≈ دقيقة
+  el.name.disabled = el.code.disabled = el.btn.disabled = true;
+
+  (function tick(){
+    if (pollLeft <= 0){
+      stopPoll();
+      setLoading(false);
+      showMsgKey('wait', 'login.wait.pending');
+      // سيب المستخدم يدوس دخول تاني لو حب
+      return;
+    }
+    // الرسالة بتتحدّث مع العدّاد ومع اللغة
+    lastMsg = { kind: 'wait', key: 'login.wait.polling', vars: { n: pollLeft * 5 } };
+    showMsg('wait', I18n.t('login.wait.polling', { n: pollLeft * 5 }));
+    pollLeft--;
+
+    apiCall('check', name, code, { retries: 0 })
+      .then(d => {
+        if (d && d.status === 'نعم'){ goIn(); return; }
+        pollTimer = setTimeout(tick, 5000);
+      })
+      .catch(() => { pollTimer = setTimeout(tick, 5000); });
+  })();
+}
+
 /* ---------- منطق تسجيل الدخول ---------- */
 el.form.addEventListener('submit', async e => {
   e.preventDefault();
+  stopPoll();
 
   const name = el.name.value.trim();
   const code = el.code.value.trim();
 
-  if (!name)          { showMsg('err', I18n.t('login.err.nameReq')); el.name.focus(); shake(); return; }
-  if (name.length < 2){ showMsg('err', I18n.t('login.err.nameShort')); el.name.focus(); shake(); return; }
-  if (!code)          { showMsg('err', I18n.t('login.err.codeReq')); el.code.focus(); shake(); return; }
+  if (!name)          { showMsgKey('err', 'login.err.nameReq'); el.name.focus(); shake(); return; }
+  if (name.length < 2){ showMsgKey('err', 'login.err.nameShort'); el.name.focus(); shake(); return; }
+  if (!code)          { showMsgKey('err', 'login.err.codeReq'); el.code.focus(); shake(); return; }
 
   setLoading(true);
   clearMsg();
-  showMsg('info', I18n.t('login.err.connecting'));
+  showMsgKey('info', 'login.err.connecting');
 
   try {
     const data = await apiCall('register', name, code);
+
+    if (data.success === false){
+      stopTick();
+      showMsgKey('err', serverErrKey(data));
+      shake();
+      setLoading(false);
+      return;
+    }
+
+    const status = (data.status || '').trim();
+
+    if (status === 'نعم'){
+      saveSession(name, code);
+      goIn();
+      return;
+    }
+
+    // لسه / لا — نحفظ الاسم عشان ميكررش، والكود لو تذكّرني مفعّلة
+    saveSession(name, code);
     applyResult(data);
 
-    if (data.status === 'نعم') {
-      saveSession(name, code);
-      setTimeout(() => { location.href = TARGET_PAGE; }, 1100);
-    } else {
-      clearSession();
-    }
+    if (status === 'لسه') startPoll(name, code);
+    else { stopTick(); setLoading(false); }
+
   } catch (err) {
+    stopTick();
     showMsg('err', err.message);
     shake();
-  } finally {
     setLoading(false);
   }
 });
 
 function applyResult(data){
-  if (data && data.success === false){
-    showMsg('err', data.message || I18n.t('login.err.unknown'));
-    shake();
-    return;
-  }
+  stopTick();
   const s = (data && data.status) || '';
-  if (s === 'نعم')       showMsg('ok', '✅ ' + I18n.t('login.ok.approved'));
-  else if (s === 'لا')   { showMsg('err', '❌ ' + I18n.t('login.err.rejected')); shake(); }
-  else if (s === 'لسه') showMsg('wait', '⏳ ' + I18n.t('login.wait.pending'));
-  else                   { showMsg('err', I18n.t('login.err.status')); shake(); }
+  if (s === 'نعم')       { showMsgKey('ok', 'login.ok.approved'); return; }
+  if (s === 'لا')        { showMsgKey('err', 'login.err.rejected'); shake(); return; }
+  if (s === 'لسه')       { showMsgKey('wait', 'login.wait.pending'); return; }
+  showMsgKey('err', 'login.err.status');
+  shake();
+}
+
+/* السيرفر بيرجّع رسائله بالعربي — بنحوّطها لمفاتيح مترجمة بدل ما نعرض
+   نص عربي للمستخدم اللي مختار إنجليزي. */
+function serverErrKey(data){
+  const code = (data && data.code) || '';
+  if (code === 'RATE_LIMIT')   return 'login.err.rate';
+  if (code === 'MISSING_FIELDS')return 'login.err.fields';
+  if (code === 'BAD_NAME')     return 'login.err.nameShort';
+  if (code === 'UNKNOWN_ACTION')return 'login.err.action';
+  if (code === 'SERVER_ERROR') return 'login.err.server';
+  return 'login.err.unknown';
 }
 
 /* ---------- استعادة الجلسة ---------- */
@@ -494,22 +631,38 @@ function applyResult(data){
   paintEye();
 
   setLoading(true);
-  showMsg('info', I18n.t('login.err.restore'));
+  showMsgKey('info', 'login.err.restore');
 
   apiCall('check', n, c)
     .then(data => {
-      applyResult(data);
-      if (data && data.status === 'نعم') {
-        setTimeout(() => { location.href = TARGET_PAGE; }, 900);
-      } else {
-        clearSession();
-        el.code.value = '';
-        el.code.type = 'password';
-        paintEye();
+      if (data.success === false){
+        showMsgKey('err', serverErrKey(data));
+        setLoading(false);
+        return;
       }
+      const status = (data.status || '').trim();
+
+      if (status === 'نعم'){ goIn(); return; }
+
+      if (status === 'لسه'){
+        showMsgKey('wait', 'login.wait.pending');
+        startPoll(n, c);                    // لوحده يكمّل ويقفل أول ما توافق
+        return;
+      }
+
+      // غير موجود / مرفوض → امسح ونجيبه يدخل تاني
+      applyResult(data);
+      clearSession();
+      el.code.value = '';
+      el.code.type = 'password';
+      paintEye();
+      setLoading(false);
     })
-    .catch(err => { showMsg('err', err.message); })
-    .finally(() => setLoading(false));
+    .catch(err => {
+      stopTick();
+      showMsg('err', err.message + ' — ' + I18n.t('login.err.tryManual'));
+      setLoading(false);
+    });
 })();
 
 /* ---------- روابط خارجية آمنة (شغّالة على كل الأجهزة) ---------- */
@@ -573,9 +726,34 @@ document.addEventListener('click', e => {
 </script>
 
 <script>
+// تسجيل Service Worker مع تنظيف الكاش القديم
+// (بيمنع إني أعرضلك نسخة قديمة من الكود بعد أي تعديل)
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      // لو في نسخة قديمة شغّالة → حدّثها فوراً
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing;
+        if (!nw) return;
+        nw.addEventListener('statechange', () => {
+          if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+            nw.postMessage('SKIP_WAITING');
+          }
+        });
+      });
+    } catch (e) { /* مش مهم */ }
+
+    // تنظيف الكاشات القديمة مرة واحدة كل 24 ساعة
+    try {
+      const last = Number(localStorage.getItem('tc.swClean') || 0);
+      if (Date.now() - last > 864e5) {
+        localStorage.setItem('tc.swClean', String(Date.now()));
+        const keys = await caches.keys();
+        await Promise.all(keys.filter(k => !/^tc-(v|code-v|img-v)5$/.test(k))
+                              .map(k => caches.delete(k)));
+      }
+    } catch (e) {}
   });
 }
 </script>
