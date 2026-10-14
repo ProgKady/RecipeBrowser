@@ -31,6 +31,9 @@
   --txt:#eaf0ff;
   --muted:#9aa8c7;
   --r:20px;
+  /* ارتفاع هيدر تطبيق أندرويد — غيّره من الرابط: index.html?top=56 */
+  --app-top:0px;
+  --safe-top:env(safe-area-inset-top,0px);
 }
 @media (prefers-color-scheme: light){
   :root{ --bg:#eef2f9; --card:rgba(255,255,255,.72); --stroke:rgba(15,23,42,.1);
@@ -43,10 +46,13 @@ body{
   font-family:'Cairo',system-ui,'Segoe UI',sans-serif;
   background:var(--bg);
   color:var(--txt);
-  min-height:100dvh;
+  height:100%; height:100dvh;
+  padding-top:var(--app-top);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:18px;padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  gap:18px;padding-inline:16px;
+  padding-bottom:calc(24px + env(safe-area-inset-bottom));
   overflow-x:hidden;position:relative;isolation:isolate;
+  overscroll-behavior:none;
 }
 
 /* ===== خلفية متحركة (Canvas واحد بدل مئات الـ DOM) ===== */
@@ -143,7 +149,7 @@ body{
 
 /* ===== زر اللغة ===== */
 .lang-btn{
-  position:fixed;top:calc(14px + env(safe-area-inset-top));inset-inline-end:14px;z-index:60;
+  position:fixed;top:calc(14px + var(--safe-top));inset-inline-end:14px;z-index:60;
   display:inline-flex;align-items:center;gap:7px;
   padding:9px 15px;border-radius:999px;border:1px solid var(--stroke);
   background:rgba(255,255,255,.07);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
@@ -218,8 +224,7 @@ footer a:hover{text-decoration:underline}
 
 /* ===== Toast ===== */
 #toast{
-  position:fixed;inset-inline:0;top:calc(14px + env(safe-area-inset-top));
-  margin:auto;width:max-content;max-width:90vw;z-index:999;
+  position:fixed;inset-inline:0;top:calc(14px + var(--safe-top));margin:auto;width:max-content;max-width:90vw;z-index:999;
   padding:11px 20px;border-radius:999px;font-size:13px;font-weight:800;
   background:rgba(20,25,38,.94);color:#fff;border:1px solid var(--stroke);
   box-shadow:0 12px 34px rgba(0,0,0,.4);
@@ -379,6 +384,26 @@ function applyStaticText(){
 function paintBtn(){
   el.btnText.textContent = I18n.t('login.submit');
 }
+
+/* ---------- إزاحة هيدر الأبلكيشن (أندرويد WebView) ----------
+   افتح: index.html?top=56   (56 = ارتفاع الهيدر بالبكسل) */
+(function applyAppTop(){
+  const qs = new URLSearchParams(location.search);
+  const v  = qs.get('top');
+  if (v !== null){
+    const n = Math.max(0, parseInt(v, 10) || 0);
+    Prefs.set('appTop', n);
+    document.documentElement.style.setProperty('--app-top', n + 'px');
+  } else {
+    const saved = Prefs.get('appTop', 0);
+    if (saved) document.documentElement.style.setProperty('--app-top', saved + 'px');
+  }
+  window.TC_SET_TOP = function(px){
+    const n = Math.max(0, parseInt(px, 10) || 0);
+    Prefs.set('appTop', n);
+    document.documentElement.style.setProperty('--app-top', n + 'px');
+  };
+})();
 
 /* ---------- طلب واحد مع مهلة + إعادة محاولة ---------- */
 const API_TIMEOUT = 15000;
