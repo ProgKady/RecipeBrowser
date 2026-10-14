@@ -2,268 +2,582 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>TC Garments</title>
-<meta name="theme-color" content="#ffffff">
-<link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" sizes="180x180" href="icons/hrrr_180.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>TC Garments — تسجيل الدخول</title>
+
+<meta name="description" content="بوابة الدخول الرسمية — TC Garments">
+<meta name="theme-color" content="#0b0f17">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./hrrr.png">
+<link rel="apple-touch-icon" href="./hrrr.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --brand:#ff2e63;
+  --brand-2:#ff7a45;
+  --ok:#22c55e;
+  --err:#ef4444;
+  --warn:#f59e0b;
+  --bg:#0b0f17;
+  --card:rgba(255,255,255,.06);
+  --stroke:rgba(255,255,255,.12);
+  --txt:#eaf0ff;
+  --muted:#9aa8c7;
+  --r:20px;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#eef2f9; --card:rgba(255,255,255,.72); --stroke:rgba(15,23,42,.1);
+         --txt:#0f172a; --muted:#5b6b8c; }
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
 body{
-  font-family:'Cairo',sans-serif;
-  background:#f5f7fa;
-  color:#1a1a1a;
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  justify-content: center;
-  align-items:center;
-  overflow:hidden;
-  position:relative;
-  padding:10px 8px;
+  font-family:'Cairo',system-ui,'Segoe UI',sans-serif;
+  background:var(--bg);
+  color:var(--txt);
+  min-height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:18px;padding:24px 16px calc(24px + env(safe-area-inset-bottom));
+  overflow-x:hidden;position:relative;isolation:isolate;
 }
 
-/* خلفية الأنيميشن خفيفة وأنيقة */
-.bg{position:fixed;inset:0;background:transparent;pointer-events:none;z-index:0}
-.dot{
-  position:absolute;
-  width:5px;height:5px;
-  background:#ff3366;
-  border-radius:50%;
-  box-shadow:0 0 12px rgba(255,51,102,0.6);
-  animation:float 14s infinite linear;
-}
-@keyframes float{
-  0%{transform:translateY(100vh) scale(0);}
-  100%{transform:translateY(-100px) scale(1);}
-}
+/* ===== خلفية متحركة (Canvas واحد بدل مئات الـ DOM) ===== */
+#bg{position:fixed;inset:0;z-index:-2;pointer-events:none}
+.blob{position:fixed;width:46vmax;height:46vmax;border-radius:50%;filter:blur(70px);
+      opacity:.42;z-index:-1;pointer-events:none;will-change:transform}
+.b1{background:var(--brand);   top:-14vmax;inset-inline-end:-16vmax;animation:float1 17s ease-in-out infinite}
+.b2{background:#6d28d9;          bottom:-18vmax;inset-inline-start:-14vmax;animation:float2 21s ease-in-out infinite}
+.b3{background:var(--brand-2);  top:32%;inset-inline-start:38%;animation:float3 25s ease-in-out infinite;opacity:.28}
+@keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-7vmax,9vmax) scale(1.15)}}
+@keyframes float2{0%,100%{transform:translate(0,0) scale(1.05)}50%{transform:translate(8vmax,-7vmax) scale(.92)}}
+@keyframes float3{0%,100%{transform:translate(0,0)}50%{transform:translate(-10vmax,-6vmax)}}
 
-/* اللوجو الآن مربع بزوايا منحنية (مش دايرة) */
+/* ===== الشعار ===== */
 .logo{
-  width:100px;
-  height:100px;
-  border-radius:24px; /* زوايا منحنية حلوة */
-  object-fit:cover;
-  border:4px solid #ff3366;
-  box-shadow:0 0 25px rgba(255,51,102,0.4);
-  margin-bottom:12px;
-  z-index:10;
-  animation:pulse 4s infinite;
+  width:104px;height:104px;border-radius:28px;object-fit:cover;
+  border:3px solid rgba(255,255,255,.18);
+  box-shadow:0 18px 45px rgba(255,46,99,.42);
+  animation:breathe 4.5s ease-in-out infinite;
 }
-@keyframes pulse{
-  0%,100%{box-shadow:0 0 25px rgba(255,51,102,0.4);}
-  50%{box-shadow:0 0 50px rgba(255,51,102,0.7);}
-}
+@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.05)}}
 
+/* ===== الكارت ===== */
 .card{
-  background:rgba(255,255,255,0.92);
-  backdrop-filter:blur(20px);
-  padding:22px 18px;
-  border-radius:20px;
-  width:90%;
-  max-width:310px;
-  text-align:center;
-  border:1px solid rgba(255,51,102,0.25);
-  box-shadow:0 10px 35px rgba(0,0,0,0.08);
-  z-index:10;
-  margin-bottom:15px;
+  width:100%;max-width:370px;
+  background:var(--card);
+  backdrop-filter:blur(26px) saturate(150%);
+  -webkit-backdrop-filter:blur(26px) saturate(150%);
+  border:1px solid var(--stroke);
+  border-radius:var(--r);
+  padding:28px 22px 22px;
+  box-shadow:0 22px 60px rgba(0,0,0,.34);
+  animation:rise .55s cubic-bezier(.2,.9,.25,1) both;
 }
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 
-h2{
-  color:#e91e63;
-  font-size:21px;
-  margin-bottom:12px;
-  text-shadow:0 2px 8px rgba(233,30,99,0.15);
-}
+.brand-top{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px}
+.brand-top h1{font-size:21px;font-weight:900;letter-spacing:.2px}
+.brand-top p{font-size:12.5px;color:var(--muted);text-align:center}
 
-input{
-  width:100%;
-  padding:11px 15px;
-  margin:7px 0;
-  background:#ffffff;
-  border:2px solid #e0e0e0;
-  border-radius:50px;
-  color:#333;
-  font-size:15px;
-  outline:none;
-  transition:all .3s;
+.field{position:relative;margin-bottom:14px}
+.field label{
+  display:block;font-size:12px;font-weight:700;color:var(--muted);
+  margin:0 4px 7px;
 }
-input:focus{
-  border:2px solid #ff3366;
-  box-shadow:0 0 20px rgba(255,51,102,0.25);
+.control{position:relative;display:flex;align-items:center}
+.control .ic{
+  position:absolute;inset-inline-start:14px;font-size:15px;
+  color:var(--muted);pointer-events:none;transition:color .25s;
 }
-input::placeholder{color:#999}
+.control input{
+  width:100%;padding:14px 46px 14px 44px;
+  background:rgba(255,255,255,.05);
+  border:1.6px solid var(--stroke);border-radius:14px;
+  color:var(--txt);font-size:15px;font-family:inherit;
+  outline:none;transition:border-color .25s, box-shadow .25s, background .25s;
+}
+@media (prefers-color-scheme: light){
+  .control input{background:rgba(255,255,255,.85)}
+}
+.control input::placeholder{color:var(--muted);opacity:.65}
+.control input:focus{
+  border-color:var(--brand);
+  box-shadow:0 0 0 4px rgba(255,46,99,.16);
+  background:rgba(255,255,255,.09);
+}
+.control:focus-within .ic{color:var(--brand)}
+.control input:disabled{opacity:.55;cursor:not-allowed}
 
-button{
-  width:100%;
-  padding:12px;
-  background:linear-gradient(145deg,#ff3366,#e91e63);
-  color:white;
-  border:none;
-  border-radius:50px;
-  font-size:16px;
-  font-weight:900;
-  cursor:pointer;
-  margin-top:10px;
-  box-shadow:0 8px 25px rgba(255,51,102,0.35);
-  transition:all .3s;
+.eye{
+  position:absolute;inset-inline-end:8px;
+  background:none;border:0;color:var(--muted);cursor:pointer;
+  font-size:16px;line-height:1;padding:8px;border-radius:8px;
 }
-button:hover:not(:disabled){
-  transform:translateY(-4px);
-  box-shadow:0 15px 40px rgba(255,51,102,0.5);
-}
-button:disabled{
-  background:#ccc;
-  box-shadow:none;
-  cursor:not-allowed;
-}
+.eye:hover{color:var(--brand)}
 
-p#status{
-  margin-top:10px;
-  color:#e91e63;
-  font-weight:bold;
-  min-height:20px;
-  font-size:14px;
-}
+.hint{font-size:11px;color:var(--warn);min-height:15px;margin:6px 4px 0;display:block}
 
+/* ===== تذكّرني ===== */
+.remember{
+  display:flex;align-items:center;gap:10px;margin:2px 2px 4px;cursor:pointer;
+  font-size:12.5px;font-weight:700;color:var(--muted);user-select:none;
+}
+.remember input{position:absolute;opacity:0;pointer-events:none}
+.remember .box{
+  width:19px;height:19px;border-radius:6px;border:1.8px solid var(--stroke);
+  display:grid;place-items:center;flex-shrink:0;transition:.2s;background:rgba(255,255,255,.05);
+}
+.remember .box i{font-size:10px;color:#fff;opacity:0;transform:scale(.4);transition:.2s}
+.remember input:checked + .box{background:linear-gradient(135deg,var(--brand),var(--brand-2));border-color:transparent}
+.remember input:checked + .box i{opacity:1;transform:none}
+.remember:hover .box{border-color:var(--brand)}
+.remember input:focus-visible + .box{box-shadow:0 0 0 4px rgba(255,46,99,.2)}
+
+/* ===== زر اللغة ===== */
+.lang-btn{
+  position:fixed;top:calc(14px + env(safe-area-inset-top));inset-inline-end:14px;z-index:60;
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 15px;border-radius:999px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.07);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  color:var(--txt);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
+  transition:.22s;box-shadow:0 8px 24px rgba(0,0,0,.22);
+}
+.lang-btn:hover{border-color:var(--brand);transform:translateY(-2px)}
+.lang-btn i{font-size:13px;color:var(--brand)}
+@media (max-width:360px){ .lang-btn{padding:8px 12px;font-size:11.5px} }
+
+/* ===== الزر ===== */
+.btn{
+  width:100%;margin-top:8px;padding:15px;border:0;border-radius:14px;
+  background:linear-gradient(135deg,var(--brand),var(--brand-2));
+  color:#fff;font-family:inherit;font-size:16px;font-weight:900;
+  cursor:pointer;position:relative;overflow:hidden;
+  box-shadow:0 12px 30px rgba(255,46,99,.34);
+  transition:transform .18s, box-shadow .25s, filter .25s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 18px 42px rgba(255,46,99,.46)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.985)}
+.btn:disabled{cursor:not-allowed;filter:grayscale(.55) brightness(.85);box-shadow:none}
+.btn .spin{
+  width:17px;height:17px;border:2.5px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== الرسائل ===== */
+.msg{
+  margin-top:14px;padding:13px 15px;border-radius:13px;
+  font-size:13.5px;font-weight:700;text-align:center;
+  display:none;align-items:center;justify-content:center;gap:8px;line-height:1.6;
+}
+.msg.show{display:flex;animation:pop .3s ease both}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.msg.ok  {background:rgba(34,197,94,.14);color:#4ade80;border:1px solid rgba(34,197,94,.34)}
+.msg.err {background:rgba(239,68,68,.14);color:#f87171;border:1px solid rgba(239,68,68,.34)}
+.msg.wait{background:rgba(245,158,11,.14);color:#fbbf24;border:1px solid rgba(245,158,11,.34)}
+.msg.info{background:rgba(59,130,246,.14);color:#93c5fd;border:1px solid rgba(59,130,246,.34)}
+
+.shake{animation:shake .42s cubic-bezier(.36,.07,.19,.97) both}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}
+                   30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+
+/* ===== الفوتر ===== */
 footer{
-  color:#777;
-  font-size:12px;
-  text-align:center;
-  z-index:10;
-  width:100%;
-  padding:0 10px;
-  position:fixed;
-  bottom:10px;
-  left:0;
+  text-align:center;font-size:11.5px;color:var(--muted);
+  line-height:1.9;width:100%;max-width:370px;
 }
-.footer-link{color:#e91e63;text-decoration:none;font-weight:bold}
-.support-btn{
-  background:#25d366;
-  color:white;
-  padding:7px 18px;
-  border-radius:25px;
-  text-decoration:none;
-  margin-top:6px;
-  display:inline-block;
-  font-size:13px;
+footer a{color:var(--brand);text-decoration:none;font-weight:700}
+footer a:hover{text-decoration:underline}
+.support{
+  display:inline-block;margin-top:8px;padding:9px 20px;border-radius:999px;
+  background:#25d366;color:#fff;text-decoration:none;font-weight:800;font-size:12.5px;
+  box-shadow:0 8px 22px rgba(37,211,102,.32);transition:transform .2s;
 }
+.support:active{transform:scale(.95)}
 
-/* تكييف للشاشات الصغيرة */
-@media (max-height: 680px), (max-width: 360px) {
-  .logo{width:85px;height:85px;border-radius:20px;margin-bottom:8px;}
-  .card{padding:18px 15px;max-width:280px;border-radius:16px;margin-bottom:10px;}
-  h2{font-size:19px;margin-bottom:10px;}
-  input{padding:10px 12px;font-size:14px;margin:6px 0;}
-  button{padding:11px;font-size:15px;margin-top:8px;}
-  footer{bottom:5px;font-size:11px;}
-  .support-btn{padding:6px 15px;}
+/* ===== Toast ===== */
+#toast{
+  position:fixed;inset-inline:0;top:calc(14px + env(safe-area-inset-top));
+  margin:auto;width:max-content;max-width:90vw;z-index:999;
+  padding:11px 20px;border-radius:999px;font-size:13px;font-weight:800;
+  background:rgba(20,25,38,.94);color:#fff;border:1px solid var(--stroke);
+  box-shadow:0 12px 34px rgba(0,0,0,.4);
+  opacity:0;transform:translateY(-16px);pointer-events:none;
+  transition:opacity .3s, transform .3s;
+}
+#toast.show{opacity:1;transform:none}
+
+@media (max-width:360px){
+  .logo{width:86px;height:86px;border-radius:22px}
+  .card{padding:22px 16px 18px;border-radius:18px}
+  .brand-top h1{font-size:19px}
+  .control input{padding:12px 44px;font-size:14.5px}
+  .btn{padding:13px;font-size:15px}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
 }
 </style>
 </head>
+
 <body>
-<div class="bg" id="bg"></div>
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="blob b1" aria-hidden="true"></div>
+<div class="blob b2" aria-hidden="true"></div>
+<div class="blob b3" aria-hidden="true"></div>
 
-<!-- اللوجو مربع منحني الزوايا -->
-<img src="hrrr.png" alt="Logo" class="logo">
+<img src="./hrrr.png" alt="TC Garments" class="logo" width="104" height="104">
 
-<div class="card">
-  <h2>تسجيل الدخول</h2>
-  <input type="text" id="name" placeholder="الاسم الكامل">
-  <input type="text" id="code" placeholder="الكود الخاص">
-  <button id="registerBtn">دخول</button>
-  <p id="status"></p>
-</div>
+<button class="lang-btn" id="langBtn" type="button"></button>
+
+<main class="card">
+  <div class="brand-top">
+    <h1 data-i18n="login.title">تسجيل الدخول</h1>
+    <p data-i18n="login.sub">أدخل بياناتك للمتابعة إلى لوحة الريسيبيز</p>
+  </div>
+
+  <form id="loginForm" novalidate>
+    <div class="field">
+      <label for="name" data-i18n="login.name">الاسم الكامل</label>
+      <div class="control">
+        <span class="ic">&#128100;</span>
+        <input id="name" name="name" type="text" placeholder="مثال: أحمد محمد"
+               data-i18n-ph="login.name.ph"
+               autocomplete="name" autocapitalize="words" spellcheck="false" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="code" data-i18n="login.code">الكود الخاص</label>
+      <div class="control">
+        <span class="ic">&#128273;</span>
+        <input id="code" name="code" type="password" placeholder="أدخل الكود"
+               data-i18n-ph="login.code.ph"
+               autocomplete="current-password" spellcheck="false" required>
+        <button type="button" class="eye" id="eye" data-i18n-aria="login.show">&#128065;</button>
+      </div>
+      <span class="hint" id="caps"></span>
+    </div>
+
+    <label class="remember" for="remember">
+      <input type="checkbox" id="remember" checked>
+      <span class="box"><i class="fas fa-check"></i></span>
+      <span data-i18n="login.remember">تذكّرني على هذا الجهاز</span>
+    </label>
+
+    <button type="submit" class="btn" id="btn">
+      <span id="btnText" data-i18n="login.submit">دخول</span>
+    </button>
+  </form>
+
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+</main>
 
 <footer>
-  © 2026 <a href="#" onclick="openExternalLink('https://facebook.com/kadinioo')" class="footer-link">Ahmed Elkady - Kadysoft Ltd.</a><br>
-  <a href="#" onclick="openExternalLink('https://wa.me/201555266002')" class="support-btn">الدعم الفني (واتساب)</a>
+  &copy; <span id="yr"></span> <a href="#" data-ext="https://facebook.com/kadinioo">Ahmed Elkady — Kadysoft Ltd.</a><br>
+  <a href="#" class="support" data-ext="https://wa.me/201555266002" data-i18n="support.whatsapp">الدعم الفني (واتساب)</a>
 </footer>
 
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="./core.js"></script>
 <script>
-function openExternalLink(url) {
-  window.location.href = "intent://" + url.replace(/^https?:\/\//, '') + "#Intent;package=com.android.chrome;scheme=https;end;";
+/* =====================================================================
+   1) إعدادات الـ API
+   ---------------------------------------------------------------------
+   ملاحظة مهمة: كان الكود القديم بيحط الـ parameters بره الـ proxy
+   (https://corsproxy.io/?<encoded>?action=...) فكانت الـ parameters
+   بتتلف و السيرفر بيردّ بـ "عملية غير معروفة".
+   الحل: بنكلّم Google Apps Script مباشرة — هو أصلاً بيرجّع
+   Access-Control-Allow-Origin: * فمفيش حاجة تحتاج proxy.
+   ===================================================================== */
+const API_BASE =
+  "https://script.google.com/macros/s/AKfycbxmRmgJn3kcFQ6ZCP0yAdWPUVCsykGazat0jhcDCnbHTUoKqCWtFrTGLCJJyTNxMsswxg/exec";
+
+const TARGET_PAGE = "./index2.html";
+
+const $  = s => document.querySelector(s);
+const el = {
+  form: $('#loginForm'), name: $('#name'), code: $('#code'),
+  btn: $('#btn'), btnText: $('#btnText'), msg: $('#msg'),
+  eye: $('#eye'), caps: $('#caps'), toast: $('#toast'),
+  remember: $('#remember')
+};
+
+/* ---------- تشغيل اللغة قبل أي رسم ---------- */
+I18n.init();
+mountLangSwitch('#langBtn', () => {
+  paintBtn();
+  applyStaticText();
+});
+
+function applyStaticText(){
+  document.title = I18n.t('login.title') + ' — ' + I18n.t('brand');
+  if (el.caps.textContent) checkCaps({ getModifierState: () => false });
 }
-</script>
+function paintBtn(){
+  el.btnText.textContent = I18n.t('login.submit');
+}
 
-<script>
-// أنيميشن النقاط المتحركة في الخلفية
-setInterval(()=>{
-  const d=document.createElement('div');
-  d.classList.add('dot');
-  d.style.left=Math.random()*100+'vw';
-  d.style.animationDuration=(Math.random()*8+10)+'s';
-  document.getElementById('bg').appendChild(d);
-  setTimeout(()=>d.remove(),20000);
-},350);
-</script>
+/* ---------- طلب واحد مع مهلة + إعادة محاولة ---------- */
+async function apiCall(action, name, code, { retries = 2 } = {}) {
+  const url = `${API_BASE}?action=${encodeURIComponent(action)}`
+            + `&name=${encodeURIComponent(name)}`
+            + `&code=${encodeURIComponent(code)}`;
 
-<script>
-const API_URL = "https://corsproxy.io/?" + encodeURIComponent("https://script.google.com/macros/s/AKfycbxmRmgJn3kcFQ6ZCP0yAdWPUVCsykGazat0jhcDCnbHTUoKqCWtFrTGLCJJyTNxMsswxg/exec");
-const nameInput = document.getElementById("name");
-const codeInput = document.getElementById("code");
-const btn = document.getElementById("registerBtn");
-const status = document.getElementById("status");
+  for (let i = 0; i <= retries; i++) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    try {
+      const res  = await fetch(url, { method: 'GET', signal: ctl.signal, redirect: 'follow', cache: 'no-store' });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(I18n.t('login.http') + ' ' + res.status);
+      const data = await res.json();
+      if (typeof data !== 'object' || data === null) throw new Error(I18n.t('login.err.badJson'));
+      return data;
+    } catch (err) {
+      clearTimeout(timer);
+      if (err.name === 'AbortError') throw new Error(I18n.t('login.err.timeout'));
+      if (i === retries) throw new Error(I18n.t('login.err.net'));
+      await sleep(700 * (i + 1));
+    }
+  }
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-window.addEventListener("DOMContentLoaded", () => {
-  const savedName = localStorage.getItem("name");
-  const savedCode = localStorage.getItem("code");
-  if (savedName && savedCode) {
-    nameInput.value = savedName;
-    codeInput.value = savedCode;
-    checkStatus(savedName, savedCode);
+/* ---------- واجهة الرسائل ---------- */
+const ICONS = { ok:'✅', err:'⚠️', wait:'⏳', info:'ℹ️' };
+function showMsg(kind, text){
+  el.msg.className = 'msg ' + kind;
+  el.msg.innerHTML = `<span>${ICONS[kind] || ''}</span><span>${text}</span>`;
+}
+function clearMsg(){ el.msg.className = 'msg'; el.msg.innerHTML = ''; }
+function shake(){
+  el.msg.classList.remove('shake'); void el.msg.offsetWidth; el.msg.classList.add('shake');
+}
+let toastT;
+function toast(text){
+  el.toast.textContent = text;
+  el.toast.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.toast.classList.remove('show'), 2600);
+}
+
+function setLoading(on){
+  el.btn.disabled = on;
+  el.name.disabled = on;
+  el.code.disabled = on;
+  el.btn.innerHTML = on
+    ? `<span class="spin"></span><span>${I18n.t('login.checking')}</span>`
+    : `<span id="btnText">${I18n.t('login.submit')}</span>`;
+}
+
+/* ---------- عرض الكود / إخفاءه ---------- */
+function paintEye(){
+  const show = el.code.type === 'password';
+  el.eye.innerHTML = show ? '&#128065;' : '&#128584;';
+  el.eye.setAttribute('aria-label', I18n.t(show ? 'login.show' : 'login.hide'));
+}
+el.eye.addEventListener('click', () => {
+  el.code.type = el.code.type === 'password' ? 'text' : 'password';
+  paintEye();
+  el.code.focus();
+});
+
+/* ---------- تحذير Caps Lock ---------- */
+el.code.addEventListener('keyup',   checkCaps);
+el.code.addEventListener('keydown', checkCaps);
+function checkCaps(e){
+  if (e.getModifierState && e.getModifierState('CapsLock')) {
+    el.caps.textContent = '⚠️ ' + I18n.t('login.capslock');
+  } else {
+    el.caps.textContent = '';
+  }
+}
+
+/* ---------- منع الازدواج ---------- */
+el.code.addEventListener('input', e => {
+  e.target.value = e.target.value.replace(/\s+/g, '');
+  clearMsg();
+});
+el.name.addEventListener('input', clearMsg);
+
+/* ---------- حفظ / مسح الجلسة ---------- */
+function saveSession(name, code){
+  const keep = el.remember.checked;
+  if (keep){
+    localStorage.setItem('tc.name', name);
+    localStorage.setItem('tc.code', code);
+    localStorage.setItem('tc.remember', '1');
+  } else {
+    // الاسم فقط — الكود مايتحفظش
+    localStorage.setItem('tc.name', name);
+    localStorage.removeItem('tc.code');
+    localStorage.setItem('tc.remember', '0');
+  }
+}
+function clearSession(){
+  localStorage.removeItem('tc.name');
+  localStorage.removeItem('tc.code');
+}
+el.remember.checked = localStorage.getItem('tc.remember') !== '0';
+
+/* ---------- منطق تسجيل الدخول ---------- */
+el.form.addEventListener('submit', async e => {
+  e.preventDefault();
+
+  const name = el.name.value.trim();
+  const code = el.code.value.trim();
+
+  if (!name)          { showMsg('err', I18n.t('login.err.nameReq')); el.name.focus(); shake(); return; }
+  if (name.length < 2){ showMsg('err', I18n.t('login.err.nameShort')); el.name.focus(); shake(); return; }
+  if (!code)          { showMsg('err', I18n.t('login.err.codeReq')); el.code.focus(); shake(); return; }
+
+  setLoading(true);
+  clearMsg();
+  showMsg('info', I18n.t('login.err.connecting'));
+
+  try {
+    const data = await apiCall('register', name, code);
+    applyResult(data);
+
+    if (data.status === 'نعم') {
+      saveSession(name, code);
+      setTimeout(() => { location.href = TARGET_PAGE; }, 1100);
+    } else {
+      clearSession();
+    }
+  } catch (err) {
+    showMsg('err', err.message);
+    shake();
+  } finally {
+    setLoading(false);
   }
 });
 
-btn.addEventListener("click", async () => {
-  const name = nameInput.value.trim();
-  const code = codeInput.value.trim();
-  if (!name || !code) { alert("من فضلك أدخل الاسم والكود أولاً."); return; }
-  btn.disabled = true;
-  status.textContent = "جارٍ التحقق...";
-  try {
-    const res = await fetch(`${API_URL}?action=register&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`);
-    const data = await res.json();
-    localStorage.setItem("name", name);
-    localStorage.setItem("code", code);
-    handleStatus(data.status);
-  } catch (err) {
-    status.textContent = "فشل الاتصال.";
-    btn.disabled = false;
+function applyResult(data){
+  if (data && data.success === false){
+    showMsg('err', data.message || I18n.t('login.err.unknown'));
+    shake();
+    return;
+  }
+  const s = (data && data.status) || '';
+  if (s === 'نعم')       showMsg('ok', '✅ ' + I18n.t('login.ok.approved'));
+  else if (s === 'لا')   { showMsg('err', '❌ ' + I18n.t('login.err.rejected')); shake(); }
+  else if (s === 'لسه') showMsg('wait', '⏳ ' + I18n.t('login.wait.pending'));
+  else                   { showMsg('err', I18n.t('login.err.status')); shake(); }
+}
+
+/* ---------- استعادة الجلسة ---------- */
+(function restore(){
+  $('#yr').textContent = new Date().getFullYear();
+  paintBtn();
+  paintEye();
+
+  const n = localStorage.getItem('tc.name');
+  if (n) el.name.value = n;
+
+  const c = localStorage.getItem('tc.code');
+  if (!n || !c) return;                       // الاسم بس أو مفيش حاجة — سيب المستخدم يدخل
+
+  el.code.value = c;
+  el.code.type = 'text';
+  paintEye();
+
+  setLoading(true);
+  showMsg('info', I18n.t('login.err.restore'));
+
+  apiCall('check', n, c)
+    .then(data => {
+      applyResult(data);
+      if (data && data.status === 'نعم') {
+        setTimeout(() => { location.href = TARGET_PAGE; }, 900);
+      } else {
+        clearSession();
+        el.code.value = '';
+        el.code.type = 'password';
+        paintEye();
+      }
+    })
+    .catch(err => { showMsg('err', err.message); })
+    .finally(() => setLoading(false));
+})();
+
+/* ---------- روابط خارجية آمنة (شغّالة على كل الأجهزة) ---------- */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-ext]');
+  if (!a) return;
+  e.preventDefault();
+  const url = a.dataset.ext;
+  // intent:// يشتغل على Chrome أندرويد بس — بنستخدمه لما يكون متاح فقط
+  const isAndroidChrome = /Android/.test(navigator.userAgent) && /Chrome/.test(navigator.userAgent);
+  if (isAndroidChrome) {
+    location.href = 'intent://' + url.replace(/^https?:\/\//,'') +
+                    '#Intent;scheme=https;package=com.android.chrome;end;';
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 });
 
-async function checkStatus(name, code) {
-  status.textContent = "جارٍ التحقق...";
-  disableInputs();
-  try {
-    const res = await fetch(`${API_URL}?action=check&name=${encodeURIComponent(name)}&code=${encodeURIComponent(code)}`);
-    const data = await res.json();
-    handleStatus(data.status);
-  } catch (err) {
-    status.textContent = "فشل الاتصال.";
-    enableInputs();
-  }
-}
+/* ---------- خلفية نقط خفيفة على Canvas ---------- */
+(function particles(){
+  const cv = document.getElementById('bg');
+  const ctx = cv.getContext('2d');
+  let w, h, dots = [];
 
-function handleStatus(state) {
-  switch (state) {
-    case "نعم": status.textContent = "تمت الموافقة! جاري التحويل..."; setTimeout(() => location.href = "index2.html", 1200); break;
-    case "لا": status.textContent = "تم رفض الطلب."; localStorage.clear(); enableInputs(); break;
-    case "لسه": status.textContent = "في انتظار الموافقة..."; disableInputs(); break;
-    default: status.textContent = "حالة غير معروفة."; localStorage.clear(); enableInputs(); break;
+  function size(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = cv.width  = innerWidth  * dpr;
+    h = cv.height = innerHeight * dpr;
+    cv.style.width = innerWidth + 'px';
+    cv.style.height = innerHeight + 'px';
+    const count = Math.min(46, Math.round(innerWidth * innerHeight / 26000));
+    dots = Array.from({ length: count }, () => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: (Math.random() * 1.7 + 0.7) * dpr,
+      v: (Math.random() * 0.22 + 0.07) * dpr
+    }));
   }
-}
 
-function disableInputs() { nameInput.disabled = codeInput.disabled = btn.disabled = true; }
-function enableInputs() { nameInput.disabled = codeInput.disabled = btn.disabled = false; }
+  function frame(){
+    ctx.clearRect(0, 0, w, h);
+    for (const d of dots){
+      d.y -= d.v;
+      if (d.y < -6) { d.y = h + 6; d.x = Math.random() * w; }
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(255,46,99,.55)';
+      ctx.shadowColor = 'rgba(255,46,99,.8)';
+      ctx.shadowBlur = 8;
+      ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    requestAnimationFrame(frame);
+  }
+
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  size();
+  addEventListener('resize', size, { passive: true });
+  requestAnimationFrame(frame);
+})();
 </script>
 
 <script>
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
-

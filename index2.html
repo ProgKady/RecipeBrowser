@@ -1,301 +1,2033 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kadysoft</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-    <style>
-        :root {
-            --primary: #5d5fef;
-            --light: #f8f9ff;
-            --text: #2d3748;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family: 'Cairo', 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #f0f2ff 0%, #f8f9ff 100%);
-            color: var(--text);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            -webkit-overflow-scrolling: touch;
-            touch-action: manipulation;
-        }
-        header {
-            background: white;
-            padding: 18px 20px;
-            box-shadow: 0 4px 20px rgba(93,95,239,0.12);
-            font-size: 1.4em;
-            font-weight: 800;
-            color: var(--primary);
-            text-align: center;
-            position: relative;
-            flex-shrink: 0;
-        }
-        .header-social {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        .header-social a {
-            margin: 0 10px;
-            color: var(--primary);
-            font-size: 1.8em;
-            transition: 0.3s;
-        }
-        .header-social a:hover { transform: scale(1.3); }
-        .tab-bar {
-            display: flex;
-            background: white;
-            border-bottom: 1px solid #eee;
-            flex-shrink: 0;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 16px;
-            text-align: center;
-            font-weight: 600;
-            color: #666;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom: 4px solid var(--primary);
-        }
-        .tab-content {
-            flex: 1;
-            overflow: hidden;
-            display: none;
-            flex-direction: column;
-        }
-        .tab-content.active { display: flex; }
-        .back-btn {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1.6em;
-            color: var(--primary);
-            cursor: pointer;
-            display: none;
-            z-index: 10;
-        }
-        .breadcrumbs {
-            padding: 12px 20px;
-            background: white;
-            font-size: 0.95em;
-            color: #666;
-            border-bottom: 1px solid #eee;
-            white-space: nowrap;
-            overflow-x: auto;
-            flex-shrink: 0;
-            -webkit-overflow-scrolling: touch;
-        }
-        .breadcrumbs span { color: var(--primary); font-weight: 600; cursor: pointer; }
-        .content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-y;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 18px;
-        }
-        .item {
-            background: white; border-radius: 16px; padding: 20px 16px; text-align: center;
-            box-shadow: 0 8px 25px rgba(93,95,239,0.1); transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-            cursor: pointer; user-select: none;
-        }
-        .item:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(93,95,239,0.2); }
-        .item i { font-size: 2.8em; margin-bottom: 12px; color: var(--primary); }
-        .item.folder i { color: #ffa502; }
-        .item span { display: block; font-weight: 600; font-size: 1em; word-break: break-word; }
-        #preview {
-            position: fixed; top:0; left:0; right:0; bottom:0; background: white; z-index: 100;
-            display: none; animation: slideIn 0.4s ease; flex-direction: column;
-        }
-        #preview iframe { width: 100%; height: calc(100% - 60px); border: none; }
-        .preview-header {
-            height: 60px; background: var(--primary); color: white;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 20px; font-size: 1.2em; font-weight: bold;
-        }
-        .close-preview { font-size: 1.8em; cursor: pointer; }
-        .add-container { padding: 30px 20px; max-width: 420px; margin: 0 auto; }
-        .add-card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px 25px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(93,95,239,0.15);
-        }
-        .add-card h2 { color: var(--primary); margin-bottom: 25px; font-size: 1.5em; }
-        .input-group { margin-bottom: 20px; position: relative; }
-        .input-group input, .input-group select {
-            width: 100%; padding: 16px; border: 2px solid #e0e4ff;
-            border-radius: 12px; font-size: 1.1em; outline: none; transition: 0.3s;
-        }
-        .input-group input:focus, .input-group select:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(93,95,239,0.1); }
-        .input-group label {
-            position: absolute; top: -10px; right: 15px; background: white;
-            padding: 0 8px; font-size: 0.9em; color: var(--primary);
-        }
-        .submit-btn {
-            background: var(--primary); color: white; border: none; width: 100%;
-            padding: 16px; border-radius: 12px; font-size: 1.2em; font-weight: 600;
-            cursor: pointer; transition: 0.3s;
-        }
-        .submit-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(93,95,239,0.3); }
-        #status { margin-top: 20px; font-weight: bold; font-size: 1.1em; }
-        footer {
-            background: white;
-            padding: 12px;
-            text-align: center;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
-            font-size: 0.85em;
-            color: #666;
-            user-select: none;
-            flex-shrink: 0;
-        }
-        footer a { color: var(--primary); text-decoration: none; font-weight: 600; }
-        footer a:hover { text-decoration: underline; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>RECETA — لوحة الريسيبيز</title>
 
-        /* تحسينات الجداول للموبايل */
-        .table-wrapper {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            margin-top: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-        table {
-            width: 100%;
-            min-width: 600px; /* لضمان التمرير الأفقي على الموبايل */
-            border-collapse: collapse;
-            background: white;
-        }
-        th, td {
-            padding: 12px 10px;
-            text-align: right;
-            border-bottom: 1px solid #eee;
-            font-size: 0.95em;
-        }
-        th {
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-        tr:nth-child(even) { background: #f9f9ff; }
-        tr:hover { background: #f0f0ff; }
+<meta name="description" content="لوحة الريسيبيز — TC Garments">
+<meta name="theme-color" content="#0d1020">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./hrrr.png">
+<link rel="apple-touch-icon" href="./hrrr.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
 
-        /* فلاتر الأعمدة */
-        .filters-row {
-            background: #f1f3ff;
-        }
-        .filters-row input {
-            width: 100%;
-            padding: 8px;
-            border: none;
-            border-radius: 6px;
-            background: white;
-            font-size: 0.9em;
-        }
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js" referrerpolicy="no-referrer"></script>
 
-        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    </style>
-</head>
-<body oncontextmenu="return false" onselectstart="return false" ondragstart="return false">
-<header>
-    RECETA
-    <div class="header-social">
-        <a href="https://facebook.com/kadinioo" target="_blank"><i class="fab fa-facebook"></i></a>
-        <a href="https://wa.me/+201555266002" target="_blank"><i class="fab fa-whatsapp"></i></a>
-        <button onclick="clearActivationCode()" style="margin-right:12px; padding:8px 16px; background:#e74c3c; color:white; border:none; border-radius:8px; cursor:pointer; font-size:0.95em;">
-            🔄 مسح الكود
-        </button>
-    </div>
-</header>
-<div class="tab-bar">
-    <div class="tab-btn active" onclick="openTab('recipes')">RECIPES</div>
-    <div class="tab-btn" onclick="openTab('add')">SEND MODIFICATION</div>
-    <div class="tab-btn" onclick="openTab('sqlite')">DATA VIEWER</div>
-</div>
-<div id="recipes" class="tab-content active">
-    <i class="fas fa-arrow-right back-btn" id="backBtn"></i>
-    <div class="breadcrumbs" id="breadcrumbs">RECIPES</div>
-    <div class="content">
-        <div class="grid" id="grid"></div>
-    </div>
-    <div id="preview">
-        <div class="preview-header">
-            <span id="fileName">عرض الريسيبي</span>
-            <i class="fas fa-times close-preview" id="closePreview"></i>
-        </div>
-        <iframe id="iframe"></iframe>
-    </div>
-</div>
-<div id="add" class="tab-content">
-    <div class="add-container">
-        <div class="add-card">
-            <h2>اضافة صورة للريسيبي</h2>
-            <div class="input-group">
-                <input type="text" id="userName" required>
-                <label>الاسم</label>
-            </div>
-            <div class="input-group">
-                <input type="file" id="imageFile" accept="image/*" required>
-                <label>اختر الصورة</label>
-            </div>
-            <button class="submit-btn" onclick="submitForm()">أرسل الريسيبي</button>
-            <div id="status"></div>
-        </div>
-    </div>
-</div>
-<div id="sqlite" class="tab-content">
-    <div class="add-container">
-        <div class="add-card">
-            <h2>عرض البيانات</h2>
-            <div class="input-group">
-                <select id="tablesSelect"><option value="">اختر جدول</option></select>
-            </div>
-            <div id="tableContainer"></div>
-        </div>
-    </div>
-</div>
-<footer>
-    © 2026 <a href="#" onclick="openExternalLink('https://facebook.com/kadinioo')">Ahmed Elkady - Kadysoft Ltd.</a><br>
-    <a href="#" onclick="openExternalLink('https://wa.me/201555266002')">الدعم الفني عبر واتساب</a>
-</footer>
-<script>
-function openTab(tab) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(tab).classList.add('active');
-    document.querySelector(`.tab-btn[onclick="openTab('${tab}')"]`).classList.add('active');
+<style>
+:root{
+  --primary:#6d5efc; --primary-2:#ff2e63; --accent:#ffa502;
+  --bg:#0d1020; --panel:rgba(255,255,255,.055);
+  --stroke:rgba(255,255,255,.1); --txt:#eaf0ff; --muted:#98a4c4;
+  --ok:#22c55e; --err:#ef4444;
+  --r:18px;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#eef1fb; --panel:rgba(255,255,255,.78); --stroke:rgba(15,23,42,.09);
+         --txt:#0f172a; --muted:#5b6b8c; }
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:'Cairo',system-ui,'Segoe UI',sans-serif;
+  background:var(--bg); color:var(--txt);
+  min-height:100dvh; display:flex; flex-direction:column;
+  overflow:hidden; -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(60vmax 60vmax at 85% -10%, rgba(109,94,252,.30), transparent 60%),
+    radial-gradient(50vmax 50vmax at 5% 105%, rgba(255,46,99,.26), transparent 60%);
+}
+button,input,select{font-family:inherit}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:rgba(140,150,200,.35);border-radius:9px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ======================= الهيدر ======================= */
+header{
+  position:relative;flex-shrink:0;
+  background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--stroke);
+  padding:calc(14px + env(safe-area-inset-top)) 16px 13px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand img{width:40px;height:40px;border-radius:12px;object-fit:cover;
+  border:2px solid rgba(255,255,255,.16);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.brand h1{font-size:1.16em;font-weight:900;
+  background:linear-gradient(90deg,var(--primary),var(--primary-2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;white-space:nowrap}
+.brand small{display:block;font-size:10.5px;color:var(--muted);font-weight:600;letter-spacing:.4px}
+.hdr-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.icon-btn{
+  width:38px;height:38px;border-radius:12px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.05);color:var(--muted);font-size:1.02em;
+  display:grid;place-items:center;cursor:pointer;transition:.22s;
+}
+.icon-btn:hover{color:#fff;border-color:var(--primary);transform:translateY(-2px)}
+.logout{color:#ff6b81 !important}
+
+/* ======================= التبويبات ======================= */
+.tab-bar{display:flex;flex-shrink:0;background:var(--panel);
+  border-bottom:1px solid var(--stroke);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.tab-btn{
+  flex:1;padding:14px 6px;text-align:center;font-weight:800;font-size:.92em;
+  color:var(--muted);cursor:pointer;border:0;background:none;position:relative;
+  transition:color .25s;
+}
+.tab-btn.active{color:#fff}
+.tab-btn.active::after{
+  content:'';position:absolute;bottom:0;inset-inline:14px;height:3px;border-radius:3px 3px 0 0;
+  background:linear-gradient(90deg,var(--primary),var(--primary-2));
+  animation:fadeIn .3s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:scaleX(.4)}to{opacity:1;transform:none}}
+
+/* ======================= المحتوى ======================= */
+.tab-content{flex:1;display:none;flex-direction:column;min-height:0}
+.tab-content.active{display:flex}
+
+.toolbar{
+  flex-shrink:0;display:flex;gap:9px;align-items:center;
+  padding:11px 14px;background:var(--panel);border-bottom:1px solid var(--stroke);
+}
+.search{position:relative;flex:1}
+.search input{
+  width:100%;padding:11px 42px 11px 38px;border-radius:12px;
+  border:1.5px solid var(--stroke);background:rgba(255,255,255,.05);
+  color:var(--txt);font-size:.92em;outline:none;transition:.25s;
+}
+@media (prefers-color-scheme: light){ .search input{background:rgba(255,255,255,.85)} }
+.search input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(109,94,252,.13)}
+.search .ic{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:.88em;pointer-events:none}
+.count-pill{font-size:11.5px;color:var(--muted);font-weight:700;white-space:nowrap;padding:0 4px}
+
+.breadcrumbs{
+  flex-shrink:0;padding:11px 16px;font-size:.88em;color:var(--muted);
+  border-bottom:1px solid var(--stroke);background:rgba(255,255,255,.02);
+  display:flex;align-items:center;gap:7px;overflow-x:auto;white-space:nowrap;
+  scrollbar-width:none;
+}
+.breadcrumbs::-webkit-scrollbar{display:none}
+.breadcrumbs b{color:var(--txt);font-weight:800}
+.breadcrumbs span{cursor:pointer;color:var(--primary);font-weight:700}
+.breadcrumbs span:hover{text-decoration:underline}
+.back-btn{
+  background:none;border:0;color:var(--primary);font-size:1.15em;cursor:pointer;
+  display:none;padding:4px;flex-shrink:0;
 }
 
-// ---------- كود الريسيبيز (بدون تغيير كبير) ----------
-const owner = 'ProgKady', repo = 'Recipes', branch = 'master';
-const api = `https://api.github.com/repos/${owner}/${repo}/contents`;
-const raw = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
-let history = [''];
-const grid = document.getElementById('grid'), breadcrumbs = document.getElementById('breadcrumbs'),
-    backBtn = document.getElementById('backBtn'), preview = document.getElementById('preview'),
-    iframe = document.getElementById('iframe'), fileName = document.getElementById('fileName'),
-    closePreview = document.getElementById('closePreview');
+.content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:18px 14px calc(24px + env(safe-area-inset-bottom))}
 
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px}
+.item{
+  background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid var(--stroke);border-radius:var(--r);
+  padding:22px 14px;text-align:center;cursor:pointer;
+  transition:transform .28s cubic-bezier(.2,.9,.3,1), box-shadow .28s, border-color .28s;
+  animation:pop .4s ease both;position:relative;overflow:hidden;
+}
+.item::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(140deg,rgba(255,255,255,.09),transparent 55%);opacity:0;transition:opacity .28s}
+.item:hover{transform:translateY(-6px);border-color:rgba(109,94,252,.5);
+  box-shadow:0 18px 40px rgba(0,0,0,.3)}
+.item:hover::after{opacity:1}
+.item:active{transform:translateY(-2px) scale(.98)}
+.item i{font-size:2.5em;margin-bottom:11px;color:var(--primary);display:block;transition:transform .28s}
+.item:hover i{transform:scale(1.12)}
+.item.folder i{color:var(--accent)}
+.item span{display:block;font-weight:700;font-size:.92em;word-break:break-word;line-height:1.5}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+
+/* Skeleton */
+.skeleton{background:var(--panel);border:1px solid var(--stroke);border-radius:var(--r);
+  height:132px;position:relative;overflow:hidden}
+.skeleton::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);
+  animation:shimmer 1.4s infinite}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* حالة فارغة / خطأ */
+.state{text-align:center;padding:56px 20px;color:var(--muted)}
+.state i{font-size:3em;margin-bottom:14px;opacity:.5;display:block}
+.state p{font-size:.95em;line-height:1.8;margin-bottom:16px}
+.state button,.btn-sec{
+  padding:11px 24px;border-radius:12px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.05);color:var(--txt);font-weight:800;cursor:pointer;transition:.22s;
+}
+.state button:hover{border-color:var(--primary);transform:translateY(-2px)}
+
+/* ======================= Recipe Viewer (LTR) ======================= */
+#preview{
+  position:fixed;inset:0;z-index:100;background:var(--bg);
+  display:none;flex-direction:column;direction:ltr;
+  font-family:'Inter','Cairo',system-ui,'Segoe UI',sans-serif;
+  animation:slide .3s cubic-bezier(.2,.9,.3,1);
+}
+@keyframes slide{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ---------- top toolbar ---------- */
+.pv-top{
+  flex-shrink:0;direction:ltr;
+  display:flex;align-items:center;gap:4px;
+  padding:calc(9px + env(safe-area-inset-top)) 10px 9px;
+  background:var(--panel);
+  backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
+  border-bottom:1px solid var(--stroke);
+  overflow-x:auto;scrollbar-width:none;
+}
+.pv-top::-webkit-scrollbar{display:none}
+.pv-group{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.pv-sep{width:1px;height:24px;background:var(--stroke);margin:0 6px;flex-shrink:0}
+.pv-spacer{flex:1;min-width:6px}
+
+.pv-btn{
+  height:36px;min-width:36px;padding:0 8px;border:1px solid transparent;border-radius:9px;
+  background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  font-family:inherit;transition:background .18s,color .18s,border-color .18s,transform .12s;
+  white-space:nowrap;user-select:none;
+}
+.pv-btn:hover:not(:disabled){background:rgba(255,255,255,.09);color:var(--txt)}
+.pv-btn:active:not(:disabled){transform:scale(.93)}
+.pv-btn:disabled{opacity:.35;cursor:not-allowed}
+.pv-btn.on{background:rgba(109,94,252,.2);color:#a99cff;border-color:rgba(109,94,252,.45)}
+.pv-btn.danger:hover:not(:disabled){background:rgba(239,68,68,.16);color:#f87171}
+.pv-btn.primary{
+  background:linear-gradient(135deg,var(--primary),var(--primary-2));
+  color:#fff;padding:0 14px;box-shadow:0 6px 18px rgba(109,94,252,.3);
+}
+.pv-btn.primary:hover:not(:disabled){color:#fff;filter:brightness(1.1)}
+
+.pv-zoomval{
+  min-width:58px;height:36px;padding:0 8px;border:1px solid var(--stroke);border-radius:9px;
+  background:rgba(255,255,255,.05);color:var(--txt);font-family:inherit;
+  font-size:12.5px;font-weight:800;text-align:center;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+}
+.pv-zoomval:hover{border-color:var(--primary)}
+.pv-range{
+  -webkit-appearance:none;appearance:none;width:96px;height:36px;background:transparent;cursor:pointer;
+}
+.pv-range::-webkit-slider-runnable-track{height:4px;border-radius:4px;
+  background:linear-gradient(90deg,var(--primary),var(--primary-2))}
+.pv-range::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:#fff;border:2px solid var(--primary);margin-top:-5.5px;transition:transform .15s}
+.pv-range:active::-webkit-slider-thumb{transform:scale(1.25)}
+.pv-range::-moz-range-track{height:4px;border-radius:4px;
+  background:linear-gradient(90deg,var(--primary),var(--primary-2))}
+.pv-range::-moz-range-thumb{width:15px;height:15px;border-radius:50%;
+  background:#fff;border:2px solid var(--primary)}
+
+.pv-name{
+  font-size:12.5px;font-weight:800;color:var(--txt);
+  max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding:0 4px;direction:ltr;
+}
+
+/* ---------- stage ---------- */
+.pv-stage{
+  flex:1;min-height:0;position:relative;overflow:hidden;
+  background:
+    linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,.035) 0% 25%, transparent 0% 50%) 50%/22px 22px;
+  display:flex;align-items:center;justify-content:center;
+}
+#iframe{
+  width:100%;height:100%;border:0;background:transparent;
+  display:block;overflow:hidden;
+}
+.pv-stage.panning{cursor:grabbing}
+.pv-stage.panning #iframe{pointer-events:none}
+
+/* ---------- bottom status bar ---------- */
+.pv-foot{
+  flex-shrink:0;direction:ltr;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:7px 12px calc(7px + env(safe-area-inset-bottom));
+  background:var(--panel);border-top:1px solid var(--stroke);
+  font-size:11.5px;font-weight:700;color:var(--muted);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.pv-foot b{color:var(--txt);font-weight:800}
+.pv-chip{
+  padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.06);
+  border:1px solid var(--stroke);white-space:nowrap;
+}
+.pv-hint{margin-inline-start:auto;opacity:.75;white-space:nowrap}
+
+/* ---------- loading / error inside stage ---------- */
+.pv-overlay{
+  position:absolute;inset:0;z-index:5;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  background:var(--bg);color:var(--muted);text-align:center;padding:26px;
+}
+.pv-overlay.show{display:flex}
+.pv-overlay .ring{
+  width:42px;height:42px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.1);border-top-color:var(--primary);
+  animation:spin .8s linear infinite;
+}
+.pv-overlay h4{color:var(--txt);font-size:1.02em;font-weight:800}
+.pv-overlay p{font-size:.85em;line-height:1.8;max-width:320px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:640px){
+  .pv-name,.pv-hint{display:none}
+  .pv-range{display:none}
+  .pv-btn span{display:none}
+  .pv-btn{padding:0 7px}
+  .pv-btn.primary{padding:0 10px}
+  .pv-btn.primary span{display:inline}
+}
+@media (prefers-reduced-motion: reduce){
+  .pv-overlay .ring{animation-duration:1.6s}
+}
+
+/* ======================= النماذج ======================= */
+.add-container{padding:26px 16px;max-width:480px;margin:0 auto;width:100%}
+.add-card{
+  background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid var(--stroke);border-radius:22px;padding:28px 22px;
+  box-shadow:0 18px 50px rgba(0,0,0,.25);animation:pop .45s ease both;
+}
+.add-card h2{text-align:center;margin-bottom:24px;font-size:1.22em;font-weight:900;
+  background:linear-gradient(90deg,var(--primary),var(--primary-2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.input-group{margin-bottom:18px;position:relative}
+.input-group input,.input-group select{
+  width:100%;padding:15px 14px;border-radius:13px;
+  border:1.8px solid var(--stroke);background:rgba(255,255,255,.05);
+  color:var(--txt);font-size:.98em;outline:none;transition:.25s;
+}
+@media (prefers-color-scheme: light){
+  .input-group input,.input-group select{background:rgba(255,255,255,.88)}
+}
+.input-group input:focus,.input-group select:focus{
+  border-color:var(--primary);box-shadow:0 0 0 4px rgba(109,94,252,.12)}
+.input-group label{
+  position:absolute;top:-9px;inset-inline-start:14px;padding:0 8px;font-size:.78em;
+  font-weight:800;color:var(--primary);background:var(--bg);border-radius:6px;pointer-events:none}
+.submit-btn{
+  width:100%;padding:15px;border:0;border-radius:14px;color:#fff;font-size:1.02em;font-weight:900;
+  background:linear-gradient(135deg,var(--primary),var(--primary-2));cursor:pointer;
+  box-shadow:0 12px 30px rgba(109,94,252,.32);transition:.22s;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+}
+.submit-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 18px 42px rgba(109,94,252,.44)}
+.submit-btn:disabled{opacity:.6;cursor:not-allowed}
+#status{margin-top:16px;text-align:center;font-weight:800;font-size:.93em;min-height:20px;line-height:1.7}
+
+/* ======================= الجداول ======================= */
+.table-wrapper{
+  overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:18px;
+  border-radius:14px;border:1px solid var(--stroke);max-height:60vh;overflow-y:auto;
+  background:var(--panel);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+table{width:100%;min-width:620px;border-collapse:collapse;font-size:.86em}
+th,td{padding:11px 10px;text-align:right;border-bottom:1px solid var(--stroke);white-space:nowrap}
+th{
+  position:sticky;top:0;z-index:2;background:var(--primary);color:#fff;font-weight:800}
+tbody tr:nth-child(even){background:rgba(255,255,255,.03)}
+tbody tr:hover{background:rgba(109,94,252,.1)}
+.filters-row{position:sticky;top:41px;z-index:1}
+.filters-row td{background:var(--panel);padding:7px}
+.filters-row input{
+  width:100%;padding:7px 9px;border:1px solid var(--stroke);border-radius:8px;
+  background:rgba(255,255,255,.06);color:var(--txt);font-size:.9em;outline:none}
+.filters-row input:focus{border-color:var(--primary)}
+
+footer{
+  flex-shrink:0;text-align:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--stroke);background:var(--panel);
+  font-size:.76em;color:var(--muted);line-height:1.9;user-select:none;
+}
+footer a{color:var(--primary);text-decoration:none;font-weight:700}
+
+/* Toast */
+#toast{
+  position:fixed;inset-inline:0;top:calc(14px + env(safe-area-inset-top));margin:auto;
+  width:max-content;max-width:90vw;z-index:999;padding:11px 20px;border-radius:999px;
+  font-size:.82em;font-weight:800;background:rgba(16,20,34,.95);color:#fff;
+  border:1px solid var(--stroke);box-shadow:0 14px 36px rgba(0,0,0,.45);
+  opacity:0;transform:translateY(-16px);pointer-events:none;transition:.3s}
+#toast.show{opacity:1;transform:none}
+
+/* ============ بوابة الحماية ============ */
+#gate{
+  position:fixed;inset:0;z-index:500;background:var(--bg);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;text-align:center}
+#gate.show{display:flex}
+#gate .gbox{max-width:360px;width:100%}
+#gate i{font-size:3.4em;color:var(--err);margin-bottom:12px;display:block}
+#gate h3{font-size:1.22em;font-weight:900;margin-bottom:8px}
+#gate p{color:var(--muted);font-size:.92em;line-height:1.9;margin-bottom:18px}
+
+/* ================= Dialogs ================= */
+.dlg-scrim{
+  position:fixed;inset:0;z-index:900;background:rgba(4,6,12,.62);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .22s ease;padding:16px;
+  display:flex;align-items:center;justify-content:center;overflow:auto;
+}
+.dlg-scrim.open{opacity:1;pointer-events:auto}
+
+.dlg{
+  width:100%;max-width:400px;margin:auto;
+  background:var(--panel);border:1px solid var(--stroke);
+  backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);
+  border-radius:22px;padding:26px 22px 20px;text-align:center;
+  box-shadow:0 30px 90px rgba(0,0,0,.55);
+  transform:translateY(18px) scale(.94);opacity:0;
+  transition:transform .26s cubic-bezier(.2,.9,.3,1), opacity .22s ease;
+}
+.dlg-scrim.open .dlg{transform:none;opacity:1}
+
+.dlg .dlg-ico{
+  width:60px;height:60px;border-radius:19px;margin:0 auto 14px;
+  display:grid;place-items:center;font-size:1.6em;color:#fff;
+  box-shadow:0 12px 30px rgba(0,0,0,.28);
+}
+.dlg .dlg-ico.i-key{background:linear-gradient(135deg,#6d5efc,#a855f7)}
+.dlg .dlg-ico.i-warn{background:linear-gradient(135deg,#f59e0b,#ef4444)}
+.dlg .dlg-ico.i-ok{background:linear-gradient(135deg,#22c55e,#10b981)}
+.dlg .dlg-ico.i-info{background:linear-gradient(135deg,#3b82f6,#6366f1)}
+.dlg .dlg-ico.i-del{background:linear-gradient(135deg,#ef4444,#f43f5e)}
+
+.dlg h4{font-size:1.14em;font-weight:900;margin-bottom:6px;color:var(--txt)}
+.dlg .dlg-msg{color:var(--muted);font-size:.9em;line-height:1.85;margin-bottom:16px}
+.dlg .dlg-msg.warn{color:#fbbf24;font-weight:700;font-size:.86em}
+
+.dlg .dlg-field{position:relative;margin-bottom:16px;text-align:start}
+.dlg .dlg-field label{
+  display:block;font-size:.76em;font-weight:800;color:var(--primary);
+  margin:0 4px 7px;letter-spacing:.3px}
+.dlg .dlg-field .wrap{position:relative;display:flex;align-items:center}
+.dlg .dlg-field input{
+  width:100%;padding:14px 44px 14px 14px;border-radius:13px;
+  border:1.8px solid var(--stroke);background:rgba(255,255,255,.06);
+  color:var(--txt);font-family:inherit;font-size:15px;outline:none;
+  transition:border-color .22s, box-shadow .22s;letter-spacing:1.5px;
+}
+@media (prefers-color-scheme: light){ .dlg .dlg-field input{background:rgba(255,255,255,.9)} }
+.dlg .dlg-field input::placeholder{color:var(--muted);opacity:.6;letter-spacing:0}
+.dlg .dlg-field input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(109,94,252,.14)}
+.dlg .dlg-field .eye{
+  position:absolute;inset-inline-end:8px;background:none;border:0;cursor:pointer;
+  color:var(--muted);font-size:15px;padding:8px;border-radius:8px;line-height:1}
+.dlg .dlg-field .eye:hover{color:var(--primary)}
+.dlg .dlg-field .err{
+  display:none;margin:8px 2px 0;font-size:.76em;font-weight:800;color:#f87171}
+.dlg .dlg-field.err input{border-color:rgba(239,68,68,.65)}
+.dlg .dlg-field.err .err{display:block;animation:pop .25s ease}
+.dlg .dlg-field .fmt{
+  margin:8px 2px 0;font-size:.72em;color:var(--muted);font-weight:700}
+.dlg .dlg-field .fmt b{color:var(--primary);font-family:ui-monospace,monospace}
+
+.dlg-actions{display:flex;gap:9px}
+.dlg-btn{
+  flex:1;padding:14px;border:1px solid var(--stroke);border-radius:13px;
+  background:rgba(255,255,255,.05);color:var(--txt);
+  font-family:inherit;font-size:.92em;font-weight:800;cursor:pointer;transition:.2s}
+.dlg-btn:hover{transform:translateY(-2px);border-color:var(--primary)}
+.dlg-btn:active{transform:none}
+.dlg-btn.ghost{flex:0 0 auto;min-width:110px;color:var(--muted)}
+.dlg-btn.primary{
+  border:0;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary-2));
+  box-shadow:0 10px 26px rgba(109,94,252,.32)}
+.dlg-btn.primary:hover{filter:brightness(1.1)}
+.dlg-btn.danger{
+  border:0;color:#fff;background:linear-gradient(135deg,#ef4444,#f43f5e);
+  box-shadow:0 10px 26px rgba(239,68,68,.3)}
+.dlg-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+
+.dlg-lock{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  margin-top:14px;padding:11px;border-radius:12px;
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.28);
+  color:#f87171;font-size:.8em;font-weight:800}
+
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+@keyframes dlgIn{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
+@media (max-width:430px){
+  .dlg-scrim{align-items:flex-end;padding:0}
+  .dlg{max-width:none;border-radius:24px 24px 0 0;padding-bottom:calc(20px + env(safe-area-inset-bottom));
+       animation:pop .3s ease both}
+  .dlg-actions{flex-direction:column-reverse}
+  .dlg-btn{width:100%}
+}
+@media (prefers-reduced-motion: reduce){
+  .dlg-scrim,.dlg{transition-duration:.01ms}
+}
+
+/* ================= شريحة كود التفعيل ================= */
+.keychip{
+  display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;
+  border-radius:99px;font-size:.78em;font-weight:800;white-space:nowrap;cursor:pointer;
+  border:1px solid transparent;transition:.22s;flex-shrink:0;
+}
+.keychip.off{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.4);color:#fbbf24}
+.keychip.on{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.38);color:#4ade80}
+.keychip:hover{filter:brightness(1.15)}
+.keychip .dot{width:7px;height:7px;border-radius:50%;background:currentColor;
+  box-shadow:0 0 8px currentColor}
+.keychip.off .dot{animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+
+/* ================= زر اللغة ================= */
+.lang-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:7px 12px;border-radius:10px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.05);color:var(--muted);
+  font-family:inherit;font-size:.78em;font-weight:800;cursor:pointer;
+  transition:.2s;white-space:nowrap;
+}
+.lang-btn:hover{color:#fff;border-color:var(--primary);transform:translateY(-2px)}
+.lang-btn i{font-size:1.1em}
+#langBtn{width:38px;padding:0}
+#langBtn span{display:none}
+@media (min-width:520px){ #langBtn{width:auto;padding:0 11px} #langBtn span{display:inline} }
+#gate .lang-btn{position:static;margin-top:14px;padding:9px 18px;font-size:.85em}
+
+/* ================= تفضيلات محفوظة ================= */
+
+
+@media (max-width:380px){
+  .grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px}
+  .item{padding:18px 10px}
+  .item i{font-size:2.1em}
+  .brand h1{font-size:1.02em}
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== بوابة الحماية: لازم تسجيل دخول عشان تشوف الصفحة دي ===== -->
+<div id="gate">
+  <div class="gbox">
+    <i class="fas fa-lock"></i>
+    <h3 data-i18n="gate.title">تحتاج تسجيل دخول</h3>
+    <p id="gateMsg" data-i18n="gate.default">الصفحة دي محمية. من فضلك سجّل دخول الأول.</p>
+    <button class="submit-btn" style="max-width:240px;margin:0 auto" onclick="location.href='./index.html'">
+      <i class="fas fa-arrow-right"></i> <span data-i18n="gate.goto">روح لصفحة الدخول</span>
+    </button>
+    <button class="lang-btn" id="langBtnGate" style="position:static;margin-top:14px" type="button"></button>
+  </div>
+</div>
+
+<header>
+  <div class="brand">
+    <img src="./hrrr.png" alt="RECETA">
+    <div>
+      <h1>RECETA</h1>
+      <small id="userTag" data-i18n="app.brand.sub">— TC Garments</small>
+    </div>
+  </div>
+<div class="hdr-actions">
+    <button class="icon-btn" id="langBtn" type="button" title="Language"></button>
+    <button class="icon-btn" id="refreshBtn" data-i18n-title="app.refresh" title="تحديث"><i class="fas fa-rotate"></i></button>
+    <span class="keychip off" id="keyChip" role="button" tabindex="0" title="كود التفعيل">
+      <span class="dot"></span>
+      <i class="fas fa-lock-open" id="keyChipIcon"></i>
+      <span id="keyChipTxt">بدون كود</span>
+    </span>
+    <button class="icon-btn logout" id="logoutBtn" data-i18n-title="app.logout" title="تسجيل الخروج"><i class="fas fa-right-from-bracket"></i></button>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="recipes" data-i18n="app.recipes">الريسيبيز</button>
+  <button class="tab-btn" data-tab="add" data-i18n="app.send">إرسال تعديل</button>
+  <button class="tab-btn" data-tab="db" data-i18n="app.db">عارض البيانات</button>
+</div>
+
+<!-- ================= RECIPES ================= -->
+<section id="recipes" class="tab-content active">
+  <div class="toolbar">
+    <button class="back-btn" id="backBtn" data-i18n-title="app.back"><i class="fas fa-arrow-right"></i></button>
+    <div class="search">
+      <span class="ic"><i class="fas fa-magnifying-glass"></i></span>
+      <input id="searchInput" type="search" placeholder="دوّر على ريسبي…" data-i18n-ph="app.search.ph" autocomplete="off">
+    </div>
+    <span class="count-pill" id="countPill"></span>
+  </div>
+
+  <div class="breadcrumbs" id="breadcrumbs"><b data-i18n="app.recipes">الريسيبيز</b></div>
+
+  <div class="content">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div id="preview">
+
+    <!-- ============ toolbar (LTR) ============ -->
+    <div class="pv-top" id="pvTop">
+      <div class="pv-group">
+        <button class="pv-btn danger" id="pvClose" title="Close (Esc)">
+          <i class="fas fa-xmark"></i>
+        </button>
+        <span class="pv-name" id="fileName">recipe</span>
+      </div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="pvRotL" title="Rotate left"><i class="fas fa-rotate-left"></i></button>
+        <button class="pv-btn" id="pvRotR" title="Rotate right"><i class="fas fa-rotate-right"></i></button>
+      </div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="pvDir" title="Text direction (RTL / LTR)">
+          <i class="fas fa-align-right"></i>
+        </button>
+      </div>
+
+      <div class="pv-spacer"></div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="pvZOut" title="Zoom out (Ctrl + −)">
+          <i class="fas fa-magnifying-glass-minus"></i>
+        </button>
+        <input  class="pv-range" id="pvSlider" type="range" min="30" max="300" step="5"
+                value="100" title="Zoom" aria-label="Zoom">
+        <button class="pv-btn" id="pvZoomVal" title="Reset to 100%">
+          <span id="pvZoomTxt">100%</span>
+        </button>
+        <button class="pv-btn" id="pvZIn" title="Zoom in (Ctrl + +)">
+          <i class="fas fa-magnifying-glass-plus"></i>
+        </button>
+      </div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn on" id="pvFitW" title="Fit width (F)">
+          <i class="fas fa-arrows-left-right"></i>
+        </button>
+        <button class="pv-btn" id="pvFitP" title="Fit page — show whole recipe (P)">
+          <i class="fas fa-arrows-up-down-left-right"></i>
+        </button>
+      </div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="pvPrint" title="Export to PDF (Ctrl + P)">
+          <i class="fas fa-file-pdf"></i><span>PDF</span>
+        </button>
+        <button class="pv-btn" id="pvDL" title="Download source file">
+          <i class="fas fa-download"></i>
+        </button>
+        <button class="pv-btn" id="pvNewTab" title="Open in new tab">
+          <i class="fas fa-arrow-up-right-from-square"></i>
+        </button>
+        <button class="pv-btn" id="pvFull" title="Fullscreen">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ stage ============ -->
+    <div class="pv-stage" id="pvStage">
+      <iframe id="iframe" title="Recipe preview"></iframe>
+
+      <div class="pv-overlay show" id="pvLoad">
+        <div class="ring"></div>
+        <h4>Decrypting recipe…</h4>
+        <p>Please wait while the file is unlocked and rendered.</p>
+      </div>
+    </div>
+
+    <!-- ============ status bar ============ -->
+    <div class="pv-foot">
+      <span class="pv-chip">Zoom <b id="pvFootZoom">100%</b></span>
+      <span class="pv-chip">Mode <b id="pvFootMode">Fit width</b></span>
+      <span class="pv-chip">Size <b id="pvFootSize">—</b></span>
+      <span class="pv-chip" id="pvFootRot" style="display:none">Rot <b>0°</b></span>
+      <span class="pv-hint">Ctrl + scroll = zoom · Double-click = fit page</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SEND ================= -->
+<section id="add" class="tab-content">
+  <div class="content">
+    <div class="add-container">
+      <div class="add-card">
+        <h2><i class="fas fa-cloud-arrow-up"></i> <span data-i18n="send.title">إرسال ريسبي جديد</span></h2>
+        <div class="input-group">
+          <label data-i18n="send.name">الاسم</label>
+          <input type="text" id="userName" placeholder="اسمك بالكامل" data-i18n-ph="send.name.ph" required>
+        </div>
+        <div class="input-group">
+          <label data-i18n="send.file">الصورة / الملف</label>
+          <input type="file" id="imageFile" accept="image/*,.ks" required>
+        </div>
+        <button class="submit-btn" id="sendBtn" onclick="submitForm()">
+          <span data-i18n="send.btn">أرسل الريسيبي</span>
+        </button>
+        <div id="status"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DB VIEWER ================= -->
+<section id="db" class="tab-content">
+  <div class="content">
+    <div class="add-container">
+      <div class="add-card">
+        <h2><i class="fas fa-database"></i> <span data-i18n="db.title">عارض البيانات</span></h2>
+        <div class="input-group">
+          <label data-i18n="db.table">الجدول</label>
+          <select id="tablesSelect"><option value="" data-i18n="db.pick">اختر جدول…</option></select>
+        </div>
+        <div id="dbStatus" style="text-align:center;color:var(--muted);font-size:.88em;min-height:20px"></div>
+        <div id="tableContainer"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  &copy; <span id="yr"></span> <a href="#" data-ext="https://facebook.com/kadinioo">Ahmed Elkady — Kadysoft Ltd.</a><br>
+  <a href="#" data-ext="https://wa.me/201555266002" data-i18n="support.whatsapp">الدعم الفني عبر واتساب</a>
+</footer>
+
+<div id="toast"></div>
+
+<!-- حاوية الـ Dialogs -->
+<div class="dlg-scrim" id="dlgScrim" aria-hidden="true"></div>
+
+
+<script src="./core.js"></script>
+<script>
+/* ==========================================================================
+   ثوابت
+   ========================================================================== */
+const API_BASE =
+  "https://script.google.com/macros/s/AKfycbxmRmgJn3kcFQ6ZCP0yAdWPUVCsykGazat0jhcDCnbHTUoKqCWtFrTGLCJJyTNxMsswxg/exec";
+
+const LS_NAME = "tc.name", LS_CODE = "tc.code";
+const LOGIN_PAGE = "./index.html";
+
+const OWNER = 'ProgKady', REPO = 'Recipes', BRANCH = 'master';
+const API   = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
+const RAW   = `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}`;
+const DB_URL = "https://raw.githubusercontent.com/ProgKady/DBs/main/Recipe_System_DB.db";
+
+/* الكود اللي مسموح يعرض الجداول دي */
+const HIDDEN_TABLES = /Audit|Editors|Issues|Users|Notifications|Timor|Password|Secret|Token/i;
+
+const $  = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const esc = s => String(s).replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+let toastT;
+function toast(text){
+  const t = $('#toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ==========================================================================
+   Dialog — نظام نوافذ مودرن بدل prompt / confirm / alert
+   ========================================================================== */
+const Dialog = (function(){
+  const scrim = $('#dlgScrim');
+  let stack = [];
+
+  const ICONS = { key:'fa-key', warn:'fa-triangle-exclamation', ok:'fa-circle-check',
+                  info:'fa-circle-info', del:'fa-trash-can' };
+
+  function open(cfg){
+    return new Promise(resolve => {
+      const d = {
+        title: cfg.title || 'تنبيه',
+        message: cfg.message || '',
+        icon: cfg.icon || 'info',
+        warn: cfg.warn || '',
+        placeholder: cfg.placeholder || '',
+        label: cfg.label || '',
+        format: cfg.format || '',
+        submitText: cfg.submitText || 'تم',
+        cancelText: cfg.cancelText || '',
+        input: cfg.input === true,            // الحقل يظهر لو اتطلب بس
+        secret: cfg.secret !== false,
+        validate: cfg.validate || null
+      };
+
+      const el = document.createElement('div');
+      el.className = 'dlg';
+      el.setAttribute('role', 'dialog');
+      el.setAttribute('aria-modal', 'true');
+
+      el.innerHTML =
+        `<div class="dlg-ico i-${d.icon}"><i class="fas ${ICONS[d.icon]}"></i></div>
+         <h4>${esc(d.title)}</h4>
+         ${d.message ? `<p class="dlg-msg">${d.message}</p>` : ''}
+         ${d.input ? `
+         <div class="dlg-field" id="dlgField">
+           ${d.label ? `<label for="dlgIn">${esc(d.label)}</label>` : ''}
+           <div class="wrap">
+             <input id="dlgIn" type="${d.secret ? 'password' : 'text'}"
+                    placeholder="${esc(d.placeholder)}" autocomplete="off"
+                    spellcheck="false" autocapitalize="off">
+             ${d.secret ? `<button class="eye" type="button" aria-label="إظهار">
+                             <i class="fas fa-eye"></i></button>` : ''}
+           </div>
+           ${d.secret ? `<div class="err" id="dlgErr">${esc(d.warn)}</div>` : ''}
+           ${d.warn && !d.secret ? `<div class="err" id="dlgErr">${esc(d.warn)}</div>` : ''}
+           ${d.format ? `<div class="fmt">${d.format}</div>` : ''}
+         </div>` : ''}
+         <div class="dlg-actions">
+           ${d.cancelText ? `<button class="dlg-btn ghost" id="dlgCancel">${esc(d.cancelText)}</button>` : ''}
+           <button class="dlg-btn ${d.icon === 'del' ? 'danger' : 'primary'}" id="dlgOk">
+             ${esc(d.submitText)}
+           </button>
+         </div>`;
+
+      scrim.innerHTML = '';
+      scrim.appendChild(el);
+      scrim.classList.add('open');
+      scrim.setAttribute('aria-hidden', 'false');
+
+      const input  = el.querySelector('#dlgIn');
+      const field  = el.querySelector('#dlgField');
+      const errBox = el.querySelector('.dlg-field .err');
+      const okBtn  = el.querySelector('#dlgOk');
+      const canBtn = el.querySelector('#dlgCancel');
+      const eye    = el.querySelector('.eye');
+
+      if (eye) eye.addEventListener('click', () => {
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        eye.innerHTML = `<i class="fas ${show ? 'fa-eye-slash' : 'fa-eye'}"></i>`;
+        input.focus();
+      });
+
+      function fail(msg){
+        if (errBox && msg) errBox.textContent = msg;
+        field.classList.add('err');
+        input.focus();
+        if (input.select) input.select();
+      }
+      function clearErr(){
+        field.classList.remove('err');
+      }
+
+      function done(val){
+        close();
+        resolve(val);
+      }
+
+      okBtn.addEventListener('click', () => {
+        if (!input){ done(true); return; }
+        const v = input.value.trim();
+        if (d.validate){
+          const err = d.validate(v);
+          if (err) return fail(err);
+        }
+        done(v || true);
+      });
+      if (canBtn) canBtn.addEventListener('click', () => done(null));
+
+      if (input){
+        input.addEventListener('input', clearErr);
+        input.addEventListener('keydown', e => {
+          if (e.key === 'Enter'){ e.preventDefault(); okBtn.click(); }
+        });
+        setTimeout(() => input.focus(), 90);
+      }
+
+      // Focus trap + Escape
+      function onKey(e){
+        if (e.key === 'Escape'){ e.preventDefault(); done(null); return; }
+        if (e.key === 'Tab'){
+          const f = el.querySelectorAll('button, input, [tabindex]:not([tabindex="-1"])');
+          if (!f.length) return;
+          const first = f[0], last = f[f.length - 1];
+          if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+        }
+      }
+      document.addEventListener('keydown', onKey, true);
+      stack.push({ onKey, done, outside });
+
+      // كليك بره النافذة يقفل
+      scrim.addEventListener('mousedown', outside);
+      function outside(e){ if (e.target === scrim) done(null); }
+    });
+  }
+
+  function close(){
+    const top = stack.pop();
+    scrim.classList.remove('open');
+    scrim.setAttribute('aria-hidden', 'true');
+    if (top){
+      document.removeEventListener('keydown', top.onKey, true);
+      scrim.removeEventListener('mousedown', top.outside);
+    }
+    setTimeout(() => { if (!stack.length) scrim.innerHTML = ''; }, 240);
+  }
+
+  return {
+    alert: cfg => open(Object.assign({
+        icon: 'info', input: false, submitText: 'تماماً'
+      }, typeof cfg === 'string' ? { message: cfg } : cfg))
+      .then(() => true),
+
+    confirm: cfg => open(Object.assign({
+        icon: 'warn', input: false, submitText: 'تأكيد', cancelText: 'إلغاء'
+      }, typeof cfg === 'string' ? { title: cfg } : cfg)),
+
+    prompt: cfg => open(Object.assign({
+        icon: 'info', input: true, secret: false,
+        submitText: 'تأكيد', cancelText: 'إلغاء'
+      }, typeof cfg === 'string' ? { title: cfg } : cfg)),
+
+    keyPrompt: cfg => open(Object.assign({
+        icon: 'key', input: true, secret: true,
+        submitText: 'فك التشفير', cancelText: 'إلغاء'
+      }, cfg)),
+
+    closeAll(){
+      while (stack.length){ const t = stack.pop(); t.done(null); }
+    }
+  };
+})();
+
+/* ==========================================================================
+   KeyVault — خزنة كود التفعيل
+   --------------------------------------------------------------------------
+   - مخزّن في sessionStorage فقط → بيموت مع قفل التاب (مبيتكرّرش على القرص)
+   - مربوط بـ origin → لو حد نقل النسخة لموقع تاني، القيمة تبقى Marshmallow
+   - مُعمّى (OOR) مش تشفير حقيقي — الحماية الحقيقية إن الملف نفسه AES-256
+     والسيرفر لازم يوافق على اليوزر قبل ما يوصل الصفحة
+   - فحص شكل الكود قبل التخزين (7 أجزاء)
+   ========================================================================== */
+const KeyVault = (function(){
+  const SKEY = 'tc.v1.vault';
+  const MAX_FAIL = 5;
+
+  function originMask(){
+    // ماسك مربوط بالمكان اللي الملف شغّال منه
+    return String(location.origin || location.href) + '|receta|v1';
+  }
+  function grow(s){
+    // XOR ببذرة مشتقة من ماسك الـ origin
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+  }
+  function mask(str){
+    const seed = grow(originMask());
+    let out = '';
+    for (let i = 0; i < str.length; i++){
+      const k = (seed >>> ((i % 4) * 8)) & 0xff;
+      out += String.fromCharCode(str.charCodeAt(i) ^ ((k + i * 31) & 0xff));
+    }
+    return out;
+  }
+  function b64(s){
+    const bytes = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i) & 0xff;
+    return btoa(String.fromCharCode.apply(null, bytes));
+  }
+  function unb64(s){
+    try{
+      const bin = atob(s);
+      let out = '';
+      for (let i = 0; i < bin.length; i++) out += String.fromCharCode(bin.charCodeAt(i));
+      return out;
+    } catch(e){ return ''; }
+  }
+
+  function looksValid(k){
+    if (typeof k !== 'string') return false;
+    const t = k.trim();
+    if (!/^[A-Za-z0-9]{7,}(-[A-Za-z0-9]{7,}){5,}$/.test(t)) return false;
+    return t.split('-').length === 7;
+  }
+
+  return {
+    looksValid,
+
+    save(k){
+      if (!looksValid(k)) return false;
+      try{
+        sessionStorage.setItem(SKEY, b64(mask(k.trim())));
+        return true;
+      } catch(e){ return false; }
+    },
+
+    load(){
+      try{
+        const raw = sessionStorage.getItem(SKEY);
+        if (!raw) return null;
+        const k = mask(unb64(raw));
+        return looksValid(k) ? k : null;   // لو معدّى فيها → نعتبرها فاضية
+      } catch(e){ return null; }
+    },
+
+    clear(){
+      try{ sessionStorage.removeItem(SKEY); }catch(e){}
+    },
+
+    masked(k){
+      if (!k) return '';
+      const p = k.split('-');
+      return p.slice(0, 3).join('-') + ' •••• ••••';
+    },
+
+    /* ---------- حماية من التخمين ---------- */
+    async fail(){
+      let n = Number(localStorage.getItem('tc.v1.fails') || 0) + 1;
+      const until = Date.now() + Math.min(30000, 2000 * Math.pow(2, Math.min(n, 4)));
+      try{
+        localStorage.setItem('tc.v1.fails', String(n));
+        localStorage.setItem('tc.v1.lock', String(until));
+      }catch(e){}
+      return n;
+    },
+    lockLeft(){
+      const until = Number(localStorage.getItem('tc.v1.lock') || 0);
+      return Math.max(0, Math.ceil((until - Date.now()) / 1000));
+    },
+    resetFails(){
+      try{
+        localStorage.setItem('tc.v1.fails', '0');
+        localStorage.setItem('tc.v1.lock', '0');
+      }catch(e){}
+    }
+  };
+})();
+
+/* ---------- شريحة حالة الكود في الهيدر ---------- */
+function refreshKeyChip(){
+  const k = KeyVault.load();
+  const chip = $('#keyChip');
+  chip.classList.toggle('on', !!k);
+  chip.classList.toggle('off', !k);
+  $('#keyChipIcon').className = 'fas ' + (k ? 'fa-lock' : 'fa-lock-open');
+  $('#keyChipTxt').textContent = I18n.t(k ? 'key.chip.set' : 'key.chip.none');
+  chip.title = I18n.t(k ? 'key.chip.tip' : 'key.chip.tipNone');
+}
+
+/* ---------- نافذة إدخال الكود (أول مرة وأي تعديل بعد كده) ---------- */
+async function askActivationKey(){
+  const left = KeyVault.lockLeft();
+  if (left > 0){
+    await Dialog.alert({
+      icon: 'warn',
+      title: I18n.t('key.tooMany'),
+      message: I18n.t('key.locked', { n: left }),
+      submitText: I18n.t('common.ok')
+    });
+    return null;
+  }
+
+  const saved = KeyVault.load();
+  const v = await Dialog.keyPrompt({
+    title: I18n.t(saved ? 'key.change.title' : 'key.enter.title'),
+    message: I18n.t(saved ? 'key.change.msg' : 'key.enter.msg'),
+    label: I18n.t('key.label'),
+    placeholder: I18n.t('key.ph'),
+    format: I18n.t('key.fmt'),
+    submitText: I18n.t(saved ? 'key.update' : 'key.save'),
+    cancelText: I18n.t(saved ? 'key.cancel' : 'key.later'),
+    validate(val){
+      if (!val) return I18n.t('key.err.empty');
+      if (!KeyVault.looksValid(val)) return I18n.t('key.err.shape');
+      return '';
+    }
+  });
+
+  if (v === null) return null;                 // إلغاء / خروج
+  KeyVault.save(v);
+  KeyVault.resetFails();
+  refreshKeyChip();
+  return v;
+}
+
+/* ==========================================================================
+   1) بوابة الحماية — لازم نتأكد إن المستخدم متسجّل فعلاً
+   ========================================================================== */
+(async function guard(){
+  $('#yr').textContent = new Date().getFullYear();
+
+  /* ---- حماية 1: لازم يكون على رابط HTTP/HTTPS ----
+     لو حد فتح الملف من جهازه (file://) أو من blob:، بنوقّفه —
+     الصفحات دي مالهاش لازمة غير على السيرفر الأصلي. */
+  if (!/^https?:$/.test(location.protocol)){
+    block(I18n.t('gate.insecure'));
+    return;
+  }
+
+  // دالة الاستدعاء نفسها المستخدمة في صفحة الدخول
+  window.__auth = async function(a, n, c){
+    const url = `${API_BASE}?action=${encodeURIComponent(a)}&name=${encodeURIComponent(n||'')}&code=${encodeURIComponent(c||'')}`;
+    const ctl = new AbortController();
+    const tm = setTimeout(() => ctl.abort(), 20000);
+    try{
+      const r = await fetch(url, { signal: ctl.signal, cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } finally { clearTimeout(tm); }
+  };
+
+  const name = localStorage.getItem(LS_NAME);
+  const code = localStorage.getItem(LS_CODE);
+
+  /* ---- حماية 2: مفيش جلسة → بلوك ----
+     producer: متسجّلش من الأول، أو حد مسح البيانات. */
+  if (!name || !code){ block(I18n.t('gate.noSession')); return; }
+  $('#userTag').textContent = name;
+
+  /* ---- حماية 3: تأكيد من السيرفر إن اليوزر "نعم" ----
+     producer: مهما حد عرف يعدّل الـ localStorage، السيرفر هو اللي يقرر. */
+  try {
+    const d = await window.__auth('check', name, code);
+    if (d && d.status === 'نعم') return;            // ✅ مصرّح
+    localStorage.removeItem(LS_NAME);
+    localStorage.removeItem(LS_CODE);
+    KeyVault.clear();
+    block(d && d.status === 'غير موجود'
+      ? I18n.t('gate.noAccount')
+      : I18n.t('gate.pending'));
+  } catch (e) {
+    KeyVault.clear();
+    block(I18n.t('gate.offline'));
+  }
+
+  function block(msg){
+    $('#gateMsg').textContent = msg;
+    $('#gate').classList.add('show');
+    document.querySelector('header').style.display = 'none';
+    document.querySelector('.tab-bar').style.display = 'none';
+    document.querySelector('footer').style.display = 'none';
+    Dialog.closeAll && Dialog.closeAll();
+  }
+})();
+
+/* ==========================================================================
+   2) التبويبات
+   ========================================================================== */
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => openTab(b.dataset.tab, true));
+});
+function openTab(tab, save){
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  $('#' + tab).classList.add('active');
+  document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+  if (save) Prefs.set('tab', tab);
+  location.hash = tab;
+}
+
+/* ---------- تشغيل اللغة + زر التبديل ---------- */
+I18n.init();
+mountLangSwitch('#langBtn',     () => { refreshKeyChip(); });
+mountLangSwitch('#langBtnGate', () => { $('#gateMsg').textContent = I18n.t('gate.default'); });
+
+/* ==========================================================================
+   3) روابط خارجية آمنة
+   ========================================================================== */
+document.addEventListener('click', e => {
+  const a = e.target.closest('[data-ext]');
+  if (!a) return;
+  e.preventDefault();
+  const url = a.dataset.ext;
+  const isAndroidChrome = /Android/.test(navigator.userAgent) && /Chrome/.test(navigator.userAgent);
+  if (isAndroidChrome) {
+    location.href = 'intent://' + url.replace(/^https?:\/\//,'') +
+                    '#Intent;scheme=https;package=com.android.chrome;end;';
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+});
+
+/* ==========================================================================
+   4) الريسيبيز — تحميل من GitHub
+   ========================================================================== */
+let history = [''];
+let currentItems = [];
+let viewToken = 0;
+
+const grid = $('#grid'), breadcrumbs = $('#breadcrumbs'), backBtn = $('#backBtn');
+const preview = $('#preview'), iframe = $('#iframe'),
+      fileName = $('#fileName');
+const pvStage = $('#pvStage'), pvLoad = $('#pvLoad');
+
+function skeletons(n = 8){
+  grid.innerHTML = Array.from({ length: n },
+    () => '<div class="skeleton"></div>').join('');
+}
+
+function stateBox(icon, text, btn){
+  return `<div class="state"><i class="fas ${icon}"></i><p>${esc(text)}</p>
+          ${btn ? `<button onclick="${btn}">${esc(I18n.t('app.retry'))}</button>` : ''}</div>`;
+}
+
+async function loadPath(path = ''){
+  const token = ++viewToken;
+  skeletons();
+  $('#countPill').textContent = '';
+  Prefs.set('lastPath', path);                 // تذكّر آخر مجلد
+
+  const url = `${API}/${path}?ref=${BRANCH}`;
+
+  let res, data;
+  try{
+    res = await fetch(url, { headers: { 'Accept': 'application/vnd.github+json' } });
+  } catch(e){
+    if (token !== viewToken) return;
+    grid.innerHTML = stateBox('fa-wifi', I18n.t('list.netErr'), 'location.reload()');
+    return;
+  }
+
+  if (res.status === 403 || res.status === 429){
+    if (token !== viewToken) return;
+    grid.innerHTML = stateBox('fa-gauge-high', I18n.t('list.rateLimit'), 'location.reload()');
+    return;
+  }
+  if (res.status === 404){
+    if (token !== viewToken) return;
+    grid.innerHTML = stateBox('fa-folder-open', I18n.t('list.noFolder'));
+    return;
+  }
+  if (!res.ok){
+    if (token !== viewToken) return;
+    grid.innerHTML = stateBox('fa-triangle-exclamation', I18n.t('list.serverErr', { code: res.status }), 'location.reload()');
+    return;
+  }
+
+  data = await res.json();
+  if (!Array.isArray(data)){ if (token === viewToken) grid.innerHTML = stateBox('fa-circle-question', I18n.t('list.badResp')); return; }
+  if (token !== viewToken) return;
+
+  data.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
+  currentItems = data;
+  renderGrid();
+}
+
+function renderGrid(){
+  const q = $('#searchInput').value.trim().toLowerCase();
+  const list = q ? currentItems.filter(m => m.name.toLowerCase().includes(q)) : currentItems;
+
+  $('#countPill').textContent = currentItems.length ? `(${list.length}/${currentItems.length})` : '';
+
+  if (!list.length){
+    grid.innerHTML = currentItems.length
+      ? stateBox('fa-magnifying-glass', I18n.t('list.noResults'))
+      : stateBox('fa-box-open', I18n.t('list.empty'));
+    return;
+  }
+
+  grid.innerHTML = list.map(m => {
+    const isDir = m.type === 'dir';
+    const icon = isDir ? 'fa-folder' : iconFor(m.name);
+    const label = isDir ? esc(m.name) : esc(m.name.replace(/\.ks$/i, ''));
+    const cls   = isDir ? 'item folder' : 'item';
+    return `<div class="${cls}" data-path="${esc(m.path)}" data-type="${m.type}" data-name="${esc(m.name)}">
+              <i class="fas ${icon}"></i><span>${label}</span>
+            </div>`;
+  }).join('');
+}
+
+function iconFor(name){
+  const n = name.toLowerCase();
+  if (n.endsWith('.ks') || n.endsWith('.html') || n.endsWith('.htm')) return 'fa-file-code';
+  if (n.endsWith('.xlsx') || n.endsWith('.xls') || n.endsWith('.csv'))  return 'fa-file-excel';
+  if (n.endsWith('.json'))  return 'fa-file-code';
+  if (n.endsWith('.pdf'))   return 'fa-file-pdf';
+  if (n.endsWith('.zip'))   return 'fa-file-zipper';
+  return 'fa-file-lines';
+}
+
+grid.addEventListener('click', e => {
+  const card = e.target.closest('.item');
+  if (!card) return;
+  const { path, type, name } = card.dataset;
+
+  if (type === 'dir'){
+    history.push(path);
+    updateBreadcrumbs();
+    loadPath(path);
+    backBtn.style.display = 'block';
+  } else if (/\.(ks|html?|xlsx?|csv)$/i.test(name)){
+    openPreview({ path, name });
+  } else {
+    window.open(RAW + '/' + path.replace(/ /g, '%20'), '_blank', 'noopener,noreferrer');
+  }
+});
+
+let searchT;
+$('#searchInput').addEventListener('input', () => {
+  renderGrid();
+  Store.debounce('search', $('#searchInput').value, 350);   // تذكّر البحث
+});
+
+function updateBreadcrumbs(){
+  const parts = history[history.length - 1].split('/').filter(Boolean);
+  let acc = '', html = `<span data-cr="">${esc(I18n.t('app.recipes'))}</span>`;
+  parts.forEach(x => {
+    acc += (acc ? '/' : '') + x;
+    html += ` <i class="fas fa-chevron-left" style="opacity:.4;font-size:.7em"></i>
+             <span data-cr="${esc(acc)}">${esc(x)}</span>`;
+  });
+  breadcrumbs.innerHTML = html;
+  breadcrumbs.scrollLeft = breadcrumbs.scrollWidth;
+}
+
+breadcrumbs.addEventListener('click', e => {
+  const s = e.target.closest('[data-cr]');
+  if (!s) return;
+  const p = s.dataset.cr;
+  const i = history.indexOf(p);
+  history = history.slice(0, i + 1);
+  updateBreadcrumbs();
+  backBtn.style.display = history.length > 1 ? 'block' : 'none';
+  loadPath(p);
+});
+
+backBtn.addEventListener('click', () => {
+  if (history.length <= 1) return;
+  history.pop();
+  updateBreadcrumbs();
+  backBtn.style.display = history.length > 1 ? 'block' : 'none';
+  loadPath(history[history.length - 1]);
+});
+
+$('#refreshBtn').addEventListener('click', () => {
+  loadPath(history[history.length - 1]);
+  toast('🔄 ' + I18n.t('app.refresh') + '...');
+});
+
+/* ==========================================================================
+   5) Recipe Viewer — LTR · zoom · rotate · fit · export PDF
+   ========================================================================== */
+
+/* ----- حالة المشاهد ----- */
+const V = {
+  item: null, html: '', rawBytes: null, rawUrl: null,
+  zoom: 1, mode: 'fitP', rot: 0, dir: 'ltr'
+};
+
+/* ----- أدوات الواجهة ----- */
+function pvShowLoad(on){
+  pvLoad.classList.toggle('show', !!on);
+}
+function pvSetZoomUI(z){
+  const pct = Math.round(z * 100);
+  $('#pvZoomTxt').textContent = pct + '%';
+  $('#pvFootZoom').textContent = pct + '%';
+  $('#pvSlider').value = Math.max(30, Math.min(300, pct));
+  V.zoom = z;
+  Prefs.set('pvZoom', z);
+}
+function pvSetMode(m){
+  V.mode = m;
+  $('#pvFitW').classList.toggle('on', m === 'fitW');
+  $('#pvFitP').classList.toggle('on', m === 'fitP');
+  $('#pvFootMode').textContent = m === 'fitW' ? 'Fit width' : m === 'fitP' ? 'Fit page' : 'Manual';
+  Prefs.set('pvMode', m);
+}
+function pvSetRot(deg){
+  V.rot = ((deg % 360) + 360) % 360;
+  const chip = $('#pvFootRot');
+  chip.style.display = V.rot ? 'flex' : 'none';
+  chip.innerHTML = 'Rot <b>' + V.rot + '&deg;</b>';
+  Prefs.set('pvRot', V.rot);
+}
+function pvSetDir(d){
+  V.dir = d;
+  $('#pvDir').innerHTML = d === 'rtl'
+    ? '<i class="fas fa-align-right"></i>'
+    : '<i class="fas fa-align-left"></i>';
+  $('#pvDir').title = d === 'rtl' ? 'Text direction: RTL (click for LTR)' : 'Text direction: LTR (click for RTL)';
+  Prefs.set('pvDir', d);
+}
+function pvCmd(cmd, val){
+  iframe.contentWindow &&
+    iframe.contentWindow.postMessage({ __pvHost: 1, cmd: cmd, v: val }, '*');
+}
+
+/* ----- بناء مستند البريفيو (ورقة A4 + محرّك زوم داخلي) ----- */
+function buildPreviewDoc(recipeHTML){
+  const safe = String(recipeHTML).replace(/<\/script/gi, '<\\/script');
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recipe</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#454b5c}
+  #stage{
+    position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;
+    touch-action:none;
+  }
+  #sheet{
+    width:840px;max-width:none;
+    background:#fff;color:#15181f;
+    padding:62px 70px 96px;
+    border-radius:3px;
+    box-shadow:0 16px 60px rgba(0,0,0,.5);
+    transform-origin:center center;
+    will-change:transform;
+    font-family:'Cairo','Segoe UI',system-ui,sans-serif;
+    font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  #sheet img{max-width:100%;height:auto;border-radius:8px;display:block;margin:14px auto}
+  #sheet a{color:#6d5efc;word-break:break-all}
+  #sheet table{max-width:100%;border-collapse:collapse;margin:16px auto}
+  #sheet td,#sheet th{border:1px solid #d5d8e0;padding:9px 12px}
+  #sheet pre{white-space:pre-wrap;background:#f4f5f8;padding:14px;border-radius:8px;overflow-x:auto}
+  #sheet blockquote{margin:14px 0;padding:6px 18px;border-inline-start:4px solid #6d5efc;
+                    background:#f7f7fc;border-radius:0 8px 8px 0}
+  #sheet h1,#sheet h2,#sheet h3{line-height:1.5}
+  #sheet::-webkit-scrollbar{width:8px}
+  #sheet::-webkit-scrollbar-thumb{background:#c9cdd8;border-radius:8px}
+
+  @media print{
+    @page{ size:A4; margin:14mm; }
+    html,body{overflow:visible !important;height:auto !important;background:#fff !important}
+    #stage{position:static !important;display:block !important;overflow:visible !important;
+           background:#fff !important;place-items:unset !important}
+    #sheet{
+      transform:none !important;width:auto !important;max-width:none !important;
+      margin:0 !important;padding:0 !important;border-radius:0 !important;
+      box-shadow:none !important;position:static !important;
+    }
+    #sheet img{max-width:100% !important;page-break-inside:avoid}
+    #sheet table,#sheet pre,#sheet blockquote{page-break-inside:avoid}
+    #sheet h1,#sheet h2,#sheet h3,#sheet p{page-break-after:auto}
+  }
+</style></head><body>
+<div id="stage"><div id="sheet">${safe}</div></div>
+<script>
+(function(){
+  var sheet=document.getElementById('sheet'), stage=document.getElementById('stage');
+  var MIN=0.3, MAX=3, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
+  var natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
+
+  function apply(){
+    var vw=stage.clientWidth, vh=stage.clientHeight;
+    var rotated=(Math.abs(rot/90)%2)===1;
+    var aw = rotated ? vh : vw;
+    var ah = rotated ? vw : vh;
+    if(mode==='fitW')      z = aw / natural.w;
+    else if(mode==='fitP') z = Math.min(aw/natural.w, ah/natural.h);
+    z = Math.max(MIN, Math.min(MAX, z));
+    sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
+    report();
+  }
+  function report(){
+    try{ parent.postMessage({__pv:1,z:z,rot:rot,mode:mode,
+      nw:natural.w,nh:natural.h,vw:stage.clientWidth,vh:stage.clientHeight},'*'); }catch(e){}
+  }
+  function measure(){
+    natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
+    apply();
+  }
+  function applyDir(){ document.documentElement.dir = dir; }
+
+  /* ---- أوامر من الصفحة الأم ---- */
+  window.addEventListener('message', function(ev){
+    var d=ev.data; if(!d||!d.__pvHost) return;
+    switch(d.cmd){
+      case 'in':    mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.22); apply(); break;
+      case 'out':   mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.22); apply(); break;
+      case 'zoom':  mode='manual'; tx=ty=0; z=Number(d.v); apply(); break;
+      case 'fitW':  mode='fitW'; tx=ty=0; apply(); break;
+      case 'fitP':  mode='fitP'; tx=ty=0; apply(); break;
+      case 'rotL':  rot=(rot-90+360)%360; apply(); break;
+      case 'rotR':  rot=(rot+90)%360;     apply(); break;
+      case 'rot':   rot=((Number(d.v)||0)%360+360)%360; apply(); break;
+      case 'dir':   dir=d.v; applyDir(); apply(); break;
+      case 'print': doPrint(); break;
+      case 'full':
+        if(document.fullscreenElement) document.exitFullscreen();
+        else stage.requestFullscreen && stage.requestFullscreen();
+        break;
+      case 'measure': measure(); break;
+    }
+  });
+
+  /* ---- زوم بالماوس / لمس / سحب ---- */
+  var wheelT=null;
+  stage.addEventListener('wheel', function(e){
+    if(e.ctrlKey||e.metaKey){
+      e.preventDefault();
+      mode='manual'; tx=ty=0;
+      z = e.deltaY<0 ? Math.min(MAX,z*1.1) : Math.max(MIN,z/1.1);
+      apply();
+    } else if(z>1.0001){
+      e.preventDefault(); ty-=e.deltaY; tx-=e.deltaX;
+      sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
+    }
+  }, {passive:false});
+
+  var drag=null;
+  stage.addEventListener('pointerdown', function(e){
+    if(e.target.closest('a,button')) return;
+    drag={x:e.clientX,y:e.clientY,tx:tx,ty:ty};
+    stage.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener('pointermove', function(e){
+    if(!drag) return;
+    tx=drag.tx+(e.clientX-drag.x);
+    ty=drag.ty+(e.clientY-drag.y);
+    sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
+  });
+  stage.addEventListener('pointerup',     function(){ drag=null; });
+  stage.addEventListener('pointercancel', function(){ drag=null; });
+
+  stage.addEventListener('dblclick', function(e){
+    if(e.target.closest('a')) return;
+    if(mode!=='fitP'){ mode='fitP'; tx=ty=0; } else { mode='manual'; tx=ty=0; z=1; }
+    apply();
+  });
+
+  /* ---- الطباعة / PDF ---- */
+  function doPrint(){
+    document.body.classList.add('printing');
+    try{ window.print(); }catch(e){}
+    setTimeout(function(){ document.body.classList.remove('printing'); }, 700);
+  }
+
+  /* ---- إعادة القياس لما الصور تحمّل أو الشاشة تتغير ---- */
+  if(window.ResizeObserver){
+    var ro=new ResizeObserver(function(){ natural={w:sheet.offsetWidth,h:sheet.offsetHeight}; apply(); });
+    ro.observe(sheet);
+  }
+  Array.prototype.forEach.call(sheet.images, function(im){
+    if(!im.complete) im.addEventListener('load', measure, {once:true});
+  });
+  window.addEventListener('resize', function(){ apply(); });
+  window.addEventListener('load', function(){ setTimeout(measure, 60); });
+
+  document.addEventListener('keydown', function(e){
+    var k=e.key;
+    if(k==='+'||k==='='){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.2); apply(); }
+    if(k==='-'||k==='_'){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.2); apply(); }
+    if(k==='0'){ e.preventDefault(); mode='manual'; tx=ty=0; z=1; apply(); }
+  });
+
+  // مبدئياً: الورقة كاملة من غير سكرول
+  document.documentElement.dir=dir;
+  requestAnimationFrame(function(){ setTimeout(measure,40); });
+  parent.postMessage({__pv:1,ready:1},'*');
+})();
+<\/script>
+</body></html>`;
+}
+
+/* ----- فتح/قفل المشاهد ----- */
+function pvOpen(){
+  preview.style.display = 'flex';
+  pvShowLoad(true);
+}
+function pvClose(){
+  preview.style.display = 'none';
+  iframe.srcdoc = '';
+  pvShowLoad(false);
+  V.item = null; V.html = ''; V.rawBytes = null; V.rawUrl = null;
+}
+
+/* ----- جلب + فك تشفير + عرض ----- */
+async function openPreview(item){
+  V.item = item;
+  fileName.textContent = item.name.replace(/\.ks$/i, '');
+  // استرجاع تفضيلات المشاهد المحفوظة
+  pvSetMode(Prefs.get('pvMode', 'fitP'));
+  pvSetRot(Prefs.get('pvRot', 0));
+  pvSetDir(Prefs.get('pvDir', 'ltr'));
+  pvSetZoomUI(Prefs.get('pvZoom', 1));
+  pvOpen();
+
+  // الكود: أول مرة بس — بعد كده من الخزنة (sessionStorage)
+  let longKey = KeyVault.load();
+  if (!longKey){
+    longKey = await askActivationKey();
+    if (!longKey){ pvClose(); return; }
+  }
+
+  pvShowLoad(true);
+
+  try {
+    const realPassword = extractPasswordFromKey(longKey);
+
+    const res = await fetch(`${RAW}/${item.path.replace(/ /g, '%20')}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const buf = await res.arrayBuffer();
+    V.rawBytes = new Uint8Array(buf);
+    V.rawUrl   = `${RAW}/${item.path.replace(/ /g, '%20')}`;
+
+    const decryptedText = await decryptKSFile(V.rawBytes, realPassword);
+    const finalHTML = decodeKS(decryptedText);
+
+    if (!finalHTML || !String(finalHTML).trim()){
+      throw new Error('EMPTY');
+    }
+
+    KeyVault.resetFails();               // نجح → صفّر العدّاد
+    V.html = String(finalHTML);
+    iframe.srcdoc = buildPreviewDoc(V.html);
+
+    iframe.addEventListener('load', function onLoad(){
+      setTimeout(() => {
+        pvShowLoad(false);
+        // رجّع المود المحفوظ جوه الإطار
+        pvCmd(Prefs.get('pvMode', 'fitP') === 'fitW' ? 'fitW' : 'fitP');
+        if (V.rot) pvCmd('rot', V.rot);
+        pvCmd('dir', V.dir);
+        pvCmd('measure');
+      }, 80);
+    }, { once: true });
+
+  } catch (e){
+    const wrongKey = e && (e.name === 'OperationError' || e.message === 'EMPTY');
+    if (wrongKey){
+      KeyVault.clear();                 // الكود غلط → امسح فوراً
+      refreshKeyChip();
+      const n = await KeyVault.fail();
+      const left = KeyVault.lockLeft();
+      await Dialog.alert({
+        icon: 'del',
+        title: I18n.t('key.wrong.title'),
+        message: I18n.t('key.wrong.msg', {
+          lock: left ? '⛔ ' : '',
+          n: left, t: n
+        }),
+        submitText: I18n.t('key.enter.title')
+      });
+    } else {
+      await Dialog.alert({
+        icon: 'warn',
+        title: I18n.t('key.err.title'),
+        message: I18n.t('key.err.msg'),
+        submitText: I18n.t('common.ok')
+      });
+    }
+
+    iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;height:100%;display:flex;flex-direction:column;align-items:center;
+ justify-content:center;gap:10px;text-align:center;font-family:Cairo,system-ui,sans-serif;
+ background:#454b5c;color:#fff;padding:26px}
+ .k{font-size:3.4em}h3{margin:4px 0;font-size:1.1em}
+ p{color:#c8cddc;font-size:.86em;max-width:330px;line-height:1.8}</style></head><body>
+<div class="k">&#128273;</div><h3>${wrongKey ? 'Invalid activation key' : 'Cannot display recipe'}</h3>
+<p>${wrongKey ? 'Make sure you typed the key exactly as you received it.' : 'Please try again in a moment.'}</p>
+</body></html>`;
+    pvShowLoad(false);
+  }
+}
+
+/* ----- رسم الواجهة حسب الرد من داخل الإطار ----- */
+window.addEventListener('message', function(ev){
+  const d = ev.data;
+  if (!d || !d.__pv) return;
+  if (d.ready){ pvCmd('measure'); return; }
+  if (typeof d.z === 'number') pvSetZoomUI(d.z);
+  if (d.mode !== V.mode) pvSetMode(d.mode);
+  if (d.rot !== V.rot) pvSetRot(d.rot);
+  if (d.nw && d.nh){
+    $('#pvFootSize').textContent =
+      Math.round(d.nw) + ' \u00d7 ' + Math.round(d.nh) + ' px';
+  }
+});
+
+/* ----- أزرار الـ toolbar ----- */
+$('#pvClose').addEventListener('click', pvClose);
+$('#pvZIn').addEventListener('click',   () => pvCmd('in'));
+$('#pvZOut').addEventListener('click',  () => pvCmd('out'));
+$('#pvZoomVal').addEventListener('click', () => pvCmd('zoom', 1));
+$('#pvFitW').addEventListener('click',  () => pvCmd('fitW'));
+$('#pvFitP').addEventListener('click',  () => pvCmd('fitP'));
+$('#pvRotL').addEventListener('click',  () => pvCmd('rotL'));
+$('#pvRotR').addEventListener('click',  () => pvCmd('rotR'));
+$('#pvDir').addEventListener('click',   () => pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'));
+$('#pvPrint').addEventListener('click', () => pvCmd('print'));
+$('#pvFull').addEventListener('click',  () => pvCmd('full'));
+$('#pvNewTab').addEventListener('click', () => {
+  if (!V.html) return;
+  const doc = buildPreviewDoc(V.html);
+  const url = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
+  window.open(url, '_blank', 'noopener,noreferrer');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+});
+$('#pvDL').addEventListener('click', () => {
+  if (!V.html) return;
+  const name = (V.item ? V.item.name : 'recipe').replace(/\.ks$/i, '') + '.html';
+  const url = URL.createObjectURL(new Blob([V.html], { type: 'text/html;charset=utf-8' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: name });
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+  toast('⬇️ ' + name);
+});
+
+$('#pvSlider').addEventListener('input', e => {
+  const v = Number(e.target.value);
+  pvSetZoomUI(v / 100);
+  pvCmd('zoom', v / 100);
+});
+
+/* ----- سحب لتكبير على الموبايل (pinch) ----- */
+(function pinch(){
+  let dist = 0;
+  pvStage.addEventListener('touchstart', e => {
+    if (e.touches.length === 2){
+      dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY);
+    }
+  }, { passive: true });
+  pvStage.addEventListener('touchmove', e => {
+    if (e.touches.length !== 2 || !dist) return;
+    const nd = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY);
+    if (Math.abs(nd - dist) > 6){
+      pvCmd(nd > dist ? 'in' : 'out');
+      dist = nd;
+    }
+  }, { passive: true });
+  pvStage.addEventListener('touchend', () => { dist = 0; }, { passive: true });
+})();
+
+/* ----- اختصارات الكيبورد ----- */
+document.addEventListener('keydown', e => {
+  if (preview.style.display !== 'flex') return;
+  const k = e.key;
+  if (k === 'Escape'){ e.preventDefault(); pvClose(); return; }
+  if (e.ctrlKey && k.toLowerCase() === 'p'){ e.preventDefault(); pvCmd('print'); return; }
+  if (e.ctrlKey && (k === '=' || k === '+')){ e.preventDefault(); pvCmd('in'); return; }
+  if (e.ctrlKey && (k === '-' || k === '_')){ e.preventDefault(); pvCmd('out'); return; }
+  if (k.toLowerCase() === 'f'){ pvCmd('fitW'); return; }
+  if (k.toLowerCase() === 'p'){ pvCmd('fitP'); return; }
+  if (k.toLowerCase() === 'r'){ pvCmd('rotR'); return; }
+  if (k.toLowerCase() === 'd'){ pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'); return; }
+});
+
+/* ----- استرجاع تفضيلات المشاهد المحفوظة (مرة واحدة عند الإقلاع) ----- */
+pvSetDir(Prefs.get('pvDir', 'ltr'));
+pvSetMode(Prefs.get('pvMode', 'fitP'));
+pvSetRot(Prefs.get('pvRot', 0));
+pvSetZoomUI(Prefs.get('pvZoom', 1));
+
+/* ==========================================================================
+   5b) شريحة كود التفعيل — إدخال / تغيير / مسح
+   ========================================================================== */
+async function onKeyChipClick(){
+  const saved = KeyVault.load();
+
+  if (!saved){
+    const v = await askActivationKey();
+    if (v) toast('🔓 ' + I18n.t('key.savedToast'));
+    else     toast(I18n.t('key.needKey'));
+    return;
+  }
+
+  const choice = await new Promise(resolve => {
+    const d = document.createElement('div');
+    d.className = 'dlg';
+    d.setAttribute('role', 'dialog');
+    d.innerHTML =
+      `<div class="dlg-ico i-key"><i class="fas fa-key"></i></div>
+       <h4>${esc(I18n.t('key.title'))}</h4>
+       <p class="dlg-msg">${I18n.t('key.savedMsg', { masked: esc(KeyVault.masked(saved)) })}</p>
+       <div class="dlg-actions" style="flex-direction:column">
+         <button class="dlg-btn" data-a="change"><i class="fas fa-pen-to-square"></i> ${esc(I18n.t('key.menu.change'))}</button>
+         <button class="dlg-btn danger" data-a="clear"><i class="fas fa-trash-can"></i> ${esc(I18n.t('key.menu.clear'))}</button>
+         <button class="dlg-btn ghost" data-a="cancel">${esc(I18n.t('key.cancel'))}</button>
+       </div>`;
+    const scrim = $('#dlgScrim');
+    scrim.innerHTML = '';
+    scrim.appendChild(d);
+    scrim.classList.add('open');
+    d.querySelectorAll('[data-a]').forEach(b =>
+      b.addEventListener('click', () => {
+        scrim.classList.remove('open');
+        setTimeout(() => { scrim.innerHTML = ''; }, 240);
+        resolve(b.dataset.a);
+      }));
+    scrim.addEventListener('mousedown', function out(e){
+      if (e.target !== scrim) return;
+      scrim.removeEventListener('mousedown', out);
+      scrim.classList.remove('open');
+      setTimeout(() => { scrim.innerHTML = ''; }, 240);
+      resolve('cancel');
+    });
+    document.addEventListener('keydown', function onk(e){
+      if (e.key !== 'Escape') return;
+      document.removeEventListener('keydown', onk);
+      scrim.classList.remove('open');
+      setTimeout(() => { scrim.innerHTML = ''; }, 240);
+      resolve('cancel');
+    });
+  });
+
+  if (choice === 'change'){
+    await askActivationKey();
+    toast('🔑 ' + I18n.t('key.updated'));
+  } else if (choice === 'clear'){
+    const yes = await Dialog.confirm({
+      icon: 'del',
+      title: I18n.t('key.clear.title'),
+      message: I18n.t('key.clear.msg'),
+      submitText: I18n.t('key.clear.btn'),
+      cancelText: I18n.t('key.cancel')
+    });
+    if (yes){
+      KeyVault.clear();
+      refreshKeyChip();
+      toast('🗑 ' + I18n.t('key.cleared'));
+    }
+  }
+}
+
+$('#keyChip').addEventListener('click', onKeyChipClick);
+$('#keyChip').addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); onKeyChipClick(); }
+});
+
+$('#logoutBtn').addEventListener('click', async () => {
+  const yes = await Dialog.confirm({
+    icon: 'warn',
+    title: I18n.t('common.logout.title'),
+    message: I18n.t('common.logout.msg'),
+    submitText: I18n.t('common.logout.btn'),
+    cancelText: I18n.t('key.cancel')
+  });
+  if (!yes) return;
+  KeyVault.clear();
+  localStorage.removeItem(LS_NAME);
+  localStorage.removeItem(LS_CODE);
+  location.href = LOGIN_PAGE;
+});
+
+/* ==========================================================================
+   6) إرسال ريسبي جديد
+   ========================================================================== */
+async function submitForm(){
+  const name   = $('#userName').value.trim();
+  const file   = $('#imageFile').files[0];
+  const status = $('#status');
+  const btn    = $('#sendBtn');
+
+  if (!name || !file){
+    status.innerHTML = `<span style="color:var(--err)">⚠️ ${esc(I18n.t('send.err.fields'))}</span>`;
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024){
+    status.innerHTML = `<span style="color:var(--err)">⚠️ ${esc(I18n.t('send.err.size'))}</span>`;
+    return;
+  }
+
+  Prefs.set('sendName', name);                 // تذكّر الاسم لل مرات الجاية
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spin" style="width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:s2 .7s linear infinite"></span><span>${esc(I18n.t('send.uploading'))}</span>`;
+  status.innerHTML = `<span style="color:var(--primary)">⏳ ${esc(I18n.t('send.uploading'))}</span>`;
+
+  try {
+    // 1) رفع الملف
+    const fd = new FormData();
+    fd.append('file', file);
+    const up = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd });
+    if (!up.ok) throw new Error('HTTP ' + up.status);
+    const upJson = await up.json();
+    const hosted = upJson && upJson.data && upJson.data.url;
+    if (!hosted) throw new Error('no url');
+    const directLink = hosted.replace('/dl/', '/');
+
+    // 2) تسجيل الطلب عند RECETA
+    status.innerHTML = `<span style="color:var(--primary)">⏳ ${esc(I18n.t('send.registering'))}</span>`;
+    const webApp = 'https://script.google.com/macros/s/AKfycbzQEkfCOI_TLnHAzt9HMeQz4AH0CPJrleQA5NK-93S_ByZSFW16G-ngcW360rVbX-Yngg/exec';
+    const payload = { date: new Date().toLocaleString(I18n.lang === 'ar' ? 'ar-EG' : 'en-GB'), name, link: directLink };
+
+    const sheet = await fetch(webApp, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    if (!sheet.ok) throw new Error('HTTP ' + sheet.status);
+
+    status.innerHTML = `<span style="color:var(--ok)">✅ ${esc(I18n.t('send.done'))}</span>`;
+    toast('✅ ' + I18n.t('send.done'));
+    Prefs.del('sendName');
+    $('#userName').value = '';
+    $('#imageFile').value = '';
+  } catch (e){
+    status.innerHTML = `<span style="color:var(--err)">⚠️ ${esc(I18n.t('send.err.network'))}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<span>${esc(I18n.t('send.btn'))}</span>`;
+  }
+}
+
+/* ==========================================================================
+   7) عارض قاعدة البيانات
+   ========================================================================== */
+(async function dbViewer(){
+  const select = $('#tablesSelect');
+  const container = $('#tableContainer');
+  const dbStatus = $('#dbStatus');
+  let db = null, current = null, filters = {};
+
+dbStatus.textContent = '⏳ ' + I18n.t('db.loading');
+
+  try{
+    const SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` });
+    const res = await fetch(DB_URL);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
+  } catch (e){
+    dbStatus.textContent = '⚠️ ' + I18n.t('db.err', { err: e.message || '—' });
+    return;
+  }
+
+  dbStatus.textContent = '';
+  const t = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
+  if (t.length){
+    t[0].values.flat().sort().forEach(name => {
+      const o = document.createElement('option');
+      o.value = name; o.textContent = name;
+      select.appendChild(o);
+    });
+    document.dispatchEvent(new CustomEvent('dbReady'));   // عشان نسترجع الجدول المحفوظ
+  } else {
+    dbStatus.textContent = I18n.t('db.noTables');
+    return;
+  }
+
+  select.addEventListener('change', () => {
+    const name = select.value;
+    container.innerHTML = '';
+    current = null;
+    if (!name) return;
+    Prefs.set('dbTable', name);                 // تذكّر الجدول
+
+    if (HIDDEN_TABLES.test(name)){
+      container.innerHTML = `<div class="state"><i class="fas fa-eye-slash"></i>
+        <p>${esc(I18n.t('db.hidden'))}</p></div>`;
+      return;
+    }
+
+    let r;
+    try { r = db.exec(`SELECT * FROM "${name.replace(/"/g,'""')}"`); }
+    catch (e){
+      container.innerHTML = `<div class="state"><i class="fas fa-triangle-exclamation"></i>
+        <p>${esc(I18n.t('db.errTable'))}</p></div>`;
+      return;
+    }
+
+    if (!r.length || !r[0].values.length){
+      container.innerHTML = `<div class="state"><i class="fas fa-inbox"></i><p>${esc(I18n.t('db.empty'))}</p></div>`;
+      return;
+    }
+
+    current = r[0];
+    filters = (Prefs.get('dbFilters:' + name, null)) || {};   // تذكّر الفلاتر
+    renderTable();
+  });
+
+  function filtered(){
+    if (!current) return [];
+    return current.values.filter(row =>
+      current.columns.every((col, i) => {
+        const f = (filters[col] || '').toLowerCase();
+        if (!f) return true;
+        return String(row[i] == null ? '' : row[i]).toLowerCase().includes(f);
+      }));
+  }
+
+  function renderTable(){
+    container.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'table-wrapper';
+    const table = document.createElement('table');
+
+    const thead = document.createElement('thead');
+    const hr = document.createElement('tr');
+    current.columns.forEach(c => {
+      const th = document.createElement('th');
+      th.textContent = c;
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr);
+    table.appendChild(thead);
+
+    const fr = document.createElement('tr');
+    fr.className = 'filters-row';
+    current.columns.forEach(c => {
+      const td = document.createElement('td');
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.placeholder = I18n.t('db.filter.ph');
+      inp.value = filters[c] || '';
+      inp.addEventListener('input', e => {
+        filters[c] = e.target.value.trim();
+        body(filtered());
+        Store.debounce('p:dbFilters:' + select.value, filters, 500);   // تذكّر الفلاتر
+      });
+      td.appendChild(inp);
+      fr.appendChild(td);
+    });
+    table.appendChild(fr);
+
+    const tbody = document.createElement('tbody');
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+    container.appendChild(wrap);
+    body(filtered());
+  }
+
+  function body(rows){
+    const tbody = table.tBodies[0];
+    tbody.innerHTML = '';
+    if (!rows.length){
+      const tr = tbody.insertRow();
+      const td = tr.insertCell();
+      td.colSpan = current.columns.length;
+      td.textContent = I18n.t('db.noMatch');
+      td.style.cssText = 'text-align:center;padding:28px;color:var(--muted)';
+      return;
+    }
+    rows.forEach(row => {
+      const tr = tbody.insertRow();
+      row.forEach(cell => {
+        const td = tr.insertCell();
+        td.textContent = cell == null ? '' : cell;
+      });
+    });
+  }
+})();
+
+/* ==========================================================================
+   8) فك التشفير — نفس المنطق بالظبط (لا تعديل)
+   ========================================================================== */
 function decodeKS(t){
     return t.replace(/פֿ/g,"9").replace(/כֿ/g,"8").replace(/בֿ/g,"7").replace(/וֹ/g,"6").replace(/תּ/g,"5")
             .replace(/שּ/g,"4").replace(/רּ/g,"3").replace(/קּ/g,"2").replace(/צּ/g,"1").replace(/פּ/g,"0")
@@ -307,467 +2039,125 @@ function decodeKS(t){
             .replace(/ﬦ/g,"A").replace(/&NBSP;/gi,"").replace(/[\u200B-\u200D\uFEFF]/g,"");
 }
 
-async function loadPath(p=''){
-    const r = await fetch(`${api}/${p}?ref=${branch}`);
-    let i = await r.json();
-    i.sort((a,b) => b.type === 'dir' ? -1 : 1);
-    grid.innerHTML = '';
-    i.forEach(m => {
-        let d = document.createElement('div');
-        d.className = 'item ' + m.type;
-        let icon = 'fa-file-code';
-        if (m.type === 'dir') icon = 'fa-folder';
-        else if (m.name.endsWith('.html')) icon = 'fa-file-code-alt';
-        else if (m.name.endsWith('.xlsx') || m.name.endsWith('.xls')) icon = 'fa-file-excel';
-        let displayName = m.name;
-        if (m.name.endsWith('.ks')) displayName = m.name.replace('.ks', '');
-        d.innerHTML = `<i class="fas ${icon}"></i><span>${displayName}</span>`;
-        d.onclick = () => {
-            if (m.type === 'dir') {
-                history.push(m.path);
-                updateBreadcrumbs();
-                loadPath(m.path);
-                backBtn.style.display = 'block';
-            } else if (m.name.endsWith('.ks') || m.name.endsWith('.html') || m.name.endsWith('.xlsx') || m.name.endsWith('.xls')) {
-                openPreview(m);
-            }
-        };
-        grid.appendChild(d);
-    });
-}
-
-function updateBreadcrumbs(){
-    let p = history[history.length-1].split('/').filter(x => x);
-    let h = 'RECIPES', c = '';
-    p.forEach(x => { c += (c ? '/' : '') + x; h += ` <i class="fas fa-chevron-left"></i> <span onclick="goTo('${c}')">${x}</span>` });
-    breadcrumbs.innerHTML = h;
-}
-
-function goTo(p){
-    let i = history.findIndex(x => x === p);
-    history = history.slice(0, i + 1);
-    loadPath(p);
-    backBtn.style.display = history.length > 1 ? 'block' : 'none';
-    updateBreadcrumbs();
-}
-
-backBtn.onclick = () => {
-    if (history.length > 1) {
-        history.pop();
-        loadPath(history[history.length - 1]);
-        updateBreadcrumbs();
-        if (history.length === 1) backBtn.style.display = 'none';
-    }
-}
-
-function loadSheetJS() {
-    return new Promise((resolve) => {
-        if (window.XLSX) return resolve();
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-        script.onload = resolve;
-        document.head.appendChild(script);
-    });
-}
-
-// ====================== openPreview ======================
-async function openPreview(item) {
-    fileName.textContent = item.name.replace('.ks', '');
-    preview.style.display = 'block';
-    iframe.srcdoc = `<h3 style='text-align:center;padding:80px;color:#999'>جار عرض الريسيبي ...</h3>`;
-
-    try {
-        let longKey = sessionStorage.getItem('user_activation_code');
-       
-        if (!longKey) {
-            longKey = prompt("أدخل كود التفعيل ولو مش معاك اتواصل واتساب 🔑");
-            if (!longKey) {
-                preview.style.display = 'none';
-                return;
-            }
-            sessionStorage.setItem('user_activation_code', longKey);
-        }
-
-        const realPassword = extractPasswordFromKey(longKey);
-        console.log("🔑 Long Key:", longKey);
-        console.log("🔑 Extracted Password:", realPassword);
-
-        const fileUrl = `${raw}/${item.path}`;
-        const res = await fetch(fileUrl);
-        if (!res.ok) throw new Error("فشل تحميل الملف");
-
-        const encryptedData = new Uint8Array(await res.arrayBuffer());
-        console.log("📦 File Size:", encryptedData.length, "bytes");
-
-        const decryptedText = await decryptKSFile(encryptedData, realPassword);
-       
-        let finalHTML = decodeKS(decryptedText);
-        
-        iframe.srcdoc = `
-            <html dir="rtl">
-            <head><meta charset="UTF-8">
-            <style>body{margin:20px;font-family:'Cairo',sans-serif;line-height:1.7;}</style>
-            </head>
-            <body>${finalHTML}</body>
-            </html>`;
-
-    } catch (e) {
-        console.error("❌ Decryption Error:", e.name, "-", e.message);
-        sessionStorage.removeItem('user_activation_code');
-       
-        iframe.srcdoc = `<h3 style="color:red;text-align:center;padding:100px">
-            كود التفعيل غير صحيح<br><br>
-            <small>تأكد من إدخال الكود الصحيح</small>
-        </h3>`;
-    }
-}
-
-closePreview.onclick = () => { preview.style.display='none'; iframe.srcdoc=''; }
-
-loadPath();
-updateBreadcrumbs();
-
-async function submitForm() {
-    const name = document.getElementById('userName').value.trim();
-    const file = document.getElementById('imageFile').files[0];
-    const status = document.getElementById('status');
-    if (!name || !file) { status.innerHTML = '<span style="color:#e74c3c">املأ كل الحقول</span>'; return; }
-    status.innerHTML = '<span style="color:#3498db">جارٍ الإرسال...</span>';
-    const fd = new FormData(); fd.append('file', file);
-    try {
-        const up = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: fd });
-        const res = await up.json();
-        const directLink = res.data.url.replace('/dl/', '/');
-        const payload = { date: new Date().toLocaleString('ar-EG'), name, link: directLink };
-        const webApp = 'https://script.google.com/macros/s/AKfycbzQEkfCOI_TLnHAzt9HMeQz4AH0CPJrleQA5NK-93S_ByZSFW16G-ngcW360rVbX-Yngg/exec';
-        const sheet = await fetch(webApp, { method: 'POST', body: JSON.stringify(payload) });
-        if(sheet.ok){
-            status.innerHTML = '<span style="color:#2ecc71">تم الإرسال بنجاح!</span>';
-            document.getElementById('userName').value='';
-            document.getElementById('imageFile').value='';
-        } else status.innerHTML='<span style="color:#e74c3c">فشل الإرسال</span>';
-    } catch(e){ status.innerHTML='<span style="color:#e74c3c">خطأ في الإرسال</span>'; }
-}
-
-function openExternalLink(url){ window.location.href = "intent://"+url.replace(/^https?:\/\//,'')+"#Intent;package=com.android.chrome;scheme=https;end;"; }
-
-// --------- كود SQLite محسن ----------
-(async function(){
-    const SQL = await initSqlJs({ locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}` });
-    const url = "https://raw.githubusercontent.com/ProgKady/DBs/main/Recipe_System_DB.db";
-    const response = await fetch(url);
-    const buffer = await response.arrayBuffer();
-    const db = new SQL.Database(new Uint8Array(buffer));
-
-    const tablesRes = db.exec("SELECT name FROM sqlite_master WHERE type='table'");
-    const tableSelect = document.getElementById("tablesSelect");
-    const container = document.getElementById("tableContainer");
-    let currentData = null;         // {columns, values}
-    let filters = {};               // لتخزين قيم الفلاتر لكل عمود
-
-    if(tablesRes.length>0){
-        tablesRes[0].values.flat().forEach(name=>{
-            let opt=document.createElement("option");
-            opt.value=name; opt.textContent=name;
-            tableSelect.appendChild(opt);
-        });
-    }
-
-    tableSelect.addEventListener("change", ()=>{
-        const tableName = tableSelect.value;
-        if(!tableName){
-            container.innerHTML = "";
-            return;
-        }
-
-        // إخفاء الجداول التي تحتوي على كلمة TIMER أو COST في الاسم (غير حساس لحالة الأحرف)
-        if(/Audit|Editors|Issues|Users|Notifications|Timor/i.test(tableName)){
-            container.innerHTML = "<p style='text-align:center;color:#999;padding:40px;'>هذا الجدول مخفي لأسباب أمنية.</p>";
-            return;
-        }
-
-        const result = db.exec(`SELECT * FROM "${tableName}"`); // استخدام علامات اقتباس لتجنب مشاكل الأسماء
-        if(result.length===0 || result[0].values.length===0){
-            container.innerHTML = "<p style='text-align:center;color:#999;padding:40px;'>الجدول فارغ!</p>";
-            return;
-        }
-
-        currentData = result[0];
-        filters = {};
-        renderTable(currentData);
-    });
-
-    function applyFilters(data){
-        if(!data) return data;
-        return data.values.filter(row => {
-            return data.columns.every((col, idx) => {
-                const filterVal = (filters[col] || "").toLowerCase();
-                if(filterVal === "") return true;
-                const cellVal = String(row[idx] || "").toLowerCase();
-                return cellVal.includes(filterVal);
-            });
-        });
-    }
-
-    function renderTable(originalData){
-        container.innerHTML = "";
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "table-wrapper";
-
-        const table = document.createElement("table");
-
-        // صف العناوين
-        const theadTr = document.createElement("tr");
-        originalData.columns.forEach(col => {
-            const th = document.createElement("th");
-            th.textContent = col;
-            theadTr.appendChild(th);
-        });
-        table.appendChild(theadTr);
-
-        // صف الفلاتر
-        const filterTr = document.createElement("tr");
-        filterTr.className = "filters-row";
-        originalData.columns.forEach(col => {
-            const td = document.createElement("td");
-            const input = document.createElement("input");
-            input.type = "text";
-            input.placeholder = "فلتر...";
-            input.value = filters[col] || "";
-            input.addEventListener("input", (e) => {
-                filters[col] = e.target.value.trim();
-                const filteredValues = applyFilters(originalData);
-                renderTableBody(table, originalData.columns, filteredValues);
-            });
-            td.appendChild(input);
-            filterTr.appendChild(td);
-        });
-        table.appendChild(filterTr);
-
-        // جسم الجدول
-        const filteredValues = applyFilters(originalData);
-        renderTableBody(table, originalData.columns, filteredValues);
-
-        wrapper.appendChild(table);
-        container.appendChild(wrapper);
-    }
-
-    function renderTableBody(table, columns, values){
-        // حذف صفوف البيانات القديمة فقط (نترك الـ thead والفلاتر)
-        const existingBodyRows = table.querySelectorAll("tr:not(:first-child):not(.filters-row)");
-        existingBodyRows.forEach(row => row.remove());
-
-        if(values.length === 0){
-            const tr = document.createElement("tr");
-            const td = document.createElement("td");
-            td.colSpan = columns.length;
-            td.textContent = "لا توجد بيانات مطابقة للفلتر";
-            td.style.textAlign = "center";
-            td.style.padding = "30px";
-            td.style.color = "#999";
-            tr.appendChild(td);
-            table.appendChild(tr);
-            return;
-        }
-
-        values.forEach(row => {
-            const tr = document.createElement("tr");
-            row.forEach(cell => {
-                const td = document.createElement("td");
-                td.textContent = cell === null ? "" : cell;
-                tr.appendChild(td);
-            });
-            table.appendChild(tr);
-        });
-    }
-})();
-
-
-
-
-function clearActivationCode() {
-    if (confirm("هل تريد مسح الكود الحالي؟\nسيطلب منك إدخال الكود مرة أخرى.")) {
-        sessionStorage.removeItem('user_activation_code');
-        alert("✅ تم مسح الكود.\nأعد تحميل الصفحة.");
-        location.reload();
-    }
-}
-
-
-
-
-
-    
-
-
-
-
-
-
 function extractPasswordFromKey(longKey) {
-    const trimmed = longKey.trim();
-    const parts = trimmed.split('-');
-    if (parts.length !== 7) {
-        throw new Error("الكود يجب أن يحتوي على 7 أجزاء مفصولة بـ (-)");
-    }
-    return parts[0].charAt(4) + 
-           parts[1].charAt(0) + 
-           parts[2].charAt(2) + 
-           parts[3].charAt(1) + 
-           parts[4].charAt(3) + 
-           parts[5].charAt(2) + 
-           parts[6].charAt(3);
+  const trimmed = longKey.trim();
+  const parts = trimmed.split('-');
+  if (parts.length !== 7) {
+    throw new Error("الكود يجب أن يحتوي على 7 أجزاء مفصولة بـ (-)");
+  }
+  return parts[0].charAt(4) +
+         parts[1].charAt(0) +
+         parts[2].charAt(2) +
+         parts[3].charAt(1) +
+         parts[4].charAt(3) +
+         parts[5].charAt(2) +
+         parts[6].charAt(3);
 }
-
-
-
-
-
-
-    
-
 
 async function decryptKSFile(encryptedBuffer, password) {
+  const salt = encryptedBuffer.slice(0, 16);
+  const iv = encryptedBuffer.slice(16, 28);
+  const keySizeBytes = encryptedBuffer.slice(28, 32);
+  const keySize = new DataView(keySizeBytes.buffer).getUint32(0, false);
+  const encryptedMasterKey = encryptedBuffer.slice(32, 32 + keySize);
+  const ciphertext = encryptedBuffer.slice(32 + keySize);
 
-    // استخراج البيانات من الملف
-    const salt = encryptedBuffer.slice(0, 16);
+  const passwordKey = await derivePasswordKeyRaw(password, salt);
+  const keyWordArray = CryptoJS.lib.WordArray.create(passwordKey);
+  const encryptedWordArray = CryptoJS.lib.WordArray.create(encryptedMasterKey);
 
-    const iv = encryptedBuffer.slice(16, 28);
+  const decryptedMaster = CryptoJS.AES.decrypt(
+    { ciphertext: encryptedWordArray },
+    keyWordArray,
+    { mode: CryptoJS.mode.ECB, padding: CryptoJS.pad.Pkcs7 }
+  );
 
-    const keySizeBytes = encryptedBuffer.slice(28, 32);
+  const masterKeyBytes = wordArrayToUint8Array(decryptedMaster);
 
-    const keySize = new DataView(
-        keySizeBytes.buffer
-    ).getUint32(0, false);
+  const masterKey = await crypto.subtle.importKey(
+    "raw", masterKeyBytes, { name: "AES-GCM" }, false, ["decrypt"]
+  );
 
-    const encryptedMasterKey =
-        encryptedBuffer.slice(32, 32 + keySize);
+  const decrypted = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: iv }, masterKey, ciphertext
+  );
 
-    const ciphertext =
-        encryptedBuffer.slice(32 + keySize);
-
-    console.log("Salt:", salt.length);
-    console.log("IV:", iv.length);
-    console.log("KeySize:", keySize);
-    console.log("EncryptedMasterKey:", encryptedMasterKey.length);
-    console.log("Ciphertext:", ciphertext.length);
-
-    // اشتقاق مفتاح الباسورد
-    const passwordKey =
-        await derivePasswordKeyRaw(password, salt);
-
-    // تحويل المفتاح إلى CryptoJS WordArray
-    const keyWordArray =
-        CryptoJS.lib.WordArray.create(passwordKey);
-
-    // تحويل البيانات المشفرة
-    const encryptedWordArray =
-        CryptoJS.lib.WordArray.create(encryptedMasterKey);
-
-    // فك تشفير الـ Master Key
-    const decryptedMaster =
-        CryptoJS.AES.decrypt(
-            {
-                ciphertext: encryptedWordArray
-            },
-            keyWordArray,
-            {
-                mode: CryptoJS.mode.ECB,
-                padding: CryptoJS.pad.Pkcs7
-            }
-        );
-
-    // تحويل الناتج إلى Uint8Array
-    const masterKeyBytes =
-        wordArrayToUint8Array(decryptedMaster);
-
-    console.log("MasterKeyBytes:", masterKeyBytes.length);
-
-    // استيراد المفتاح لـ AES-GCM
-    const masterKey =
-        await crypto.subtle.importKey(
-            "raw",
-            masterKeyBytes,
-            {
-                name: "AES-GCM"
-            },
-            false,
-            ["decrypt"]
-        );
-
-    // فك تشفير الملف
-    const decrypted =
-        await crypto.subtle.decrypt(
-            {
-                name: "AES-GCM",
-                iv: iv
-            },
-            masterKey,
-            ciphertext
-        );
-
-    // تحويل النص
-    return new TextDecoder("utf-8").decode(decrypted);
+  return new TextDecoder("utf-8").decode(decrypted);
 }
 
 async function derivePasswordKeyRaw(password, salt) {
-
-    const enc = new TextEncoder();
-
-    const baseKey =
-        await crypto.subtle.importKey(
-            "raw",
-            enc.encode(password),
-            "PBKDF2",
-            false,
-            ["deriveBits"]
-        );
-
-    const bits =
-        await crypto.subtle.deriveBits(
-            {
-                name: "PBKDF2",
-                salt: salt,
-                iterations: 200000,
-                hash: "SHA-256"
-            },
-            baseKey,
-            256
-        );
-
-    return new Uint8Array(bits);
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey(
+    "raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: salt, iterations: 200000, hash: "SHA-256" },
+    baseKey, 256
+  );
+  return new Uint8Array(bits);
 }
 
 function wordArrayToUint8Array(wordArray) {
-
-    const words = wordArray.words;
-
-    const sigBytes = wordArray.sigBytes;
-
-    const u8 = new Uint8Array(sigBytes);
-
-    for (let i = 0; i < sigBytes; i++) {
-
-        u8[i] =
-            (
-                words[i >>> 2] >> (24 - (i % 4) * 8)
-            ) & 0xff;
-    }
-
-    return u8;
+  const words = wordArray.words;
+  const sigBytes = wordArray.sigBytes;
+  const u8 = new Uint8Array(sigBytes);
+  for (let i = 0; i < sigBytes; i++){
+    u8[i] = (words[i >>> 2] >> (24 - (i % 4) * 8)) & 0xff;
+  }
+  return u8;
 }
 
+/* ==========================================================================
+   9) التشغيل + استرجاع كل البيانات المحفوظة
+   ========================================================================== */
+(function boot(){
+  const lastPath = Prefs.get('lastPath', '');
+  history = lastPath ? ['', lastPath] : [''];
 
+  // البحث المحفوظ
+  const q = Store.get('search');
+  if (q) $('#searchInput').value = q;
 
+  // اسم الإرسال المحفوظ
+  const sn = Prefs.get('sendName');
+  if (sn) $('#userName').value = sn;
 
+  loadPath(lastPath);
+  updateBreadcrumbs();
+  refreshKeyChip();
+  backBtn.style.display = history.length > 1 ? 'block' : 'none';
 
-    
+  // التبويب: hash الأول، بعدين الاختصار، بعدين المحفوظ، بعدين الافتراضي
+  const fromQuery = new URLSearchParams(location.search).get('tab');
+  const tab = (location.hash || '').replace('#','')
+          || fromQuery
+          || Prefs.get('tab', 'recipes');
+  if (['recipes', 'add', 'db'].includes(tab)) openTab(tab);
 
-    
-    
+  // استرجاع الجدول المحفوظ لما القاعدة تجهز
+  document.addEventListener('dbReady', () => {
+    const t = Prefs.get('dbTable');
+    const sel = $('#tablesSelect');
+    if (t && [...sel.options].some(o => o.value === t)){
+      sel.value = t;
+      sel.dispatchEvent(new Event('change'));
+    }
+  });
+})();
+
+// إعادة رسم النصوص لما اللغة تتبدّل أثناء التشغيل
+document.addEventListener('langchange', () => {
+  updateBreadcrumbs();
+  renderGrid();
+});
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
-
-

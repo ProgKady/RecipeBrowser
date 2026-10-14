@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مفيش اتصال — RECETA</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./hrrr.png">
+<meta name="theme-color" content="#0b0f17">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0f17; --stroke:rgba(255,255,255,.1);
+  --txt:#eaf0ff; --muted:#98a4c4; --brand:#ff2e63;
+}
+@media (prefers-color-scheme: light){
+  :root{ --bg:#eef2f9; --stroke:rgba(15,23,42,.1); --txt:#0f172a; --muted:#5b6b8c; }
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Cairo',system-ui,sans-serif;background:var(--bg);color:var(--txt);
+  min-height:100dvh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:18px;padding:28px;text-align:center;
+}
+img{width:88px;height:88px;border-radius:24px;border:3px solid rgba(255,255,255,.16)}
+h2{font-size:1.3em;font-weight:900}
+p{color:var(--muted);font-size:.94em;line-height:1.9;max-width:340px}
+button{
+  margin-top:6px;padding:13px 30px;border:0;border-radius:12px;color:#fff;
+  background:linear-gradient(135deg,var(--brand),#ff7a45);
+  font-family:inherit;font-size:1em;font-weight:900;cursor:pointer;
+  box-shadow:0 12px 30px rgba(255,46,99,.3);
+}
+button:active{transform:scale(.96)}
+</style>
+</head>
+<body>
+<img src="./hrrr.png" alt="RECETA">
+<h2>مش شايفين شبكة</h2>
+<p>الجهاز مش متصل بالإنترنت. اتصل وحاول تاني.</p>
+<button onclick="location.reload()">إعادة المحاولة</button>
+</body>
+</html>
