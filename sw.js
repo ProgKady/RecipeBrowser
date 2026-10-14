@@ -6,7 +6,7 @@
    - طلبات الـ API    : Network بس — ما بنكاشّها أبداً (عشان الداتا تفضل سليمة)
    ========================================================================== */
 
-const VERSION   = 'tc-v11';
+const VERSION   = 'tc-v12';
 const PRECACHE  = [
   './',
   './index.html',
@@ -16,8 +16,8 @@ const PRECACHE  = [
   './hrrr.png',
   './manifest.json'
 ];
-const CODE_CACHE = 'tc-code-v11';
-const IMG_CACHE  = 'tc-img-v11';
+const CODE_CACHE = 'tc-code-v12';
+const IMG_CACHE  = 'tc-img-v12';
 
 self.addEventListener('install', e => {
   e.waitUntil(

@@ -191,133 +191,51 @@ header{
 
 /* ======================= Recipe Viewer (LTR) ======================= */
 #preview{
-  position:fixed;inset:0;z-index:100;background:var(--bg);
-  padding-top:var(--app-top);                 /* تحت هيدر الأبلكيشن */
-  display:none;flex-direction:column;direction:ltr;
-  font-family:'Inter','Cairo',system-ui,'Segoe UI',sans-serif;
-  animation:slide .3s cubic-bezier(.2,.9,.3,1);
+  display:none; position:fixed; inset:0; z-index:90;
+  background:#1a1d27; flex-direction:column;
 }
-@keyframes slide{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-
-/* ---------- top toolbar ---------- */
-.pv-top{
-  flex-shrink:0;direction:ltr;
-  display:flex;align-items:center;gap:4px;
-  padding:calc(9px + var(--safe-top)) 10px 9px;
-  background:var(--panel);
-  backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
-  border-bottom:1px solid var(--stroke);
-  overflow-x:auto;scrollbar-width:none;
+#preview[style*="flex"], #preview.open{ display:flex !important; }
+.pv-close{
+  position:fixed; top:calc(10px + var(--safe-top, 0px) + var(--app-top, 0px));
+  inset-inline-end:12px; z-index:95;
+  width:40px; height:40px; border-radius:12px; border:0;
+  background:rgba(0,0,0,.55); color:#fff; font-size:1.1em;
+  display:grid; place-items:center; cursor:pointer;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  box-shadow:0 4px 16px rgba(0,0,0,.35);
 }
-.pv-top::-webkit-scrollbar{display:none}
-.pv-group{display:flex;align-items:center;gap:2px;flex-shrink:0}
-.pv-sep{width:1px;height:24px;background:var(--stroke);margin:0 6px;flex-shrink:0}
-.pv-spacer{flex:1;min-width:6px}
-
-.pv-btn{
-  height:36px;min-width:36px;padding:0 8px;border:1px solid transparent;border-radius:9px;
-  background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-weight:700;
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  font-family:inherit;transition:background .18s,color .18s,border-color .18s,transform .12s;
-  white-space:nowrap;user-select:none;
-}
-.pv-btn:hover:not(:disabled){background:rgba(255,255,255,.09);color:var(--txt)}
-.pv-btn:active:not(:disabled){transform:scale(.93)}
-.pv-btn:disabled{opacity:.35;cursor:not-allowed}
-.pv-btn.on{background:rgba(109,94,252,.2);color:#a99cff;border-color:rgba(109,94,252,.45)}
-.pv-btn.danger:hover:not(:disabled){background:rgba(239,68,68,.16);color:#f87171}
-.pv-btn.primary{
-  background:linear-gradient(135deg,var(--primary),var(--primary-2));
-  color:#fff;padding:0 14px;box-shadow:0 6px 18px rgba(109,94,252,.3);
-}
-.pv-btn.primary:hover:not(:disabled){color:#fff;filter:brightness(1.1)}
-
-.pv-zoomval{
-  min-width:58px;height:36px;padding:0 8px;border:1px solid var(--stroke);border-radius:9px;
-  background:rgba(255,255,255,.05);color:var(--txt);font-family:inherit;
-  font-size:12.5px;font-weight:800;text-align:center;cursor:pointer;
-  appearance:none;-webkit-appearance:none;
-}
-.pv-zoomval:hover{border-color:var(--primary)}
-.pv-range{
-  -webkit-appearance:none;appearance:none;width:96px;height:36px;background:transparent;cursor:pointer;
-}
-.pv-range::-webkit-slider-runnable-track{height:4px;border-radius:4px;
-  background:linear-gradient(90deg,var(--primary),var(--primary-2))}
-.pv-range::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
-  background:#fff;border:2px solid var(--primary);margin-top:-5.5px;transition:transform .15s}
-.pv-range:active::-webkit-slider-thumb{transform:scale(1.25)}
-.pv-range::-moz-range-track{height:4px;border-radius:4px;
-  background:linear-gradient(90deg,var(--primary),var(--primary-2))}
-.pv-range::-moz-range-thumb{width:15px;height:15px;border-radius:50%;
-  background:#fff;border:2px solid var(--primary)}
-
+.pv-close:active{ transform:scale(.92); }
 .pv-name{
-  font-size:12.5px;font-weight:800;color:var(--txt);
-  max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  padding:0 4px;direction:ltr;
+  position:fixed; top:calc(14px + var(--safe-top, 0px) + var(--app-top, 0px));
+  inset-inline-start:14px; inset-inline-end:60px; z-index:94;
+  color:rgba(255,255,255,.85); font-size:.82em; font-weight:700;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  pointer-events:none; text-shadow:0 1px 4px rgba(0,0,0,.5);
 }
-
-/* ---------- stage ---------- */
 .pv-stage{
-  flex:1;min-height:0;position:relative;overflow:hidden;
-  background:
-    linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),
-    repeating-conic-gradient(from 0deg, rgba(255,255,255,.035) 0% 25%, transparent 0% 50%) 50%/22px 22px;
-  display:flex;align-items:center;justify-content:center;
+  flex:1; position:relative; width:100%; height:100%;
+  overflow:hidden; background:#2a2e3a;
+  /* touch handled inside iframe */
 }
-#iframe{
-  width:100%;height:100%;border:0;background:transparent;
-  display:block;overflow:hidden;
+.pv-stage iframe{
+  position:absolute; inset:0; width:100%; height:100%;
+  border:0; background:#2a2e3a;
 }
-.pv-stage.panning{cursor:grabbing}
-.pv-stage.panning #iframe{pointer-events:none}
-
-/* ---------- bottom status bar ---------- */
-.pv-foot{
-  flex-shrink:0;direction:ltr;
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  padding:7px 12px calc(7px + env(safe-area-inset-bottom));
-  background:var(--panel);border-top:1px solid var(--stroke);
-  font-size:11.5px;font-weight:700;color:var(--muted);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-}
-.pv-foot b{color:var(--txt);font-weight:800}
-.pv-chip{
-  padding:3px 9px;border-radius:99px;background:rgba(255,255,255,.06);
-  border:1px solid var(--stroke);white-space:nowrap;
-}
-.pv-hint{margin-inline-start:auto;opacity:.75;white-space:nowrap}
-
-/* ---------- loading / error inside stage ---------- */
 .pv-overlay{
-  position:absolute;inset:0;z-index:5;display:none;
-  flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  background:var(--bg);color:var(--muted);text-align:center;padding:26px;
+  position:absolute; inset:0; z-index:5;
+  display:none; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; background:rgba(26,29,39,.88); color:#fff; text-align:center;
+  padding:24px;
 }
-.pv-overlay.show{display:flex}
+.pv-overlay.show{ display:flex; }
 .pv-overlay .ring{
-  width:42px;height:42px;border-radius:50%;
-  border:3px solid rgba(255,255,255,.1);border-top-color:var(--primary);
+  width:42px; height:42px; border-radius:50%;
+  border:3px solid rgba(255,255,255,.2); border-top-color:#a99cff;
   animation:spin .8s linear infinite;
 }
-.pv-overlay h4{color:var(--txt);font-size:1.02em;font-weight:800}
-.pv-overlay p{font-size:.85em;line-height:1.8;max-width:320px}
-@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.pv-overlay h4{ font-size:.95em; font-weight:700; margin:0; color:#e8eaf0; }
 
-@media (max-width:640px){
-  .pv-name,.pv-hint{display:none}
-  .pv-range{display:none}
-  .pv-btn span{display:none}
-  .pv-btn{padding:0 7px}
-  .pv-btn.primary{padding:0 10px}
-  .pv-btn.primary span{display:inline}
-}
-@media (prefers-reduced-motion: reduce){
-  .pv-overlay .ring{animation-duration:1.6s}
-}
-
-/* ======================= النماذج ======================= */
 .add-container{padding:26px 16px;max-width:480px;margin:0 auto;width:100%}
 .add-card{
   background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -598,87 +516,16 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
   </div>
 
   <div id="preview">
-
-    <!-- ============ toolbar (LTR) ============ -->
-    <div class="pv-top" id="pvTop">
-      <div class="pv-group">
-        <button class="pv-btn danger" id="pvClose" title="Close (Esc)">
-          <i class="fas fa-xmark"></i>
-        </button>
-        <span class="pv-name" id="fileName">recipe</span>
-      </div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn" id="pvRotL" title="Rotate left"><i class="fas fa-rotate-left"></i></button>
-        <button class="pv-btn" id="pvRotR" title="Rotate right"><i class="fas fa-rotate-right"></i></button>
-      </div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn" id="pvDir" title="Text direction (RTL / LTR)">
-          <i class="fas fa-align-right"></i>
-        </button>
-      </div>
-
-      <div class="pv-spacer"></div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn" id="pvZOut" title="Zoom out (Ctrl + −)">
-          <i class="fas fa-magnifying-glass-minus"></i>
-        </button>
-        <input  class="pv-range" id="pvSlider" type="range" min="30" max="300" step="5"
-                value="100" title="Zoom" aria-label="Zoom">
-        <button class="pv-btn" id="pvZoomVal" title="Reset to 100%">
-          <span id="pvZoomTxt">100%</span>
-        </button>
-        <button class="pv-btn" id="pvZIn" title="Zoom in (Ctrl + +)">
-          <i class="fas fa-magnifying-glass-plus"></i>
-        </button>
-      </div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn on" id="pvFitW" title="Fit width (F)">
-          <i class="fas fa-arrows-left-right"></i>
-        </button>
-        <button class="pv-btn" id="pvFitP" title="Fit page — show whole recipe (P)">
-          <i class="fas fa-arrows-up-down-left-right"></i>
-        </button>
-      </div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn" id="pvFull" title="Fullscreen">
-          <i class="fas fa-expand"></i>
-        </button>
-      </div>
-    </div>
-
-    <!-- ============ stage ============ -->
+    <button type="button" class="pv-close" id="pvClose" title="Close" aria-label="Close">
+      <i class="fas fa-xmark"></i>
+    </button>
+    <div class="pv-name" id="fileName">recipe</div>
     <div class="pv-stage" id="pvStage">
       <iframe id="iframe" title="Recipe preview"></iframe>
-
       <div class="pv-overlay show" id="pvLoad">
         <div class="ring"></div>
-        <h4>Decrypting recipe…</h4>
-        <p>Please wait while the file is unlocked and rendered.</p>
+        <h4>Decrypting…</h4>
       </div>
-    </div>
-
-    <!-- ============ status bar ============ -->
-    <div class="pv-foot">
-      <span class="pv-chip">Zoom <b id="pvFootZoom">100%</b></span>
-      <span class="pv-chip">Mode <b id="pvFootMode">Fit width</b></span>
-      <span class="pv-chip">Size <b id="pvFootSize">—</b></span>
-      <span class="pv-chip" id="pvFootRot" style="display:none">Rot <b>0°</b></span>
-      <span class="pv-hint">Ctrl + scroll = zoom · Double-click = fit page</span>
     </div>
   </div>
 </section>
@@ -1453,55 +1300,40 @@ $('#refreshBtn').addEventListener('click', () => {
 });
 
 /* ==========================================================================
-   5) Recipe Viewer — LTR · zoom · rotate · fit · export PDF
+   5) Recipe Viewer — عرض كالورقة/الصورة · زوم بالأصابع · سحب
    ========================================================================== */
 
-/* ----- حالة المشاهد ----- */
 const V = {
-  item: null, html: '', rawBytes: null, rawUrl: null,
-  zoom: 1, mode: 'fitP', rot: 0, dir: 'ltr'
+  item: null, html: '', rawBytes: null, rawUrl: null, _blobUrl: null
 };
 
-/* ----- أدوات الواجهة ----- */
+const preview = $('#preview');
+const iframe  = $('#iframe');
+const fileName = $('#fileName');
+const pvStage = $('#pvStage');
+const pvLoad  = $('#pvLoad');
+
 function pvShowLoad(on){
+  if (!pvLoad) return;
   pvLoad.classList.toggle('show', !!on);
 }
-function pvSetZoomUI(z){
-  const pct = Math.round(z * 100);
-  $('#pvZoomTxt').textContent = pct + '%';
-  $('#pvFootZoom').textContent = pct + '%';
-  $('#pvSlider').value = Math.max(30, Math.min(300, pct));
-  V.zoom = z;
-  Prefs.set('pvZoom', z);
+function pvOpen(){
+  preview.style.display = 'flex';
+  preview.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
-function pvSetMode(m){
-  V.mode = m;
-  $('#pvFitW').classList.toggle('on', m === 'fitW');
-  $('#pvFitP').classList.toggle('on', m === 'fitP');
-  $('#pvFootMode').textContent = m === 'fitW' ? 'Fit width' : m === 'fitP' ? 'Fit page' : 'Manual';
-  Prefs.set('pvMode', m);
-}
-function pvSetRot(deg){
-  V.rot = ((deg % 360) + 360) % 360;
-  const chip = $('#pvFootRot');
-  chip.style.display = V.rot ? 'flex' : 'none';
-  chip.innerHTML = 'Rot <b>' + V.rot + '&deg;</b>';
-  Prefs.set('pvRot', V.rot);
-}
-function pvSetDir(d){
-  V.dir = d;
-  $('#pvDir').innerHTML = d === 'rtl'
-    ? '<i class="fas fa-align-right"></i>'
-    : '<i class="fas fa-align-left"></i>';
-  $('#pvDir').title = d === 'rtl' ? 'Text direction: RTL (click for LTR)' : 'Text direction: LTR (click for RTL)';
-  Prefs.set('pvDir', d);
-}
-function pvCmd(cmd, val){
-  iframe.contentWindow &&
-    iframe.contentWindow.postMessage({ __pvHost: 1, cmd: cmd, v: val }, '*');
+function pvClose(){
+  preview.style.display = 'none';
+  preview.classList.remove('open');
+  document.body.style.overflow = '';
+  try { iframe.onload = null; } catch(_){}
+  try { iframe.srcdoc = ''; } catch(_){}
+  try { iframe.removeAttribute('src'); iframe.src = 'about:blank'; } catch(_){}
+  if (V._blobUrl){ try{ URL.revokeObjectURL(V._blobUrl); }catch(_){} V._blobUrl = null; }
+  pvShowLoad(false);
+  V.item = null; V.html = ''; V.rawBytes = null; V.rawUrl = null;
 }
 
-/* ----- بناء مستند البريفيو (ورقة A4 + محرّك زوم داخلي) ----- */
 function prepareRecipeHTML(raw){
   const original = String(raw || '');
   let html = original.trim();
@@ -1513,145 +1345,146 @@ function prepareRecipeHTML(raw){
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
   if (bodyMatch) html = bodyMatch[1];
   else if (/^\s*(<!doctype|<html)/i.test(html)){
-    html = html.replace(/^\s*<!DOCTYPE[^>]*>/i,'').replace(/<\/?html[^>]*>/gi,'')
-               .replace(/<head[\s\S]*?<\/head>/i,'').replace(/<\/?body[^>]*>/gi,'');
+    html = html.replace(/^\s*<!DOCTYPE[^>]*>/i,'')
+               .replace(/<\/?html[^>]*>/gi,'')
+               .replace(/<head[\s\S]*?<\/head>/i,'')
+               .replace(/<\/?body[^>]*>/gi,'');
   }
-  html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
-  html = html.trim();
-  // لو الاستخراج فضّى المحتوى → رجّع الخام كما هو
+  html = html.replace(/<script[\s\S]*?<\/script>/gi, '').trim();
   if (!html) html = original.replace(/<script[\s\S]*?<\/script>/gi, '').trim();
   return { body: html, styles: styles.trim() };
 }
+
+/* مستند العرض: ورقة بيضاء + زوم/سحب باللمس كالورقة */
 function buildPreviewDoc(recipeHTML){
   const _prep = prepareRecipeHTML(recipeHTML);
   const safe = String(_prep.body).replace(/<\/script/gi, '<\\/script');
   const extraStyles = String(_prep.styles).replace(/<\/style/gi, '<\\/style');
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Recipe</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#454b5c}
-  #stage{
-    position:fixed;inset:0;display:grid;place-items:center;overflow:auto;
-    -webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;
-  }
-  #sheet{
-    width:max-content;min-width:min(920px,96vw);max-width:none;
-    background:#fff;color:#15181f;
-    padding:28px 20px 36px;
-    border-radius:4px;
-    box-shadow:0 16px 60px rgba(0,0,0,.5);
-    transform-origin:center center;
-    will-change:transform;
-    font-family:'Cairo','Segoe UI',system-ui,sans-serif;
-    font-size:15px;line-height:1.7;overflow-wrap:break-word;word-break:break-word;
-  }
-  #sheet img{max-width:100%;height:auto;border-radius:6px;display:block;margin:12px auto}
-  #sheet a{color:#6d5efc;word-break:break-all}
-  #sheet table{border-collapse:collapse;margin:12px 0;width:auto;max-width:none;font-size:13px;background:#fff}
-  #sheet td,#sheet th{border:1px solid #c8ccd6;padding:6px 10px;vertical-align:top;white-space:normal;color:#15181f;background:#fff}
-  #sheet th{background:#eef0f5;font-weight:800}
-  #sheet tr:nth-child(even) td{background:#fafbfc}
-  #sheet pre{white-space:pre-wrap;background:#f4f5f8;padding:12px;border-radius:6px;overflow-x:auto}
-  #sheet blockquote{margin:14px 0;padding:6px 18px;border-inline-start:4px solid #6d5efc;
-                    background:#f7f7fc;border-radius:0 8px 8px 0}
-  #sheet h1,#sheet h2,#sheet h3{line-height:1.4;color:#15181f}
-  #sheet::-webkit-scrollbar{width:8px}
-  #sheet::-webkit-scrollbar-thumb{background:#c9cdd8;border-radius:8px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#2a2e3a;
+  /* منع نسخ البيانات */
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;}
+#stage{
+  position:fixed;inset:0;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  touch-action:none;
+}
+#sheet{
+  background:#fff;color:#15181f;
+  padding:20px 16px 28px;
+  border-radius:4px;
+  box-shadow:0 12px 40px rgba(0,0,0,.45);
+  transform-origin:center center;
+  will-change:transform;
+  font-family:'Cairo','Segoe UI',system-ui,sans-serif;
+  font-size:14px;line-height:1.65;
+  width:max-content;min-width:min(860px,92vw);max-width:none;
+  -webkit-user-select:none;user-select:none;
+}
+#sheet img{max-width:100%;height:auto;display:block;margin:10px auto;pointer-events:none}
+#sheet a{pointer-events:none;color:#6d5efc;text-decoration:none}
+#sheet table{border-collapse:collapse;margin:10px 0;font-size:12.5px;background:#fff}
+#sheet td,#sheet th{
+  border:1px solid #c8ccd6;padding:5px 8px;vertical-align:top;
+  white-space:normal;color:#15181f;background:#fff;
+}
+#sheet th{background:#eef0f5;font-weight:800}
+#sheet tr:nth-child(even) td{background:#fafbfc}
+#sheet pre{white-space:pre-wrap;background:#f4f5f8;padding:10px;border-radius:6px}
+#sheet h1,#sheet h2,#sheet h3{line-height:1.35;color:#15181f}
 </style>
 <style id="recipe-styles">${extraStyles}</style>
-<style>
-
-  @media print{
-    @page{ size:A4; margin:14mm; }
-    html,body{overflow:visible !important;height:auto !important;background:#fff !important}
-    #stage{position:static !important;display:block !important;overflow:visible !important;
-           background:#fff !important;place-items:unset !important}
-    #sheet{
-      transform:none !important;width:auto !important;max-width:none !important;
-      margin:0 !important;padding:0 !important;border-radius:0 !important;
-      box-shadow:none !important;position:static !important;
-    }
-    #sheet img{max-width:100% !important;page-break-inside:avoid}
-    #sheet table,#sheet pre,#sheet blockquote{page-break-inside:avoid}
-    #sheet h1,#sheet h2,#sheet h3,#sheet p{page-break-after:auto}
-  }
-</style></head><body>
+</head><body>
 <div id="stage"><div id="sheet">${safe}</div></div>
 <script>
 (function(){
   var sheet=document.getElementById('sheet'), stage=document.getElementById('stage');
-  var MIN=0.2, MAX=4, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
-  var natural={w:Math.max(sheet.scrollWidth||0,sheet.offsetWidth||0,280),h:Math.max(sheet.scrollHeight||0,sheet.offsetHeight||0,40)};
+  var MIN=0.15, MAX=5, z=1, tx=0, ty=0, baseZ=1;
+  var natural={w:1,h:1};
 
   function apply(){
-    var vw=stage.clientWidth, vh=stage.clientHeight;
-    var rotated=(Math.abs(rot/90)%2)===1;
-    var aw = rotated ? vh : vw;
-    var ah = rotated ? vw : vh;
-    if(mode==='fitW')      z = aw / Math.max(natural.w, 1);
-    else if(mode==='fitP') z = Math.min(aw/Math.max(natural.w,1), ah/Math.max(natural.h,1));
-    if(!isFinite(z) || z <= 0) z = 1;
-    z = Math.max(MIN, Math.min(MAX, z));
-    sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
-    report();
-  }
-  function report(){
-    try{ parent.postMessage({__pv:1,z:z,rot:rot,mode:mode,
-      nw:natural.w,nh:natural.h,vw:stage.clientWidth,vh:stage.clientHeight},'*'); }catch(e){}
+    sheet.style.transform='translate('+tx+'px,'+ty+'px) scale('+z+')';
   }
   function measure(){
-    natural={
-      w: Math.max(sheet.scrollWidth||0, sheet.offsetWidth||0, 280),
-      h: Math.max(sheet.scrollHeight||0, sheet.offsetHeight||0, 40)
-    };
-    if (!isFinite(natural.w) || natural.w < 1) natural.w = 280;
-    if (!isFinite(natural.h) || natural.h < 1) natural.h = 40;
+    natural.w = Math.max(sheet.scrollWidth||0, sheet.offsetWidth||0, 200);
+    natural.h = Math.max(sheet.scrollHeight||0, sheet.offsetHeight||0, 40);
+    var vw=stage.clientWidth, vh=stage.clientHeight;
+    // مصغّر ليعرض كامل داخل الشاشة مع هامش
+    var fit = Math.min(vw/(natural.w+24), vh/(natural.h+24));
+    if(!isFinite(fit)||fit<=0) fit=1;
+    baseZ = Math.max(MIN, Math.min(1, fit));
+    z = baseZ; tx=0; ty=0;
     apply();
   }
-  function applyDir(){ document.documentElement.dir = dir; }
 
-  /* ---- أوامر من الصفحة الأم ---- */
-  window.addEventListener('message', function(ev){
-    var d=ev.data; if(!d||!d.__pvHost) return;
-    switch(d.cmd){
-      case 'in':    mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.22); apply(); break;
-      case 'out':   mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.22); apply(); break;
-      case 'zoom':  mode='manual'; tx=ty=0; z=Number(d.v); apply(); break;
-      case 'fitW':  mode='fitW'; tx=ty=0; apply(); break;
-      case 'fitP':  mode='fitP'; tx=ty=0; apply(); break;
-      case 'rotL':  rot=(rot-90+360)%360; apply(); break;
-      case 'rotR':  rot=(rot+90)%360;     apply(); break;
-      case 'rot':   rot=((Number(d.v)||0)%360+360)%360; apply(); break;
-      case 'dir':   dir=d.v; applyDir(); apply(); break;
-      case 'print': doPrint(); break;
-      case 'full':
-        if(document.fullscreenElement) document.exitFullscreen();
-        else stage.requestFullscreen && stage.requestFullscreen();
-        break;
-      case 'measure': measure(); break;
+  /* ---- لمس: سحب بإصبع · زوم بإصبعين ---- */
+  var mode=null; // 'pan' | 'pinch'
+  var lastX=0, lastY=0, startDist=0, startZ=1, startTx=0, startTy=0, midX=0, midY=0;
+
+  function dist(a,b){
+    var dx=a.clientX-b.clientX, dy=a.clientY-b.clientY;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+  function mid(a,b){ return {x:(a.clientX+b.clientX)/2, y:(a.clientY+b.clientY)/2}; }
+
+  stage.addEventListener('touchstart', function(e){
+    if(e.touches.length===1){
+      mode='pan';
+      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+      startTx=tx; startTy=ty;
+    } else if(e.touches.length>=2){
+      mode='pinch';
+      startDist=dist(e.touches[0], e.touches[1])||1;
+      startZ=z; startTx=tx; startTy=ty;
+      var m=mid(e.touches[0], e.touches[1]); midX=m.x; midY=m.y;
     }
-  });
+  }, {passive:true});
 
-  /* ---- زوم بالماوس / لمس / سحب ---- */
-  var wheelT=null;
-  stage.addEventListener('wheel', function(e){
-    if(e.ctrlKey||e.metaKey){
-      e.preventDefault();
-      mode='manual'; tx=ty=0;
-      z = e.deltaY<0 ? Math.min(MAX,z*1.1) : Math.max(MIN,z/1.1);
+  stage.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    if(mode==='pan' && e.touches.length===1){
+      tx = startTx + (e.touches[0].clientX - lastX);
+      ty = startTy + (e.touches[0].clientY - lastY);
+      // update start relative? keep absolute from touchstart last
+      // actually last was start position of finger - keep startTx/startTy from start
+      tx = startTx + (e.touches[0].clientX - lastX);
+      ty = startTy + (e.touches[0].clientY - lastY);
       apply();
-    } else if(z>1.0001){
-      e.preventDefault(); ty-=e.deltaY; tx-=e.deltaX;
-      sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
+    } else if(e.touches.length>=2){
+      mode='pinch';
+      var d=dist(e.touches[0], e.touches[1])||1;
+      var nz = startZ * (d / startDist);
+      if(!isFinite(nz)) nz=z;
+      z = Math.max(MIN, Math.min(MAX, nz));
+      apply();
     }
+  }, {passive:false});
+
+  stage.addEventListener('touchend', function(e){
+    if(e.touches.length===0) mode=null;
+    else if(e.touches.length===1){
+      mode='pan';
+      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+      startTx=tx; startTy=ty;
+    }
+  }, {passive:true});
+
+  /* ---- ماوس / عجلة ---- */
+  stage.addEventListener('wheel', function(e){
+    e.preventDefault();
+    var factor = e.deltaY<0 ? 1.12 : 1/1.12;
+    z = Math.max(MIN, Math.min(MAX, z*factor));
+    apply();
   }, {passive:false});
 
   var drag=null;
   stage.addEventListener('pointerdown', function(e){
-    if(e.target.closest('a,button')) return;
+    if(e.pointerType==='touch') return;
     drag={x:e.clientX,y:e.clientY,tx:tx,ty:ty};
     stage.setPointerCapture(e.pointerId);
   });
@@ -1659,78 +1492,46 @@ function buildPreviewDoc(recipeHTML){
     if(!drag) return;
     tx=drag.tx+(e.clientX-drag.x);
     ty=drag.ty+(e.clientY-drag.y);
-    sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
-  });
-  stage.addEventListener('pointerup',     function(){ drag=null; });
-  stage.addEventListener('pointercancel', function(){ drag=null; });
-
-  stage.addEventListener('dblclick', function(e){
-    if(e.target.closest('a')) return;
-    if(mode!=='fitP'){ mode='fitP'; tx=ty=0; } else { mode='manual'; tx=ty=0; z=1; }
     apply();
   });
+  stage.addEventListener('pointerup', function(){ drag=null; });
+  stage.addEventListener('pointercancel', function(){ drag=null; });
 
-  /* ---- الطباعة / PDF ---- */
-  function doPrint(){
-    document.body.classList.add('printing');
-    try{ window.print(); }catch(e){}
-    setTimeout(function(){ document.body.classList.remove('printing'); }, 700);
-  }
+  /* دبل كليك = إعادة ملاءمة */
+  stage.addEventListener('dblclick', function(){ measure(); });
 
-  /* ---- إعادة القياس لما الصور تحمّل أو الشاشة تتغير ---- */
-  if(window.ResizeObserver){
-    var ro=new ResizeObserver(function(){ natural={w:sheet.offsetWidth,h:sheet.offsetHeight}; apply(); });
-    ro.observe(sheet);
-  }
-  Array.prototype.forEach.call(sheet.images, function(im){
-    if(!im.complete) im.addEventListener('load', measure, {once:true});
-  });
-  window.addEventListener('resize', function(){ apply(); });
-  window.addEventListener('load', function(){ setTimeout(measure, 60); });
-
-  document.addEventListener('keydown', function(e){
-    var k=e.key;
-    if(k==='+'||k==='='){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.2); apply(); }
-    if(k==='-'||k==='_'){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.2); apply(); }
-    if(k==='0'){ e.preventDefault(); mode='manual'; tx=ty=0; z=1; apply(); }
+  window.addEventListener('message', function(ev){
+    var d=ev.data; if(!d||!d.__pvHost) return;
+    if(d.cmd==='measure' || d.cmd==='fit') measure();
   });
 
-  // مبدئياً: الورقة كاملة من غير سكرول
-  document.documentElement.dir=dir;
-  requestAnimationFrame(function(){ setTimeout(measure,40); });
-  parent.postMessage({__pv:1,ready:1},'*');
+  // قياس بعد الرسم (جداول/صور)
+  function boot(){
+    measure();
+    setTimeout(measure, 120);
+    setTimeout(measure, 400);
+    setTimeout(measure, 900);
+  }
+  if(document.readyState==='complete') boot();
+  else window.addEventListener('load', boot);
+  requestAnimationFrame(function(){ setTimeout(boot, 30); });
+  try{ parent.postMessage({__pv:1,ready:1},'*'); }catch(e){}
 })();
 <\/script>
 </body></html>`;
 }
 
-/* ----- فتح/قفل المشاهد ----- */
-function pvOpen(){
-  preview.style.display = 'flex';
-  pvShowLoad(true);
-}
-function pvClose(){
-  preview.style.display = 'none';
-  try { iframe.onload = null; } catch(_){}
-  try { iframe.srcdoc = ''; } catch(_){}
-  try { iframe.removeAttribute('src'); iframe.src = 'about:blank'; } catch(_){}
-  if (V._blobUrl) { try{ URL.revokeObjectURL(V._blobUrl); }catch(_){} V._blobUrl = null; }
-  pvShowLoad(false);
-  V.item = null; V.html = ''; V.rawBytes = null; V.rawUrl = null;
+function pvCmd(cmd){
+  try{
+    iframe.contentWindow && iframe.contentWindow.postMessage({ __pvHost:1, cmd: cmd }, '*');
+  }catch(_){}
 }
 
-/* ----- جلب + فك تشفير + عرض ----- */
 async function openPreview(item){
   V.item = item;
   fileName.textContent = item.name.replace(/\.ks$/i, '');
-  // استرجاع تفضيلات المشاهد المحفوظة
-  pvSetMode(Prefs.get('pvMode', 'fitP'));
-  pvSetRot(Prefs.get('pvRot', 0));
-  pvSetDir(Prefs.get('pvDir', 'ltr'));
-  pvSetZoomUI(Prefs.get('pvZoom', 1));
   pvOpen();
 
-  // الكود: أول مرة بس — بعد كده من الخزنة (sessionStorage)
   let longKey = KeyVault.load();
   if (!longKey){
     longKey = await askActivationKey();
@@ -1741,7 +1542,6 @@ async function openPreview(item){
 
   try {
     const realPassword = extractPasswordFromKey(longKey);
-
     const res = await fetch(`${RAW}/${item.path.replace(/ /g, '%20')}`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
@@ -1759,16 +1559,14 @@ async function openPreview(item){
     KeyVault.resetFails();
     V.html = String(finalHTML);
     const docHtml = buildPreviewDoc(V.html);
+
     let loaded = false;
     function afterLoad(){
       if (loaded) return;
       loaded = true;
       pvShowLoad(false);
       try {
-        const m = Prefs.get('pvMode', 'fitW');
-        pvCmd(m === 'fitP' ? 'fitP' : 'fitW');
-        if (V.rot) pvCmd('rot', V.rot);
-        pvCmd('dir', V.dir);
+        pvCmd('fit');
         pvCmd('measure');
         setTimeout(() => pvCmd('measure'), 200);
         setTimeout(() => pvCmd('measure'), 600);
@@ -1776,37 +1574,29 @@ async function openPreview(item){
       } catch(_){}
     }
     iframe.onload = afterLoad;
-    // srcdoc أولاً (أضمن للـ postMessage)، ولو فشل نستخدم blob
     try {
-      if (V._blobUrl) { try{ URL.revokeObjectURL(V._blobUrl); }catch(_){} V._blobUrl = null; }
+      if (V._blobUrl){ try{ URL.revokeObjectURL(V._blobUrl); }catch(_){} V._blobUrl = null; }
       iframe.removeAttribute('src');
       iframe.srcdoc = docHtml;
     } catch(_) {
-      try {
-        V._blobUrl = URL.createObjectURL(new Blob([docHtml], { type: 'text/html;charset=utf-8' }));
-        iframe.removeAttribute('srcdoc');
-        iframe.src = V._blobUrl;
-      } catch(__) {
-        iframe.srcdoc = docHtml;
-      }
+      V._blobUrl = URL.createObjectURL(new Blob([docHtml], { type: 'text/html;charset=utf-8' }));
+      iframe.removeAttribute('srcdoc');
+      iframe.src = V._blobUrl;
     }
-    setTimeout(afterLoad, 1200);
-    setTimeout(afterLoad, 2500);
+    setTimeout(afterLoad, 1000);
+    setTimeout(afterLoad, 2200);
 
   } catch (e){
     const wrongKey = e && (e.name === 'OperationError' || e.message === 'EMPTY');
     if (wrongKey){
-      KeyVault.clear();                 // الكود غلط → امسح فوراً
+      KeyVault.clear();
       refreshKeyChip();
       const n = await KeyVault.fail();
       const left = KeyVault.lockLeft();
       await Dialog.alert({
         icon: 'del',
         title: I18n.t('key.wrong.title'),
-        message: I18n.t('key.wrong.msg', {
-          lock: left ? '⛔ ' : '',
-          n: left, t: n
-        }),
+        message: I18n.t('key.wrong.msg', { lock: left ? '⛔ ' : '', n: left, t: n }),
         submitText: I18n.t('key.enter.title')
       });
     } else {
@@ -1817,93 +1607,21 @@ async function openPreview(item){
         submitText: I18n.t('common.ok')
       });
     }
-
     iframe.srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8">
-<style>html,body{margin:0;height:100%;display:flex;flex-direction:column;align-items:center;
- justify-content:center;gap:10px;text-align:center;font-family:Cairo,system-ui,sans-serif;
- background:#454b5c;color:#fff;padding:26px}
- .k{font-size:3.4em}h3{margin:4px 0;font-size:1.1em}
- p{color:#c8cddc;font-size:.86em;max-width:330px;line-height:1.8}</style></head><body>
-<div class="k">&#128273;</div><h3>${wrongKey ? 'Invalid activation key' : 'Cannot display recipe'}</h3>
-<p>${wrongKey ? 'Make sure you typed the key exactly as you received it.' : 'Please try again in a moment.'}</p>
+<style>html,body{margin:0;height:100%;display:flex;align-items:center;justify-content:center;
+font-family:Cairo,system-ui,sans-serif;background:#2a2e3a;color:#fff;text-align:center;padding:24px}
+h3{margin:8px 0;font-size:1.05em}p{color:#c8cddc;font-size:.88em}</style></head><body>
+<div><h3>${wrongKey ? 'Invalid key' : 'Cannot display'}</h3>
+<p>${wrongKey ? 'Check the activation key and try again.' : 'Please try again.'}</p></div>
 </body></html>`;
     pvShowLoad(false);
   }
 }
 
-/* ----- رسم الواجهة حسب الرد من داخل الإطار ----- */
-window.addEventListener('message', function(ev){
-  const d = ev.data;
-  if (!d || !d.__pv) return;
-  if (d.ready){ pvCmd('measure'); return; }
-  if (typeof d.z === 'number') pvSetZoomUI(d.z);
-  if (d.mode !== V.mode) pvSetMode(d.mode);
-  if (d.rot !== V.rot) pvSetRot(d.rot);
-  if (d.nw && d.nh){
-    $('#pvFootSize').textContent =
-      Math.round(d.nw) + ' \u00d7 ' + Math.round(d.nh) + ' px';
-  }
-});
-
-/* ----- أزرار الـ toolbar ----- */
 $('#pvClose').addEventListener('click', pvClose);
-$('#pvZIn').addEventListener('click',   () => pvCmd('in'));
-$('#pvZOut').addEventListener('click',  () => pvCmd('out'));
-$('#pvZoomVal').addEventListener('click', () => pvCmd('zoom', 1));
-$('#pvFitW').addEventListener('click',  () => pvCmd('fitW'));
-$('#pvFitP').addEventListener('click',  () => pvCmd('fitP'));
-$('#pvRotL').addEventListener('click',  () => pvCmd('rotL'));
-$('#pvRotR').addEventListener('click',  () => pvCmd('rotR'));
-$('#pvDir').addEventListener('click',   () => pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'));
-$('#pvFull').addEventListener('click',  () => pvCmd('full'));
-
-$('#pvSlider').addEventListener('input', e => {
-  const v = Number(e.target.value);
-  pvSetZoomUI(v / 100);
-  pvCmd('zoom', v / 100);
-});
-
-/* ----- سحب لتكبير على الموبايل (pinch) ----- */
-(function pinch(){
-  let dist = 0;
-  pvStage.addEventListener('touchstart', e => {
-    if (e.touches.length === 2){
-      dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY);
-    }
-  }, { passive: true });
-  pvStage.addEventListener('touchmove', e => {
-    if (e.touches.length !== 2 || !dist) return;
-    const nd = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY);
-    if (Math.abs(nd - dist) > 6){
-      pvCmd(nd > dist ? 'in' : 'out');
-      dist = nd;
-    }
-  }, { passive: true });
-  pvStage.addEventListener('touchend', () => { dist = 0; }, { passive: true });
-})();
-
-/* ----- اختصارات الكيبورد ----- */
 document.addEventListener('keydown', e => {
-  if (preview.style.display !== 'flex') return;
-  const k = e.key;
-  if (k === 'Escape'){ e.preventDefault(); pvClose(); return; }
-  if (e.ctrlKey && (k === '=' || k === '+')){ e.preventDefault(); pvCmd('in'); return; }
-  if (e.ctrlKey && (k === '-' || k === '_')){ e.preventDefault(); pvCmd('out'); return; }
-  if (k.toLowerCase() === 'f'){ pvCmd('fitW'); return; }
-  if (k.toLowerCase() === 'p'){ pvCmd('fitP'); return; }
-  if (k.toLowerCase() === 'r'){ pvCmd('rotR'); return; }
-  if (k.toLowerCase() === 'd'){ pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'); return; }
+  if (e.key === 'Escape' && preview.style.display === 'flex'){ e.preventDefault(); pvClose(); }
 });
-
-/* ----- استرجاع تفضيلات المشاهد المحفوظة (مرة واحدة عند الإقلاع) ----- */
-pvSetDir(Prefs.get('pvDir', 'ltr'));
-pvSetMode(Prefs.get('pvMode', 'fitP'));
-pvSetRot(Prefs.get('pvRot', 0));
-pvSetZoomUI(Prefs.get('pvZoom', 1));
 
 /* ==========================================================================
    5b) شريحة كود التفعيل — إدخال / تغيير / مسح
