@@ -40,7 +40,6 @@ html{
   height:100%;overflow:hidden;
   overscroll-behavior:none;
   overscroll-behavior-y:none;
-  -webkit-overflow-scrolling:auto;
 }
 body{
   font-family:'Cairo',system-ui,'Segoe UI',sans-serif;
@@ -52,7 +51,6 @@ body{
   overflow:hidden; -webkit-font-smoothing:antialiased;
   overscroll-behavior:none;
   overscroll-behavior-y:none;
-  /* يمنع سحب التحديث (pull-to-refresh) في أندرويد WebView */
   touch-action:manipulation;
 }
 body::before{
@@ -150,7 +148,6 @@ header{
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
   overscroll-behavior-y:contain;
-  /* pan-y يسمح بالسكرول العمودي بدون إيماءات المتصفح (سحب التحديث) */
   touch-action:pan-y;
   padding:18px 14px calc(24px + env(safe-area-inset-bottom));
 }
@@ -896,20 +893,22 @@ const Dialog = (function(){
         resolve(val);
       }
 
-      // على أندرويد: ضغط الزر بعد إغلاق الكيبورد ممكن يفوّت الـ click
-      // فنربط touchend + click مع منع الازدواج
       function onOk(e){
-        if (e) e.preventDefault();
+        if (e){ e.preventDefault(); e.stopPropagation(); }
         if (!input){ done(true); return; }
         const v = (input.value || '').trim();
         if (d.validate){
-          const err = d.validate(v);
-          if (err) return fail(err);
+          try {
+            const err = d.validate(v);
+            if (err) return fail(err);
+          } catch (ex) {
+            return fail(String(ex && ex.message || ex));
+          }
         }
         done(v || true);
       }
       function onCancel(e){
-        if (e) e.preventDefault();
+        if (e){ e.preventDefault(); e.stopPropagation(); }
         done(null);
       }
       okBtn.addEventListener('click', onOk);
@@ -924,11 +923,9 @@ const Dialog = (function(){
         input.addEventListener('keydown', e => {
           if (e.key === 'Enter'){ e.preventDefault(); onOk(); }
         });
-        // تأخير بسيط عشان الكيبورد ما يعملش layout shift يفسد الضغط
         setTimeout(() => { try{ input.focus(); }catch(_){} }, 120);
       }
 
-      // Focus trap + Escape
       function onKey(e){
         if (e.key === 'Escape'){ e.preventDefault(); done(null); return; }
         if (e.key === 'Tab'){
@@ -941,12 +938,9 @@ const Dialog = (function(){
       }
       document.addEventListener('keydown', onKey, true);
 
-      // إغلاق عند الضغط بره: بس لو اللمسة بدأت وانتهت على الـ scrim نفسه
-      // (يمنع مشكلة أندرويد لما الكيبورد يقفل والضغط يوقع على الـ scrim)
+      // إغلاق بره: اللمسة لازم تبدأ وتنتهي على الـ scrim (يمنع إغلاق غلط على أندرويد)
       let outsideStart = false;
-      function onOutsideStart(e){
-        outsideStart = (e.target === scrim);
-      }
+      function onOutsideStart(e){ outsideStart = (e.target === scrim); }
       function onOutsideEnd(e){
         if (outsideStart && e.target === scrim) done(null);
         outsideStart = false;
@@ -1052,10 +1046,8 @@ const KeyVault = (function(){
    parts[4].charAt(3) → 4    parts[5].charAt(2) → 3
    parts[6].charAt(3) → 4                                      */
 const KEY_MIN = [5, 1, 3, 2, 4, 3, 4];
-  // ذاكرة احتياطية لو sessionStorage محجوب في WebView
-  let memVault = null;
+  let memVault = null; // احتياطي لو sessionStorage محجوب في WebView
 
-  /** تطبيع الكود: إزالة مسافات زائدة حول الشرطات */
   function normalizeKey(k){
     if (typeof k !== 'string') return '';
     return k.trim().replace(/\s*-\s*/g, '-').replace(/\s+/g, '');
@@ -1063,7 +1055,7 @@ const KEY_MIN = [5, 1, 3, 2, 4, 3, 4];
 
   function keyParts(k){
     if (typeof k !== 'string') return [];
-    return normalizeKey(k).split('-').filter((p, i, a) => !(p === '' && (i === 0 || i === a.length - 1)));
+    return normalizeKey(k).split('-');
   }
 
   function looksValid(k){
@@ -1076,16 +1068,13 @@ const KEY_MIN = [5, 1, 3, 2, 4, 3, 4];
     return true;
   }
 
-  /** رسالة خطأ دقيقة */
   function keyProblem(k){
     const p = keyParts(k);
     if (!p.length || p.every(x => !x)) return I18n.t('key.err.empty');
-    if (p.length !== 7){
-      return I18n.t('key.err.count', { n: p.length });
-    }
+    if (p.length !== 7) return I18n.t('key.err.count', { n: p.length });
     for (let i = 0; i < 7; i++){
       if (!/^[A-Za-z0-9_#]+$/.test(p[i])) return I18n.t('key.err.chars');
-      if (p[i].length < KEY_MIN[i])       return I18n.t('key.err.short', { i: i + 1, n: KEY_MIN[i] });
+      if (p[i].length < KEY_MIN[i]) return I18n.t('key.err.short', { i: i + 1, n: KEY_MIN[i] });
     }
     return '';
   }
@@ -1098,10 +1087,8 @@ const KEY_MIN = [5, 1, 3, 2, 4, 3, 4];
     save(k){
       const nk = normalizeKey(k);
       if (!looksValid(nk)) return false;
-      memVault = nk;   // دايماً في الذاكرة كاحتياطي
-      try{
-        sessionStorage.setItem(SKEY, b64(mask(nk)));
-      } catch(e){ /* WebView بدون sessionStorage — الذاكرة تكفي للجلسة */ }
+      memVault = nk;
+      try{ sessionStorage.setItem(SKEY, b64(mask(nk))); }catch(e){}
       return true;
     },
 
@@ -1113,7 +1100,6 @@ const KEY_MIN = [5, 1, 3, 2, 4, 3, 4];
           if (looksValid(k)){ memVault = k; return k; }
         }
       } catch(e){}
-      // احتياطي من الذاكرة
       return (memVault && looksValid(memVault)) ? memVault : null;
     },
 
@@ -1187,17 +1173,9 @@ async function askActivationKey(){
     validate(val){ return KeyVault.keyProblem(val); }
   });
 
-  if (v === null || v === true) return null;   // إلغاء / خروج
+  if (v === null || v === true) return null;
   const nk = KeyVault.normalizeKey(String(v));
-  if (!KeyVault.save(nk)){
-    await Dialog.alert({
-      icon: 'warn',
-      title: I18n.t('key.err.title'),
-      message: KeyVault.keyProblem(nk) || I18n.t('key.err.msg'),
-      submitText: I18n.t('common.ok')
-    });
-    return null;
-  }
+  if (!KeyVault.save(nk)) return null;
   KeyVault.resetFails();
   refreshKeyChip();
   return nk;
@@ -1284,59 +1262,50 @@ mountLangSwitch('#langBtn',     () => { refreshKeyChip(); });
 mountLangSwitch('#langBtnGate', () => { $('#gateMsg').textContent = I18n.t('gate.default'); });
 
 /* ==========================================================================
-   منع سحب التحديث (pull-to-refresh) في أندرويد WebView
+   منع pull-to-refresh في أندرويد WebView
    --------------------------------------------------------------------------
-   overscroll-behavior لوحده مش كفاية في WebView — بنمنع الـ touchmove
-   لما المستخدم يحاول يسحب لأعلى وهو أصلاً في أول الصفحة (scrollTop=0)
-   أو يسحب لتحت وهو في آخر الصفحة.
+   بنمنع اللمس بس لما المستخدم يسحب لتحت وهو في أول الصفحة (scrollTop=0).
+   السكرول لفوق أو لتحت جوه المحتوى يفضل شغال طبيعي.
    ========================================================================== */
 (function blockPullToRefresh(){
   let startY = 0;
-  let activeEl = null;
+  let scrollEl = null;
 
-  function scrollParent(el){
+  function findScroll(el){
     let n = el;
-    while (n && n !== document.body && n !== document.documentElement){
-      const s = getComputedStyle(n);
+    while (n && n !== document.documentElement){
+      if (n === document.body) break;
+      const s = window.getComputedStyle(n);
       const oy = s.overflowY;
-      if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') && n.scrollHeight > n.clientHeight + 1){
+      if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') &&
+          n.scrollHeight > n.clientHeight + 2){
         return n;
       }
       n = n.parentElement;
     }
-    return document.querySelector('.tab-content.active .content') || document.scrollingElement;
+    return document.querySelector('.tab-content.active .content');
   }
 
   document.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) return;
     startY = e.touches[0].clientY;
-    activeEl = scrollParent(e.target);
+    scrollEl = findScroll(e.target);
   }, { passive: true, capture: true });
 
   document.addEventListener('touchmove', e => {
-    if (e.touches.length !== 1 || !activeEl) return;
-    // لو في ديالوج مفتوح ما تتدخلش
+    if (e.touches.length !== 1 || !scrollEl) return;
     if (document.getElementById('dlgScrim')?.classList.contains('open')) return;
-    // لو المشاهد مفتوح — السكرول جوه الـ iframe
     if (document.getElementById('preview')?.style.display === 'flex') return;
 
-    const dy = e.touches[0].clientY - startY;
-    const el = activeEl;
-    const atTop = el.scrollTop <= 0;
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-
-    // سحب لتحت (dy>0) و إحنا في أول الصفحة → ده pull-to-refresh → امنعه
-    if (atTop && dy > 0){
-      e.preventDefault();
-      return;
-    }
-    // سحب لفوق (dy<0) و إحنا في آخر الصفحة → امنع bounce
-    if (atBottom && dy < 0){
+    const dy = e.touches[0].clientY - startY; // >0 = سحب لتحت (نحو محتوى أعلى / pull-refresh)
+    const top = scrollEl.scrollTop <= 0;
+    // امنع بس إيماءة سحب التحديث، مش السكرول العادي لفوق
+    if (top && dy > 0){
       e.preventDefault();
     }
   }, { passive: false, capture: true });
 
-  document.addEventListener('touchend', () => { activeEl = null; }, { passive: true, capture: true });
+  document.addEventListener('touchend', () => { scrollEl = null; }, { passive: true, capture: true });
 })();
 
 /* ==========================================================================
@@ -1784,18 +1753,29 @@ async function openPreview(item){
 
     KeyVault.resetFails();               // نجح → صفّر العدّاد
     V.html = String(finalHTML);
-    iframe.srcdoc = buildPreviewDoc(V.html);
 
-    iframe.addEventListener('load', function onLoad(){
-      setTimeout(() => {
-        pvShowLoad(false);
-        // رجّع المود المحفوظ جوه الإطار
+    function afterLoad(){
+      pvShowLoad(false);
+      try {
         pvCmd(Prefs.get('pvMode', 'fitP') === 'fitW' ? 'fitW' : 'fitP');
         if (V.rot) pvCmd('rot', V.rot);
         pvCmd('dir', V.dir);
         pvCmd('measure');
-      }, 80);
-    }, { once: true });
+      } catch (_) {}
+    }
+
+    // مهم على WebView: نربط onload قبل srcdoc، ونضيف مهلة احتياطية
+    // لو حدث load اتفوت (بعض WebViews بتطلقه قبل addEventListener)
+    let loaded = false;
+    const onLoad = () => {
+      if (loaded) return;
+      loaded = true;
+      setTimeout(afterLoad, 60);
+    };
+    iframe.onload = onLoad;
+    iframe.srcdoc = buildPreviewDoc(V.html);
+    // احتياطي لو load ما اتشغلش
+    setTimeout(() => { if (!loaded) onLoad(); }, 1200);
 
   } catch (e){
     const wrongKey = e && (e.name === 'OperationError' || e.message === 'EMPTY');
@@ -1957,31 +1937,42 @@ async function onKeyChipClick(){
     scrim.innerHTML = '';
     scrim.appendChild(d);
     scrim.classList.add('open');
-    d.querySelectorAll('[data-a]').forEach(b =>
-      b.addEventListener('click', () => {
-        scrim.classList.remove('open');
-        setTimeout(() => { scrim.innerHTML = ''; }, 240);
-        resolve(b.dataset.a);
-      }));
-    scrim.addEventListener('mousedown', function out(e){
-      if (e.target !== scrim) return;
-      scrim.removeEventListener('mousedown', out);
+
+    let settled = false;
+    function finish(action){
+      if (settled) return;
+      settled = true;
       scrim.classList.remove('open');
-      setTimeout(() => { scrim.innerHTML = ''; }, 240);
-      resolve('cancel');
-    });
+      // مهم: نفضي الـ scrim فوراً قبل فتح ديالوج تاني
+      // (الـ setTimeout القديم كان بيمسح الديالوج الجديد بعد 240ms)
+      scrim.innerHTML = '';
+      resolve(action);
+    }
+
+    d.querySelectorAll('[data-a]').forEach(b =>
+      b.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        finish(b.dataset.a);
+      }));
+
+    function onOut(e){
+      if (e.target !== scrim) return;
+      finish('cancel');
+    }
+    scrim.addEventListener('mousedown', onOut);
+    scrim.addEventListener('touchend', onOut, { passive: true });
+
     document.addEventListener('keydown', function onk(e){
       if (e.key !== 'Escape') return;
       document.removeEventListener('keydown', onk);
-      scrim.classList.remove('open');
-      setTimeout(() => { scrim.innerHTML = ''; }, 240);
-      resolve('cancel');
+      finish('cancel');
     });
   });
 
   if (choice === 'change'){
-    await askActivationKey();
-    toast('🔑 ' + I18n.t('key.updated'));
+    const v = await askActivationKey();
+    if (v) toast('🔑 ' + I18n.t('key.updated'));
   } else if (choice === 'clear'){
     const yes = await Dialog.confirm({
       icon: 'del',
