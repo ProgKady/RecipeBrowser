@@ -49,8 +49,8 @@ body{
   height:100%; height:100dvh;
   padding-top:var(--app-top);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:18px;padding-inline:16px;
-  padding-bottom:calc(24px + env(safe-area-inset-bottom));
+  gap:12px;padding-inline:14px;
+  padding-bottom:calc(18px + env(safe-area-inset-bottom));
   overflow-x:hidden;position:relative;isolation:isolate;
   overscroll-behavior:none;
 }
@@ -68,46 +68,46 @@ body{
 
 /* ===== الشعار ===== */
 .logo{
-  width:104px;height:104px;border-radius:28px;object-fit:cover;
-  border:3px solid rgba(255,255,255,.18);
-  box-shadow:0 18px 45px rgba(255,46,99,.42);
+  width:78px;height:78px;border-radius:20px;object-fit:cover;
+  border:2.5px solid rgba(255,255,255,.18);
+  box-shadow:0 12px 32px rgba(255,46,99,.38);
   animation:breathe 4.5s ease-in-out infinite;
 }
-@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-8px) scale(1.05)}}
+@keyframes breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.04)}}
 
 /* ===== الكارت ===== */
 .card{
-  width:100%;max-width:370px;
+  width:100%;max-width:320px;
   background:var(--card);
   backdrop-filter:blur(26px) saturate(150%);
   -webkit-backdrop-filter:blur(26px) saturate(150%);
   border:1px solid var(--stroke);
-  border-radius:var(--r);
-  padding:28px 22px 22px;
-  box-shadow:0 22px 60px rgba(0,0,0,.34);
+  border-radius:16px;
+  padding:20px 16px 16px;
+  box-shadow:0 16px 44px rgba(0,0,0,.30);
   animation:rise .55s cubic-bezier(.2,.9,.25,1) both;
 }
 @keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
 
-.brand-top{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px}
-.brand-top h1{font-size:21px;font-weight:900;letter-spacing:.2px}
-.brand-top p{font-size:12.5px;color:var(--muted);text-align:center}
+.brand-top{display:flex;flex-direction:column;align-items:center;gap:6px;margin-bottom:16px}
+.brand-top h1{font-size:17px;font-weight:900;letter-spacing:.2px}
+.brand-top p{font-size:11px;color:var(--muted);text-align:center}
 
-.field{position:relative;margin-bottom:14px}
+.field{position:relative;margin-bottom:11px}
 .field label{
-  display:block;font-size:12px;font-weight:700;color:var(--muted);
-  margin:0 4px 7px;
+  display:block;font-size:11px;font-weight:700;color:var(--muted);
+  margin:0 4px 5px;
 }
 .control{position:relative;display:flex;align-items:center}
 .control .ic{
-  position:absolute;inset-inline-start:14px;font-size:15px;
+  position:absolute;inset-inline-start:12px;font-size:13px;
   color:var(--muted);pointer-events:none;transition:color .25s;
 }
 .control input{
-  width:100%;padding:14px 46px 14px 44px;
+  width:100%;padding:11px 40px 11px 38px;
   background:rgba(255,255,255,.05);
-  border:1.6px solid var(--stroke);border-radius:14px;
-  color:var(--txt);font-size:15px;font-family:inherit;
+  border:1.5px solid var(--stroke);border-radius:12px;
+  color:var(--txt);font-size:13.5px;font-family:inherit;
   outline:none;transition:border-color .25s, box-shadow .25s, background .25s;
 }
 @media (prefers-color-scheme: light){
@@ -133,15 +133,15 @@ body{
 
 /* ===== تذكّرني ===== */
 .remember{
-  display:flex;align-items:center;gap:10px;margin:2px 2px 4px;cursor:pointer;
-  font-size:12.5px;font-weight:700;color:var(--muted);user-select:none;
+  display:flex;align-items:center;gap:8px;margin:2px 2px 2px;cursor:pointer;
+  font-size:11.5px;font-weight:700;color:var(--muted);user-select:none;
 }
 .remember input{position:absolute;opacity:0;pointer-events:none}
 .remember .box{
-  width:19px;height:19px;border-radius:6px;border:1.8px solid var(--stroke);
+  width:17px;height:17px;border-radius:5px;border:1.6px solid var(--stroke);
   display:grid;place-items:center;flex-shrink:0;transition:.2s;background:rgba(255,255,255,.05);
 }
-.remember .box i{font-size:10px;color:#fff;opacity:0;transform:scale(.4);transition:.2s}
+.remember .box i{font-size:9px;color:#fff;opacity:0;transform:scale(.4);transition:.2s}
 .remember input:checked + .box{background:linear-gradient(135deg,var(--brand),var(--brand-2));border-color:transparent}
 .remember input:checked + .box i{opacity:1;transform:none}
 .remember:hover .box{border-color:var(--brand)}
@@ -149,41 +149,41 @@ body{
 
 /* ===== زر اللغة ===== */
 .lang-btn{
-  position:fixed;top:calc(14px + var(--safe-top));inset-inline-end:14px;z-index:60;
-  display:inline-flex;align-items:center;gap:7px;
-  padding:9px 15px;border-radius:999px;border:1px solid var(--stroke);
+  position:fixed;top:calc(10px + var(--safe-top));inset-inline-end:10px;z-index:60;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 12px;border-radius:999px;border:1px solid var(--stroke);
   background:rgba(255,255,255,.07);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  color:var(--txt);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
-  transition:.22s;box-shadow:0 8px 24px rgba(0,0,0,.22);
+  color:var(--txt);font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;
+  transition:.22s;box-shadow:0 6px 18px rgba(0,0,0,.2);
 }
 .lang-btn:hover{border-color:var(--brand);transform:translateY(-2px)}
-.lang-btn i{font-size:13px;color:var(--brand)}
-@media (max-width:360px){ .lang-btn{padding:8px 12px;font-size:11.5px} }
+.lang-btn i{font-size:12px;color:var(--brand)}
+@media (max-width:360px){ .lang-btn{padding:6px 10px;font-size:11px} }
 
 /* ===== الزر ===== */
 .btn{
-  width:100%;margin-top:8px;padding:15px;border:0;border-radius:14px;
+  width:100%;margin-top:6px;padding:12px;border:0;border-radius:12px;
   background:linear-gradient(135deg,var(--brand),var(--brand-2));
-  color:#fff;font-family:inherit;font-size:16px;font-weight:900;
+  color:#fff;font-family:inherit;font-size:14.5px;font-weight:900;
   cursor:pointer;position:relative;overflow:hidden;
-  box-shadow:0 12px 30px rgba(255,46,99,.34);
+  box-shadow:0 10px 24px rgba(255,46,99,.32);
   transition:transform .18s, box-shadow .25s, filter .25s;
-  display:flex;align-items:center;justify-content:center;gap:10px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
 }
-.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 18px 42px rgba(255,46,99,.46)}
+.btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 34px rgba(255,46,99,.42)}
 .btn:active:not(:disabled){transform:translateY(0) scale(.985)}
 .btn:disabled{cursor:not-allowed;filter:grayscale(.55) brightness(.85);box-shadow:none}
 .btn .spin{
-  width:17px;height:17px;border:2.5px solid rgba(255,255,255,.35);
+  width:15px;height:15px;border:2.5px solid rgba(255,255,255,.35);
   border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ===== الرسائل ===== */
 .msg{
-  margin-top:14px;padding:13px 15px;border-radius:13px;
-  font-size:13.5px;font-weight:700;text-align:center;
-  display:none;align-items:center;justify-content:center;gap:8px;line-height:1.6;
+  margin-top:11px;padding:10px 12px;border-radius:11px;
+  font-size:12px;font-weight:700;text-align:center;
+  display:none;align-items:center;justify-content:center;gap:7px;line-height:1.55;
 }
 .msg.show{display:flex;animation:pop .3s ease both}
 @keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
@@ -210,15 +210,15 @@ body{
 
 /* ===== الفوتر ===== */
 footer{
-  text-align:center;font-size:11.5px;color:var(--muted);
-  line-height:1.9;width:100%;max-width:370px;
+  text-align:center;font-size:10.5px;color:var(--muted);
+  line-height:1.8;width:100%;max-width:320px;
 }
 footer a{color:var(--brand);text-decoration:none;font-weight:700}
 footer a:hover{text-decoration:underline}
 .support{
-  display:inline-block;margin-top:8px;padding:9px 20px;border-radius:999px;
-  background:#25d366;color:#fff;text-decoration:none;font-weight:800;font-size:12.5px;
-  box-shadow:0 8px 22px rgba(37,211,102,.32);transition:transform .2s;
+  display:inline-block;margin-top:6px;padding:7px 16px;border-radius:999px;
+  background:#25d366;color:#fff;text-decoration:none;font-weight:800;font-size:11.5px;
+  box-shadow:0 6px 16px rgba(37,211,102,.28);transition:transform .2s;
 }
 .support:active{transform:scale(.95)}
 
@@ -234,11 +234,11 @@ footer a:hover{text-decoration:underline}
 #toast.show{opacity:1;transform:none}
 
 @media (max-width:360px){
-  .logo{width:86px;height:86px;border-radius:22px}
-  .card{padding:22px 16px 18px;border-radius:18px}
-  .brand-top h1{font-size:19px}
-  .control input{padding:12px 44px;font-size:14.5px}
-  .btn{padding:13px;font-size:15px}
+  .logo{width:68px;height:68px;border-radius:18px}
+  .card{padding:16px 14px 14px;border-radius:14px;max-width:300px}
+  .brand-top h1{font-size:16px}
+  .control input{padding:10px 38px 10px 34px;font-size:13px}
+  .btn{padding:11px;font-size:13.5px}
 }
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
@@ -252,7 +252,7 @@ footer a:hover{text-decoration:underline}
 <div class="blob b2" aria-hidden="true"></div>
 <div class="blob b3" aria-hidden="true"></div>
 
-<img src="./hrrr.png" alt="TC Garments" class="logo" width="104" height="104">
+<img src="./hrrr.png" alt="TC Garments" class="logo" width="78" height="78">
 
 <button class="lang-btn" id="langBtn" type="button"></button>
 
@@ -690,9 +690,7 @@ function serverErrKey(data){
     } else {
       const name = r.err && r.err.name ? r.err.name : 'Error';
       d.className = 'diag';
-      d.innerHTML = I18n.t('diag.fail') +
-        '<code>' + name + ' — ' + BUILD + '</code>' +
-        '<code>' + API_BASE + '</code>';
+      d.innerHTML = I18n.t('diag.fail');
       d.hidden = false;
     }
   })();
