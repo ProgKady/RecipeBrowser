@@ -50,7 +50,6 @@ body{
   overflow:hidden; -webkit-font-smoothing:antialiased;
   overscroll-behavior:none;
   overscroll-behavior-y:none;
-  /* عزل إيماءات السحب عن واجهة WebView (pull-to-refresh) */
   touch-action:manipulation;
 }
 body::before{
@@ -148,7 +147,6 @@ header{
   -webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
   overscroll-behavior-y:contain;
-  /* السكرول العمودي فقط جوه المنطقة دي — معزول عن التطبيق */
   touch-action:pan-y;
   padding:18px 14px calc(24px + env(safe-area-inset-bottom));
 }
@@ -657,15 +655,6 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
       <div class="pv-sep"></div>
 
       <div class="pv-group">
-        <button class="pv-btn" id="pvPrint" title="Export to PDF (Ctrl + P)">
-          <i class="fas fa-file-pdf"></i><span>PDF</span>
-        </button>
-        <button class="pv-btn" id="pvDL" title="Download source file">
-          <i class="fas fa-download"></i>
-        </button>
-        <button class="pv-btn" id="pvNewTab" title="Open in new tab">
-          <i class="fas fa-arrow-up-right-from-square"></i>
-        </button>
         <button class="pv-btn" id="pvFull" title="Fullscreen">
           <i class="fas fa-expand"></i>
         </button>
@@ -903,7 +892,7 @@ const Dialog = (function(){
             const err = d.validate(v);
             if (err) return fail(err);
           } catch (ex) {
-            return fail(String(ex && ex.message || 'validation error'));
+            return fail(String(ex && ex.message || 'error'));
           }
         }
         done(v || true);
@@ -912,7 +901,6 @@ const Dialog = (function(){
         if (e){ try{ e.preventDefault(); e.stopPropagation(); }catch(_){} }
         done(null);
       }
-      // click فقط — touchend+click كان بيسبب ضغط مزدوج على أندرويد
       okBtn.addEventListener('click', onOk);
       if (canBtn) canBtn.addEventListener('click', onCancel);
 
@@ -936,7 +924,6 @@ const Dialog = (function(){
       }
       document.addEventListener('keydown', onKey, true);
 
-      // إغلاق بره: اللمسة لازم تبدأ وتنتهي على الـ scrim فقط
       let outStart = false;
       function onOutStart(e){ outStart = (e.target === scrim); }
       function onOutEnd(e){
@@ -1259,52 +1246,35 @@ I18n.init();
 mountLangSwitch('#langBtn',     () => { refreshKeyChip(); });
 mountLangSwitch('#langBtnGate', () => { $('#gateMsg').textContent = I18n.t('gate.default'); });
 
-/* ==========================================================================
-   عزل السكرول عن واجهة التطبيق (منع pull-to-refresh في WebView)
-   --------------------------------------------------------------------------
-   السكرول بيتم فقط جوه .content — لو وصلت لأول/آخر الصفحة
-   بنمنع الـ overscroll من يوصل للتطبيق.
-   ========================================================================== */
+/* عزل السكرول عن pull-to-refresh في أندرويد WebView */
 (function isolateScroll(){
-  let startY = 0;
-  let el = null;
-
+  let startY = 0, el = null;
   function findScroll(node){
     let n = node;
     while (n && n !== document.body && n !== document.documentElement){
       const s = window.getComputedStyle(n);
       const oy = s.overflowY;
-      if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') &&
-          n.scrollHeight > n.clientHeight + 2){
+      if ((oy === 'auto' || oy === 'scroll' || oy === 'overlay') && n.scrollHeight > n.clientHeight + 2)
         return n;
-      }
       n = n.parentElement;
     }
     return document.querySelector('.tab-content.active .content');
   }
-
   document.addEventListener('touchstart', e => {
     if (e.touches.length !== 1) return;
     startY = e.touches[0].clientY;
     el = findScroll(e.target);
   }, { passive: true, capture: true });
-
   document.addEventListener('touchmove', e => {
     if (e.touches.length !== 1 || !el) return;
-    // ديالوج أو مشاهد مفتوحين → متتدخلش
     if (document.getElementById('dlgScrim')?.classList.contains('open')) return;
     if (document.getElementById('preview')?.style.display === 'flex') return;
-
     const dy = e.touches[0].clientY - startY;
     const atTop = el.scrollTop <= 0;
     const atBot = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-
-    // سحب لتحت من أول الصفحة = pull-to-refresh → امنع
     if (atTop && dy > 0){ e.preventDefault(); return; }
-    // سحب لفوق من آخر الصفحة = bounce → امنع
     if (atBot && dy < 0){ e.preventDefault(); }
   }, { passive: false, capture: true });
-
   document.addEventListener('touchend', () => { el = null; }, { passive: true, capture: true });
 })();
 
@@ -1532,8 +1502,26 @@ function pvCmd(cmd, val){
 }
 
 /* ----- بناء مستند البريفيو (ورقة A4 + محرّك زوم داخلي) ----- */
+function prepareRecipeHTML(raw){
+  let html = String(raw || '').trim();
+  if (!html) return { body: '', styles: '' };
+  let styles = '';
+  const styleRe = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+  let sm;
+  while ((sm = styleRe.exec(html)) !== null) styles += sm[1] + '\n';
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  if (bodyMatch) html = bodyMatch[1];
+  else if (/^\s*(<!doctype|<html)/i.test(html)){
+    html = html.replace(/^\s*<!DOCTYPE[^>]*>/i,'').replace(/<\/?html[^>]*>/gi,'')
+               .replace(/<head[\s\S]*?<\/head>/i,'').replace(/<\/?body[^>]*>/gi,'');
+  }
+  html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+  return { body: html.trim(), styles: styles.trim() };
+}
 function buildPreviewDoc(recipeHTML){
-  const safe = String(recipeHTML).replace(/<\/script/gi, '<\\/script');
+  const _prep = prepareRecipeHTML(recipeHTML);
+  const safe = String(_prep.body).replace(/<\/script/gi, '<\\/script');
+  const extraStyles = String(_prep.styles).replace(/<\/style/gi, '<\\/style');
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Recipe</title>
@@ -1542,31 +1530,35 @@ function buildPreviewDoc(recipeHTML){
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#454b5c}
   #stage{
-    position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;
-    touch-action:none;
+    position:fixed;inset:0;display:grid;place-items:center;overflow:auto;
+    -webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;
   }
   #sheet{
-    width:840px;max-width:none;
+    width:max-content;min-width:min(920px,96vw);max-width:none;
     background:#fff;color:#15181f;
-    padding:62px 70px 96px;
-    border-radius:3px;
+    padding:28px 20px 36px;
+    border-radius:4px;
     box-shadow:0 16px 60px rgba(0,0,0,.5);
     transform-origin:center center;
     will-change:transform;
     font-family:'Cairo','Segoe UI',system-ui,sans-serif;
-    font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;
-    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+    font-size:15px;line-height:1.7;overflow-wrap:break-word;word-break:break-word;
   }
-  #sheet img{max-width:100%;height:auto;border-radius:8px;display:block;margin:14px auto}
+  #sheet img{max-width:100%;height:auto;border-radius:6px;display:block;margin:12px auto}
   #sheet a{color:#6d5efc;word-break:break-all}
-  #sheet table{max-width:100%;border-collapse:collapse;margin:16px auto}
-  #sheet td,#sheet th{border:1px solid #d5d8e0;padding:9px 12px}
-  #sheet pre{white-space:pre-wrap;background:#f4f5f8;padding:14px;border-radius:8px;overflow-x:auto}
+  #sheet table{border-collapse:collapse;margin:12px 0;width:auto;max-width:none;font-size:13px;background:#fff}
+  #sheet td,#sheet th{border:1px solid #c8ccd6;padding:6px 10px;vertical-align:top;white-space:normal;color:#15181f;background:#fff}
+  #sheet th{background:#eef0f5;font-weight:800}
+  #sheet tr:nth-child(even) td{background:#fafbfc}
+  #sheet pre{white-space:pre-wrap;background:#f4f5f8;padding:12px;border-radius:6px;overflow-x:auto}
   #sheet blockquote{margin:14px 0;padding:6px 18px;border-inline-start:4px solid #6d5efc;
                     background:#f7f7fc;border-radius:0 8px 8px 0}
-  #sheet h1,#sheet h2,#sheet h3{line-height:1.5}
+  #sheet h1,#sheet h2,#sheet h3{line-height:1.4;color:#15181f}
   #sheet::-webkit-scrollbar{width:8px}
   #sheet::-webkit-scrollbar-thumb{background:#c9cdd8;border-radius:8px}
+</style>
+<style id="recipe-styles">${extraStyles}</style>
+<style>
 
   @media print{
     @page{ size:A4; margin:14mm; }
@@ -1751,20 +1743,26 @@ async function openPreview(item){
       throw new Error('EMPTY');
     }
 
-    KeyVault.resetFails();               // نجح → صفّر العدّاد
+    KeyVault.resetFails();
     V.html = String(finalHTML);
-    iframe.srcdoc = buildPreviewDoc(V.html);
-
-    iframe.addEventListener('load', function onLoad(){
-      setTimeout(() => {
-        pvShowLoad(false);
-        // رجّع المود المحفوظ جوه الإطار
-        pvCmd(Prefs.get('pvMode', 'fitP') === 'fitW' ? 'fitW' : 'fitP');
+    let loaded = false;
+    function afterLoad(){
+      if (loaded) return;
+      loaded = true;
+      pvShowLoad(false);
+      try {
+        const m = Prefs.get('pvMode', 'fitW');
+        pvCmd(m === 'fitP' ? 'fitP' : 'fitW');
         if (V.rot) pvCmd('rot', V.rot);
         pvCmd('dir', V.dir);
         pvCmd('measure');
-      }, 80);
-    }, { once: true });
+        setTimeout(() => pvCmd('measure'), 300);
+        setTimeout(() => pvCmd('measure'), 800);
+      } catch(_){}
+    }
+    iframe.onload = afterLoad;
+    iframe.srcdoc = buildPreviewDoc(V.html);
+    setTimeout(afterLoad, 1500);
 
   } catch (e){
     const wrongKey = e && (e.name === 'OperationError' || e.message === 'EMPTY');
@@ -1828,24 +1826,7 @@ $('#pvFitP').addEventListener('click',  () => pvCmd('fitP'));
 $('#pvRotL').addEventListener('click',  () => pvCmd('rotL'));
 $('#pvRotR').addEventListener('click',  () => pvCmd('rotR'));
 $('#pvDir').addEventListener('click',   () => pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'));
-$('#pvPrint').addEventListener('click', () => pvCmd('print'));
 $('#pvFull').addEventListener('click',  () => pvCmd('full'));
-$('#pvNewTab').addEventListener('click', () => {
-  if (!V.html) return;
-  const doc = buildPreviewDoc(V.html);
-  const url = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
-  window.open(url, '_blank', 'noopener,noreferrer');
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-});
-$('#pvDL').addEventListener('click', () => {
-  if (!V.html) return;
-  const name = (V.item ? V.item.name : 'recipe').replace(/\.ks$/i, '') + '.html';
-  const url = URL.createObjectURL(new Blob([V.html], { type: 'text/html;charset=utf-8' }));
-  const a = Object.assign(document.createElement('a'), { href: url, download: name });
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
-  toast('⬇️ ' + name);
-});
 
 $('#pvSlider').addEventListener('input', e => {
   const v = Number(e.target.value);
@@ -1881,7 +1862,6 @@ document.addEventListener('keydown', e => {
   if (preview.style.display !== 'flex') return;
   const k = e.key;
   if (k === 'Escape'){ e.preventDefault(); pvClose(); return; }
-  if (e.ctrlKey && k.toLowerCase() === 'p'){ e.preventDefault(); pvCmd('print'); return; }
   if (e.ctrlKey && (k === '=' || k === '+')){ e.preventDefault(); pvCmd('in'); return; }
   if (e.ctrlKey && (k === '-' || k === '_')){ e.preventDefault(); pvCmd('out'); return; }
   if (k.toLowerCase() === 'f'){ pvCmd('fitW'); return; }
@@ -1926,28 +1906,20 @@ async function onKeyChipClick(){
     scrim.innerHTML = '';
     scrim.appendChild(d);
     scrim.classList.add('open');
-
     let settled = false;
     function finish(action){
       if (settled) return;
       settled = true;
       scrim.classList.remove('open');
-      // فوري — عشان الديالوج التالي ما يتمسحش بعد 240ms
       scrim.innerHTML = '';
       resolve(action);
     }
-
     d.querySelectorAll('[data-a]').forEach(b =>
       b.addEventListener('click', e => {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         finish(b.dataset.a);
       }));
-
-    function onOut(e){
-      if (e.target !== scrim) return;
-      finish('cancel');
-    }
+    function onOut(e){ if (e.target === scrim) finish('cancel'); }
     scrim.addEventListener('mousedown', onOut);
     scrim.addEventListener('touchend', onOut, { passive: true });
     document.addEventListener('keydown', function onk(e){
@@ -1958,8 +1930,8 @@ async function onKeyChipClick(){
   });
 
   if (choice === 'change'){
-    const v = await askActivationKey();
-    if (v) toast('🔑 ' + I18n.t('key.updated'));
+    const nv = await askActivationKey();
+    if (nv) toast('🔑 ' + I18n.t('key.updated'));
   } else if (choice === 'clear'){
     const yes = await Dialog.confirm({
       icon: 'del',
