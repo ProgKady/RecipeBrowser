@@ -1503,7 +1503,8 @@ function pvCmd(cmd, val){
 
 /* ----- بناء مستند البريفيو (ورقة A4 + محرّك زوم داخلي) ----- */
 function prepareRecipeHTML(raw){
-  let html = String(raw || '').trim();
+  const original = String(raw || '');
+  let html = original.trim();
   if (!html) return { body: '', styles: '' };
   let styles = '';
   const styleRe = /<style[^>]*>([\s\S]*?)<\/style>/gi;
@@ -1516,7 +1517,10 @@ function prepareRecipeHTML(raw){
                .replace(/<head[\s\S]*?<\/head>/i,'').replace(/<\/?body[^>]*>/gi,'');
   }
   html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
-  return { body: html.trim(), styles: styles.trim() };
+  html = html.trim();
+  // لو الاستخراج فضّى المحتوى → رجّع الخام كما هو
+  if (!html) html = original.replace(/<script[\s\S]*?<\/script>/gi, '').trim();
+  return { body: html, styles: styles.trim() };
 }
 function buildPreviewDoc(recipeHTML){
   const _prep = prepareRecipeHTML(recipeHTML);
@@ -1579,16 +1583,17 @@ function buildPreviewDoc(recipeHTML){
 <script>
 (function(){
   var sheet=document.getElementById('sheet'), stage=document.getElementById('stage');
-  var MIN=0.3, MAX=3, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
-  var natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
+  var MIN=0.2, MAX=4, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
+  var natural={w:Math.max(sheet.scrollWidth||0,sheet.offsetWidth||0,280),h:Math.max(sheet.scrollHeight||0,sheet.offsetHeight||0,40)};
 
   function apply(){
     var vw=stage.clientWidth, vh=stage.clientHeight;
     var rotated=(Math.abs(rot/90)%2)===1;
     var aw = rotated ? vh : vw;
     var ah = rotated ? vw : vh;
-    if(mode==='fitW')      z = aw / natural.w;
-    else if(mode==='fitP') z = Math.min(aw/natural.w, ah/natural.h);
+    if(mode==='fitW')      z = aw / Math.max(natural.w, 1);
+    else if(mode==='fitP') z = Math.min(aw/Math.max(natural.w,1), ah/Math.max(natural.h,1));
+    if(!isFinite(z) || z <= 0) z = 1;
     z = Math.max(MIN, Math.min(MAX, z));
     sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
     report();
@@ -1598,7 +1603,12 @@ function buildPreviewDoc(recipeHTML){
       nw:natural.w,nh:natural.h,vw:stage.clientWidth,vh:stage.clientHeight},'*'); }catch(e){}
   }
   function measure(){
-    natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
+    natural={
+      w: Math.max(sheet.scrollWidth||0, sheet.offsetWidth||0, 280),
+      h: Math.max(sheet.scrollHeight||0, sheet.offsetHeight||0, 40)
+    };
+    if (!isFinite(natural.w) || natural.w < 1) natural.w = 280;
+    if (!isFinite(natural.h) || natural.h < 1) natural.h = 40;
     apply();
   }
   function applyDir(){ document.documentElement.dir = dir; }
@@ -1701,7 +1711,10 @@ function pvOpen(){
 }
 function pvClose(){
   preview.style.display = 'none';
-  iframe.srcdoc = '';
+  try { iframe.onload = null; } catch(_){}
+  try { iframe.srcdoc = ''; } catch(_){}
+  try { iframe.removeAttribute('src'); iframe.src = 'about:blank'; } catch(_){}
+  if (V._blobUrl) { try{ URL.revokeObjectURL(V._blobUrl); }catch(_){} V._blobUrl = null; }
   pvShowLoad(false);
   V.item = null; V.html = ''; V.rawBytes = null; V.rawUrl = null;
 }
@@ -1745,6 +1758,7 @@ async function openPreview(item){
 
     KeyVault.resetFails();
     V.html = String(finalHTML);
+    const docHtml = buildPreviewDoc(V.html);
     let loaded = false;
     function afterLoad(){
       if (loaded) return;
@@ -1756,13 +1770,28 @@ async function openPreview(item){
         if (V.rot) pvCmd('rot', V.rot);
         pvCmd('dir', V.dir);
         pvCmd('measure');
-        setTimeout(() => pvCmd('measure'), 300);
-        setTimeout(() => pvCmd('measure'), 800);
+        setTimeout(() => pvCmd('measure'), 200);
+        setTimeout(() => pvCmd('measure'), 600);
+        setTimeout(() => pvCmd('measure'), 1200);
       } catch(_){}
     }
     iframe.onload = afterLoad;
-    iframe.srcdoc = buildPreviewDoc(V.html);
-    setTimeout(afterLoad, 1500);
+    // srcdoc أولاً (أضمن للـ postMessage)، ولو فشل نستخدم blob
+    try {
+      if (V._blobUrl) { try{ URL.revokeObjectURL(V._blobUrl); }catch(_){} V._blobUrl = null; }
+      iframe.removeAttribute('src');
+      iframe.srcdoc = docHtml;
+    } catch(_) {
+      try {
+        V._blobUrl = URL.createObjectURL(new Blob([docHtml], { type: 'text/html;charset=utf-8' }));
+        iframe.removeAttribute('srcdoc');
+        iframe.src = V._blobUrl;
+      } catch(__) {
+        iframe.srcdoc = docHtml;
+      }
+    }
+    setTimeout(afterLoad, 1200);
+    setTimeout(afterLoad, 2500);
 
   } catch (e){
     const wrongKey = e && (e.name === 'OperationError' || e.message === 'EMPTY');
