@@ -601,66 +601,9 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
         </button>
         <span class="pv-name" id="fileName">recipe</span>
       </div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn" id="pvRotL" title="Rotate left"><i class="fas fa-rotate-left"></i></button>
-        <button class="pv-btn" id="pvRotR" title="Rotate right"><i class="fas fa-rotate-right"></i></button>
-      </div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn" id="pvDir" title="Text direction (RTL / LTR)">
-          <i class="fas fa-align-right"></i>
-        </button>
-      </div>
-
       <div class="pv-spacer"></div>
-
-      <div class="pv-sep"></div>
-
       <div class="pv-group">
-        <button class="pv-btn" id="pvZOut" title="Zoom out (Ctrl + −)">
-          <i class="fas fa-magnifying-glass-minus"></i>
-        </button>
-        <input  class="pv-range" id="pvSlider" type="range" min="30" max="300" step="5"
-                value="100" title="Zoom" aria-label="Zoom">
-        <button class="pv-btn" id="pvZoomVal" title="Reset to 100%">
-          <span id="pvZoomTxt">100%</span>
-        </button>
-        <button class="pv-btn" id="pvZIn" title="Zoom in (Ctrl + +)">
-          <i class="fas fa-magnifying-glass-plus"></i>
-        </button>
-      </div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn on" id="pvFitW" title="Fit width (F)">
-          <i class="fas fa-arrows-left-right"></i>
-        </button>
-        <button class="pv-btn" id="pvFitP" title="Fit page — show whole recipe (P)">
-          <i class="fas fa-arrows-up-down-left-right"></i>
-        </button>
-      </div>
-
-      <div class="pv-sep"></div>
-
-      <div class="pv-group">
-        <button class="pv-btn" id="pvPrint" title="Export to PDF (Ctrl + P)">
-          <i class="fas fa-file-pdf"></i><span>PDF</span>
-        </button>
-        <button class="pv-btn" id="pvDL" title="Download source file">
-          <i class="fas fa-download"></i>
-        </button>
-        <button class="pv-btn" id="pvNewTab" title="Open in new tab">
-          <i class="fas fa-arrow-up-right-from-square"></i>
-        </button>
-        <button class="pv-btn" id="pvFull" title="Fullscreen">
-          <i class="fas fa-expand"></i>
-        </button>
+        <span class="pv-hint" style="opacity:.75;font-size:.75em;padding:0 8px">pinch · drag</span>
       </div>
     </div>
 
@@ -1450,24 +1393,34 @@ function pvShowLoad(on){
 }
 function pvSetZoomUI(z){
   const pct = Math.round(z * 100);
-  $('#pvZoomTxt').textContent = pct + '%';
-  $('#pvFootZoom').textContent = pct + '%';
-  $('#pvSlider').value = Math.max(30, Math.min(300, pct));
+  try{
+    const a=$('#pvZoomTxt'), b=$('#pvFootZoom'), c=$('#pvSlider');
+    if(a) a.textContent = pct + '%';
+    if(b) b.textContent = pct + '%';
+    if(c) c.value = Math.max(30, Math.min(300, pct));
+  }catch(_){}
   V.zoom = z;
   Prefs.set('pvZoom', z);
 }
 function pvSetMode(m){
   V.mode = m;
-  $('#pvFitW').classList.toggle('on', m === 'fitW');
-  $('#pvFitP').classList.toggle('on', m === 'fitP');
-  $('#pvFootMode').textContent = m === 'fitW' ? 'Fit width' : m === 'fitP' ? 'Fit page' : 'Manual';
+  try{
+    const a=$('#pvFitW'), b=$('#pvFitP'), c=$('#pvFootMode');
+    if(a) a.classList.toggle('on', m === 'fitW');
+    if(b) b.classList.toggle('on', m === 'fitP');
+    if(c) c.textContent = m === 'fitW' ? 'Fit width' : m === 'fitP' ? 'Fit page' : 'Manual';
+  }catch(_){}
   Prefs.set('pvMode', m);
 }
 function pvSetRot(deg){
   V.rot = ((deg % 360) + 360) % 360;
-  const chip = $('#pvFootRot');
-  chip.style.display = V.rot ? 'flex' : 'none';
-  chip.innerHTML = 'Rot <b>' + V.rot + '&deg;</b>';
+  try{
+    const chip = $('#pvFootRot');
+    if(chip){
+      chip.style.display = V.rot ? 'flex' : 'none';
+      chip.innerHTML = 'Rot <b>' + V.rot + '&deg;</b>';
+    }
+  }catch(_){}
   Prefs.set('pvRot', V.rot);
 }
 function pvSetDir(d){
@@ -1492,27 +1445,30 @@ function buildPreviewDoc(recipeHTML){
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#454b5c}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#454b5c;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   #stage{
     position:fixed;inset:0;display:grid;place-items:center;overflow:hidden;
-    touch-action:none;
+    touch-action:none;background:#454b5c;
   }
   #sheet{
-    width:840px;max-width:none;
+    width:max-content;min-width:min(860px,94vw);max-width:none;
     background:#fff;color:#15181f;
-    padding:62px 70px 96px;
-    border-radius:3px;
+    padding:28px 22px 36px;
+    border-radius:4px;
     box-shadow:0 16px 60px rgba(0,0,0,.5);
     transform-origin:center center;
     will-change:transform;
     font-family:'Cairo','Segoe UI',system-ui,sans-serif;
-    font-size:16px;line-height:1.85;overflow-wrap:break-word;word-break:break-word;
-    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+    font-size:15px;line-height:1.7;overflow-wrap:break-word;word-break:break-word;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
   }
   #sheet img{max-width:100%;height:auto;border-radius:8px;display:block;margin:14px auto}
   #sheet a{color:#6d5efc;word-break:break-all}
-  #sheet table{max-width:100%;border-collapse:collapse;margin:16px auto}
-  #sheet td,#sheet th{border:1px solid #d5d8e0;padding:9px 12px}
+  #sheet table{border-collapse:collapse;margin:12px 0;width:auto;max-width:none;font-size:13px;background:#fff}
+  #sheet td,#sheet th{border:1px solid #c8ccd6;padding:6px 10px;vertical-align:top;white-space:normal;color:#15181f;background:#fff}
+  #sheet th{background:#eef0f5;font-weight:800}
+  #sheet tr:nth-child(even) td{background:#fafbfc}
   #sheet pre{white-space:pre-wrap;background:#f4f5f8;padding:14px;border-radius:8px;overflow-x:auto}
   #sheet blockquote{margin:14px 0;padding:6px 18px;border-inline-start:4px solid #6d5efc;
                     background:#f7f7fc;border-radius:0 8px 8px 0}
@@ -1539,18 +1495,10 @@ function buildPreviewDoc(recipeHTML){
 <script>
 (function(){
   var sheet=document.getElementById('sheet'), stage=document.getElementById('stage');
-  var MIN=0.3, MAX=3, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
-  var natural={w:sheet.offsetWidth,h:sheet.offsetHeight};
+  var MIN=0.2, MAX=5, z=1, rot=0, tx=0, ty=0, mode='fitP', dir='ltr';
+  var natural={w:200,h:40};
 
   function apply(){
-    var vw=stage.clientWidth, vh=stage.clientHeight;
-    var rotated=(Math.abs(rot/90)%2)===1;
-    var aw = rotated ? vh : vw;
-    var ah = rotated ? vw : vh;
-    if(mode==='fitW')      z = aw / Math.max(natural.w,1);
-    else if(mode==='fitP') z = Math.min(aw/Math.max(natural.w,1), ah/Math.max(natural.h,1));
-    if(!isFinite(z)||z<=0) z=1;
-    z = Math.max(MIN, Math.min(MAX, z));
     sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
     report();
   }
@@ -1565,95 +1513,114 @@ function buildPreviewDoc(recipeHTML){
     };
     if(!isFinite(natural.w)||natural.w<1) natural.w=200;
     if(!isFinite(natural.h)||natural.h<1) natural.h=40;
+    var vw=stage.clientWidth, vh=stage.clientHeight;
+    var fit = Math.min(vw/Math.max(natural.w,1), vh/Math.max(natural.h,1));
+    if(!isFinite(fit)||fit<=0) fit=1;
+    // مصغّر عشان يظهر كامل جوّه الشاشة
+    z = Math.max(MIN, Math.min(1, fit * 0.96));
+    mode='fitP'; tx=0; ty=0;
     apply();
   }
   function applyDir(){ document.documentElement.dir = dir; }
 
-  /* ---- أوامر من الصفحة الأم ---- */
   window.addEventListener('message', function(ev){
     var d=ev.data; if(!d||!d.__pvHost) return;
     switch(d.cmd){
-      case 'in':    mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.22); apply(); break;
-      case 'out':   mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.22); apply(); break;
-      case 'zoom':  mode='manual'; tx=ty=0; z=Number(d.v); apply(); break;
-      case 'fitW':  mode='fitW'; tx=ty=0; apply(); break;
-      case 'fitP':  mode='fitP'; tx=ty=0; apply(); break;
+      case 'in':    mode='manual'; z=Math.min(MAX,z*1.22); apply(); break;
+      case 'out':   mode='manual'; z=Math.max(MIN,z/1.22); apply(); break;
+      case 'zoom':  mode='manual'; z=Number(d.v)||z; apply(); break;
+      case 'fitW':  mode='fitW'; tx=ty=0;
+        z=Math.max(MIN,Math.min(MAX, stage.clientWidth/Math.max(natural.w,1))); apply(); break;
+      case 'fitP':  measure(); break;
       case 'rotL':  rot=(rot-90+360)%360; apply(); break;
-      case 'rotR':  rot=(rot+90)%360;     apply(); break;
+      case 'rotR':  rot=(rot+90)%360; apply(); break;
       case 'rot':   rot=((Number(d.v)||0)%360+360)%360; apply(); break;
       case 'dir':   dir=d.v; applyDir(); apply(); break;
-      case 'print': doPrint(); break;
-      case 'full':
-        if(document.fullscreenElement) document.exitFullscreen();
-        else stage.requestFullscreen && stage.requestFullscreen();
-        break;
       case 'measure': measure(); break;
     }
   });
 
-  /* ---- زوم بالماوس / لمس / سحب ---- */
-  var wheelT=null;
-  stage.addEventListener('wheel', function(e){
-    if(e.ctrlKey||e.metaKey){
-      e.preventDefault();
-      mode='manual'; tx=ty=0;
-      z = e.deltaY<0 ? Math.min(MAX,z*1.1) : Math.max(MIN,z/1.1);
+  /* ---- صورة: سحب بإصبع · زوم بإصبعين ---- */
+  var gMode=null, lastX=0, lastY=0, startTx=0, startTy=0, startDist=0, startZ=1;
+
+  function tDist(a,b){
+    var dx=a.clientX-b.clientX, dy=a.clientY-b.clientY;
+    return Math.sqrt(dx*dx+dy*dy)||1;
+  }
+
+  stage.addEventListener('touchstart', function(e){
+    if(e.touches.length===1){
+      gMode='pan';
+      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+      startTx=tx; startTy=ty;
+    } else if(e.touches.length>=2){
+      gMode='pinch';
+      startDist=tDist(e.touches[0], e.touches[1]);
+      startZ=z; startTx=tx; startTy=ty;
+    }
+  }, {passive:true});
+
+  stage.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    if(gMode==='pan' && e.touches.length===1){
+      mode='manual';
+      tx = startTx + (e.touches[0].clientX - lastX);
+      ty = startTy + (e.touches[0].clientY - lastY);
       apply();
-    } else if(z>1.0001){
-      e.preventDefault(); ty-=e.deltaY; tx-=e.deltaX;
-      sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
+    } else if(e.touches.length>=2){
+      gMode='pinch'; mode='manual';
+      var d=tDist(e.touches[0], e.touches[1]);
+      var nz = startZ * (d / startDist);
+      if(isFinite(nz)) z = Math.max(MIN, Math.min(MAX, nz));
+      apply();
     }
   }, {passive:false});
 
+  stage.addEventListener('touchend', function(e){
+    if(e.touches.length===0) gMode=null;
+    else if(e.touches.length===1){
+      gMode='pan';
+      lastX=e.touches[0].clientX; lastY=e.touches[0].clientY;
+      startTx=tx; startTy=ty;
+    }
+  }, {passive:true});
+
+  /* عجلة الماوس = زوم */
+  stage.addEventListener('wheel', function(e){
+    e.preventDefault();
+    mode='manual';
+    z = Math.max(MIN, Math.min(MAX, z * (e.deltaY<0 ? 1.12 : 1/1.12)));
+    apply();
+  }, {passive:false});
+
+  /* سحب بالماوس */
   var drag=null;
   stage.addEventListener('pointerdown', function(e){
-    if(e.target.closest('a,button')) return;
+    if(e.pointerType==='touch') return;
     drag={x:e.clientX,y:e.clientY,tx:tx,ty:ty};
-    stage.setPointerCapture(e.pointerId);
+    try{ stage.setPointerCapture(e.pointerId); }catch(_){}
   });
   stage.addEventListener('pointermove', function(e){
     if(!drag) return;
+    mode='manual';
     tx=drag.tx+(e.clientX-drag.x);
     ty=drag.ty+(e.clientY-drag.y);
-    sheet.style.transform='translate('+tx+'px,'+ty+'px) rotate('+rot+'deg) scale('+z+')';
-  });
-  stage.addEventListener('pointerup',     function(){ drag=null; });
-  stage.addEventListener('pointercancel', function(){ drag=null; });
-
-  stage.addEventListener('dblclick', function(e){
-    if(e.target.closest('a')) return;
-    if(mode!=='fitP'){ mode='fitP'; tx=ty=0; } else { mode='manual'; tx=ty=0; z=1; }
     apply();
   });
+  stage.addEventListener('pointerup', function(){ drag=null; });
+  stage.addEventListener('pointercancel', function(){ drag=null; });
 
-  /* ---- الطباعة / PDF ---- */
-  function doPrint(){
-    document.body.classList.add('printing');
-    try{ window.print(); }catch(e){}
-    setTimeout(function(){ document.body.classList.remove('printing'); }, 700);
+  stage.addEventListener('dblclick', function(){ measure(); });
+
+  function boot(){
+    measure();
+    setTimeout(measure, 100);
+    setTimeout(measure, 350);
+    setTimeout(measure, 800);
   }
-
-  /* ---- إعادة القياس لما الصور تحمّل أو الشاشة تتغير ---- */
-  if(window.ResizeObserver){
-    var ro=new ResizeObserver(function(){ natural={w:sheet.offsetWidth,h:sheet.offsetHeight}; apply(); });
-    ro.observe(sheet);
-  }
-  Array.prototype.forEach.call(sheet.images, function(im){
-    if(!im.complete) im.addEventListener('load', measure, {once:true});
-  });
-  window.addEventListener('resize', function(){ apply(); });
-  window.addEventListener('load', function(){ setTimeout(measure, 60); });
-
-  document.addEventListener('keydown', function(e){
-    var k=e.key;
-    if(k==='+'||k==='='){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.min(MAX,z*1.2); apply(); }
-    if(k==='-'||k==='_'){ e.preventDefault(); mode='manual'; tx=ty=0; z=Math.max(MIN,z/1.2); apply(); }
-    if(k==='0'){ e.preventDefault(); mode='manual'; tx=ty=0; z=1; apply(); }
-  });
-
-  // مبدئياً: الورقة كاملة من غير سكرول
-  document.documentElement.dir=dir;
-  requestAnimationFrame(function(){ setTimeout(measure,40); });
+  if(document.readyState==='complete') boot();
+  else window.addEventListener('load', boot);
+  requestAnimationFrame(function(){ setTimeout(boot, 40); });
   parent.postMessage({__pv:1,ready:1},'*');
 })();
 <\/script>
@@ -1785,74 +1752,15 @@ window.addEventListener('message', function(ev){
 
 /* ----- أزرار الـ toolbar ----- */
 $('#pvClose').addEventListener('click', pvClose);
-$('#pvZIn').addEventListener('click',   () => pvCmd('in'));
-$('#pvZOut').addEventListener('click',  () => pvCmd('out'));
-$('#pvZoomVal').addEventListener('click', () => pvCmd('zoom', 1));
-$('#pvFitW').addEventListener('click',  () => pvCmd('fitW'));
-$('#pvFitP').addEventListener('click',  () => pvCmd('fitP'));
-$('#pvRotL').addEventListener('click',  () => pvCmd('rotL'));
-$('#pvRotR').addEventListener('click',  () => pvCmd('rotR'));
-$('#pvDir').addEventListener('click',   () => pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'));
-$('#pvPrint').addEventListener('click', () => pvCmd('print'));
-$('#pvFull').addEventListener('click',  () => pvCmd('full'));
-$('#pvNewTab').addEventListener('click', () => {
-  if (!V.html) return;
-  const doc = buildPreviewDoc(V.html);
-  const url = URL.createObjectURL(new Blob([doc], { type: 'text/html' }));
-  window.open(url, '_blank', 'noopener,noreferrer');
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-});
-$('#pvDL').addEventListener('click', () => {
-  if (!V.html) return;
-  const name = (V.item ? V.item.name : 'recipe').replace(/\.ks$/i, '') + '.html';
-  const url = URL.createObjectURL(new Blob([V.html], { type: 'text/html;charset=utf-8' }));
-  const a = Object.assign(document.createElement('a'), { href: url, download: name });
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30000);
-  toast('⬇️ ' + name);
-});
 
-$('#pvSlider').addEventListener('input', e => {
-  const v = Number(e.target.value);
-  pvSetZoomUI(v / 100);
-  pvCmd('zoom', v / 100);
-});
-
-/* ----- سحب لتكبير على الموبايل (pinch) ----- */
-(function pinch(){
-  let dist = 0;
-  pvStage.addEventListener('touchstart', e => {
-    if (e.touches.length === 2){
-      dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY);
-    }
-  }, { passive: true });
-  pvStage.addEventListener('touchmove', e => {
-    if (e.touches.length !== 2 || !dist) return;
-    const nd = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY);
-    if (Math.abs(nd - dist) > 6){
-      pvCmd(nd > dist ? 'in' : 'out');
-      dist = nd;
-    }
-  }, { passive: true });
-  pvStage.addEventListener('touchend', () => { dist = 0; }, { passive: true });
-})();
 
 /* ----- اختصارات الكيبورد ----- */
 document.addEventListener('keydown', e => {
   if (preview.style.display !== 'flex') return;
   const k = e.key;
   if (k === 'Escape'){ e.preventDefault(); pvClose(); return; }
-  if (e.ctrlKey && k.toLowerCase() === 'p'){ e.preventDefault(); pvCmd('print'); return; }
   if (e.ctrlKey && (k === '=' || k === '+')){ e.preventDefault(); pvCmd('in'); return; }
   if (e.ctrlKey && (k === '-' || k === '_')){ e.preventDefault(); pvCmd('out'); return; }
-  if (k.toLowerCase() === 'f'){ pvCmd('fitW'); return; }
-  if (k.toLowerCase() === 'p'){ pvCmd('fitP'); return; }
-  if (k.toLowerCase() === 'r'){ pvCmd('rotR'); return; }
-  if (k.toLowerCase() === 'd'){ pvCmd('dir', V.dir === 'rtl' ? 'ltr' : 'rtl'); return; }
 });
 
 /* ----- استرجاع تفضيلات المشاهد المحفوظة (مرة واحدة عند الإقلاع) ----- */
