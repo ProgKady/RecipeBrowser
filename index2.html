@@ -641,9 +641,6 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
         <button class="pv-btn primary" id="pvPrint" type="button" title="Export to PDF (Ctrl + P)">
           <i class="fas fa-file-pdf"></i><span>PDF</span>
         </button>
-        <button class="pv-btn" id="pvDL" type="button" title="Download source file (HTML)">
-          <i class="fas fa-download"></i>
-        </button>
         <button class="pv-btn" id="pvNewTab" type="button" title="Open in new tab">
           <i class="fas fa-arrow-up-right-from-square"></i>
         </button>
@@ -943,13 +940,19 @@ const Dialog = (function(){
 /* ==========================================================================
    KeyVault — خزنة كود التفعيل
    --------------------------------------------------------------------------
-   - sessionStorage (+ نسخة في الذاكرة لو الـ WebView مانع الـ storage)
+   - localStorage (يبقى محفوظ بعد قفل التطبيق وفتحه تاني) + نسخة في الذاكرة
+     لو الـ WebView مانع الـ storage
    - الكود 7 أجزاء مفصولة بـ "-" (كل جزء 4 حروف/أرقام على الأقل)
    - بنطبّع الكود قبل الفحص: مسافات مخفية + شرطات غريبة (– — −) بتتحوّل لـ "-"
+   - مدة الصلاحية 30 يوم بالظبط من لحظة الإدخال؛ بعد ما يعدّي الشهر
+     الكود بيتمسح تلقائياً والتطبيق يطلبه تاني، وكل ما يتكتب تاني
+     بيبدأ شهر كامل جديد من يوم الإدخال
    ========================================================================== */
 const KeyVault = (function(){
-  const SKEY = 'tc.v1.vault';
-  let memKey = null;                       // احتياطي لو sessionStorage مش شغّال
+  const SKEY = 'tc.v1.vault';          // الكود مشفّر
+  const TKEY = 'tc.v1.vault.at';       // توقيت الإدخال (ms)
+  const TTL  = 30 * 24 * 60 * 60 * 1000;   // شهر كامل من يوم الإدخال
+  let memKey = null;                       // احتياطي لو الـ storage مش شغّال
 
   function originMask(){
     return String(location.origin || location.href) + '|receta|v1';
@@ -998,32 +1001,89 @@ const KeyVault = (function(){
     return p[0].length >= 5;               // extractPasswordFromKey بتقرا الحرف الخامس من أول جزء
   }
 
+  /* ---------- القراءة + التحقق من مدة الصلاحية ---------- */
+  function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function lsSet(k, v){ try{ localStorage.setItem(k, v); }catch(e){} }
+  function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+  function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
+  function ssSet(k, v){ try{ sessionStorage.setItem(k, v); }catch(e){} }
+  function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
+
+  function stamp(){ return Number(lsGet(TKEY) || 0) || 0; }
+
+  function readFrom(get){
+    const raw = get(SKEY);
+    if (!raw) return null;
+    const k = mask(unb64(raw));
+    return looksValid(k) ? norm(k) : null;
+  }
+
   return {
     norm,
     looksValid,
+    TTL,
 
     save(k){
       const t = norm(k);
       if (!looksValid(t)) return false;
+      const at = Date.now();              // الشهر الجديد بيبدأ من دلوقتي
+      const enc = b64(mask(t));
       memKey = t;
-      try{ sessionStorage.setItem(SKEY, b64(mask(t))); } catch(e){}
+      lsSet(SKEY, enc); lsSet(TKEY, String(at));
+      ssSet(SKEY, enc);
       return true;
     },
 
     load(){
-      try{
-        const raw = sessionStorage.getItem(SKEY);
-        if (raw){
-          const k = mask(unb64(raw));
-          if (looksValid(k)) return norm(k);
-        }
-      } catch(e){}
-      return memKey && looksValid(memKey) ? memKey : null;
+      const at = stamp();
+
+      // عدّى 30 يوم (أو أكتر) من يوم الإدخال → مسح نهائي
+      if (at && (Date.now() - at) >= TTL){
+        this.clear();
+        return null;
+      }
+
+      // 1) النسخة الدائمة على الجهاز
+      const k = readFrom(lsGet);
+      if (k){
+        if (!at) this.save(k);            // ترقية: خزّن توقيت بداية الشهر
+        ssDel(SKEY);
+        memKey = k;
+        return k;
+      }
+
+      // 2) ترقية كود قديم متخزّن في الجلسة بس → ينحفظ 30 يوم من دلوقتي
+      const sk = readFrom(ssGet);
+      if (sk){ this.save(sk); return sk; }
+
+      // 3) نسخة الذاكرة لو الـ storage محجوب
+      return memKey && looksValid(memKey) ? norm(memKey) : null;
     },
 
     clear(){
       memKey = null;
-      try{ sessionStorage.removeItem(SKEY); }catch(e){}
+      lsDel(SKEY); lsDel(TKEY);
+      ssDel(SKEY);
+    },
+
+    /* تاريخ انتهاء الصلاحية (ms) أو 0 */
+    expiresAt(){ return stamp(); },
+
+    /* الأيام المتبقية — الصفر أو أقل معناه انتهى */
+    daysLeft(){
+      const at = stamp();
+      if (!at) return 0;
+      return Math.max(0, Math.ceil((at + TTL - Date.now()) / 86400000));
+    },
+
+    expiresOn(){
+      const at = stamp();
+      if (!at) return '';
+      try{
+        return new Date(at + TTL).toLocaleDateString(
+          I18n.lang === 'ar' ? 'ar-EG' : 'en-GB',
+          { year: 'numeric', month: 'short', day: 'numeric' });
+      }catch(e){ return ''; }
     },
 
     masked(k){
@@ -1059,11 +1119,16 @@ const KeyVault = (function(){
 function refreshKeyChip(){
   const k = KeyVault.load();
   const chip = $('#keyChip');
+  const days = k ? KeyVault.daysLeft() : 0;
   chip.classList.toggle('on', !!k);
   chip.classList.toggle('off', !k);
   $('#keyChipIcon').className = 'fas ' + (k ? 'fa-lock' : 'fa-lock-open');
-  $('#keyChipTxt').textContent = I18n.t(k ? 'key.chip.set' : 'key.chip.none');
-  chip.title = I18n.t(k ? 'key.chip.tip' : 'key.chip.tipNone');
+  $('#keyChipTxt').textContent = k
+    ? (days ? I18n.t('key.chip.setDays', { n: days }) : I18n.t('key.chip.set'))
+    : I18n.t('key.chip.none');
+  chip.title = k
+    ? I18n.t('key.chip.tipDays', { n: days, date: KeyVault.expiresOn() })
+    : I18n.t('key.chip.tipNone');
 }
 
 /* ---------- نافذة إدخال الكود ---------- */
@@ -1734,9 +1799,25 @@ function pvToggleFull(){
 
 /* ==========================================================================
    5b) حفظ / تنزيل / مشاركة ملف — شغّال على الموبايل والـ WebView
+   --------------------------------------------------------------------------
+   الـ WebView مش بيسمح بتنزيل blob مباشرة (مش بيفتحش الـ Download Manager)،
+   فبنستخدم نفس طريقة تحميل الإكسل: نرفع الملف ثم نفتحه في المتصفح ونضغط تحميل.
    ========================================================================== */
+const UPLOAD_API = 'https://tmpfiles.org/api/v1/upload';
+
+/* فتح رابط التحميل: بنجرّب تاب جديد الأول، ولو الـ WebView منعه بنفتحه في الصفحة نفسها */
+function openDownload(url){
+  let w = null;
+  try { w = window.open(url, '_blank', 'noopener,noreferrer'); } catch(e){}
+  if (!w){
+    try { window.location.href = url; } catch(e){}
+    return;
+  }
+  setTimeout(() => { try { w.close(); } catch(e){} }, 2500);
+}
+
 async function saveBlob(blob, filename){
-  // 1) مشاركة الملف (بيفتح قائمة الموبايل: حفظ / واتساب / درايف ...)
+  // 1) مشاركة الملف على الموبايل (لو الجهاز يدعمها)
   try{
     const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
     if (navigator.canShare && navigator.canShare({ files: [file] })){
@@ -1746,14 +1827,44 @@ async function saveBlob(blob, filename){
   }catch(e){
     if (e && e.name === 'AbortError') return 'cancel';
   }
-  // 2) تنزيل عادي
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href: url, download: filename, rel: 'noopener' });
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-  return 'download';
+
+  // 2) رفع الملف ثم فتحه في المتصفح (نفس طريقة تحميل الإكسل)
+  try{
+    toast('⏳ ' + I18n.t('dl.uploading'));
+    const fd = new FormData();
+    fd.append('file', blob, filename);
+    const res = await fetch(UPLOAD_API, { method: 'POST', body: fd });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const out = await res.json();
+    const link = out && out.data && out.data.url;
+    if (!link) throw new Error('no url');
+    const direct = String(link).replace('/dl/', '/');
+
+    await Dialog.alert({
+      icon: 'ok',
+      title: I18n.t('dl.ready.title'),
+      message: I18n.t('dl.ready.msg', { name: esc(filename) }),
+      submitText: I18n.t('dl.open')
+    });
+    openDownload(direct);
+    return 'upload';
+  }catch(e){
+    toast('⚠️ ' + I18n.t('dl.err'));
+  }
+
+  // 3) احتياطي: تنزيل مباشر من غير رفع
+  try{
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement('a'),
+      { href: url, download: filename, rel: 'noopener' });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return 'download';
+  }catch(e){
+    return 'cancel';
+  }
 }
 
 function pvBaseName(){
@@ -1871,7 +1982,7 @@ async function pvExportPDF(){
 
     const name = pvBaseName() + '.pdf';
     const how = await saveBlob(pdf.output('blob'), name);
-    if (how !== 'cancel') toast('✅ ' + name);
+    if (how === 'shared' || how === 'download') toast('✅ ' + name);
   } catch (err){
     toast('⚠️ PDF export failed');
     // احتياطي: على الكمبيوتر نفتح نافذة الطباعة العادية
@@ -1905,13 +2016,6 @@ $('#pvNewTab').addEventListener('click', () => {
   const w = window.open(url, '_blank');
   if (!w) toast('⚠️ New tab is blocked here — use Full view instead');
   setTimeout(() => URL.revokeObjectURL(url), 120000);
-});
-
-$('#pvDL').addEventListener('click', async () => {
-  if (!V.html) return;
-  const name = pvBaseName() + '.html';
-  const how = await saveBlob(new Blob([V.html], { type: 'text/html;charset=utf-8' }), name);
-  if (how !== 'cancel') toast('⬇️ ' + name);
 });
 
 $('#pvSlider').addEventListener('input', e => {
@@ -1984,7 +2088,11 @@ async function onKeyChipClick(){
     d.innerHTML =
       `<div class="dlg-ico i-key"><i class="fas fa-key"></i></div>
        <h4>${esc(I18n.t('key.title'))}</h4>
-       <p class="dlg-msg">${I18n.t('key.savedMsg', { masked: esc(KeyVault.masked(saved)) })}</p>
+       <p class="dlg-msg">${I18n.t('key.savedMsg', {
+                 masked: esc(KeyVault.masked(saved)),
+                 days: KeyVault.daysLeft(),
+                 date: esc(KeyVault.expiresOn())
+               })}</p>
        <div class="dlg-actions" style="flex-direction:column">
          <button class="dlg-btn" data-a="change" type="button"><i class="fas fa-pen-to-square"></i> ${esc(I18n.t('key.menu.change'))}</button>
          <button class="dlg-btn danger" data-a="clear" type="button"><i class="fas fa-trash-can"></i> ${esc(I18n.t('key.menu.clear'))}</button>
