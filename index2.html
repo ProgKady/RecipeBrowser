@@ -289,6 +289,45 @@ header{
 .pv-overlay p{font-size:.82em;line-height:1.8;max-width:300px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* ======================= File Viewer (LTR · zoom + pan فقط) =======================
+   ملفاته منفصلة تمامًا عن #preview (مش بيلمس بريفيو الريسيبي المشفّر خالص) */
+#fileView{
+  position:fixed;inset:0;z-index:100;background:var(--bg);
+  display:none;flex-direction:column;direction:ltr;
+  font-family:'Inter','Cairo',system-ui,'Segoe UI',sans-serif;
+  animation:slide .3s cubic-bezier(.2,.9,.3,1);
+  overscroll-behavior:contain;
+}
+#fileView .pv-name{max-width:190px}
+.fv-stage{
+  touch-action:none;user-select:none;-webkit-user-select:none;
+  cursor:grab;align-items:flex-start;justify-content:flex-start;
+  background:
+    linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),
+    repeating-conic-gradient(from 0deg, rgba(255,255,255,.035) 0% 25%, transparent 0% 50%) 50%/22px 22px;
+}
+.fv-stage.drag{cursor:grabbing}
+.fv-wrap{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+#fvContent{transform-origin:0 0}
+#fvContent.k-image,#fvContent.k-html{display:block}
+#fvContent.k-pdf{display:flex;flex-direction:column;gap:10px}
+#fvContent.k-sheet,#fvContent.k-text{display:flex;flex-direction:column;gap:12px}
+#fvContent img,#fvContent canvas{display:block;background:#fff}
+.fv-sheet{background:#fff;padding:14px 16px;color:#15181f;
+  font-family:'Cairo',system-ui,sans-serif;overflow-wrap:anywhere}
+.fv-sheet h3{margin:0 0 9px;font-size:.95em;font-weight:900;color:#0f172a}
+.fv-sheet table{border-collapse:collapse;font-size:12.5px;line-height:1.6}
+.fv-sheet td,.fv-sheet th{border:1px solid #d5d8e0;padding:5px 9px;white-space:pre-wrap}
+.fv-sheet th{background:#eef1fb;font-weight:800}
+.fv-sheet tr:first-child td{background:#f7f8fc;font-weight:800}
+.fv-pre{margin:0;background:#fff;color:#15181f;padding:14px 16px;
+  font:12.5px/1.75 ui-monospace,'Cascadia Mono',Consolas,monospace;
+  white-space:pre-wrap;word-break:break-word}
+.fv-frame{display:block;width:820px;height:600px;border:0;background:#fff}
+.fv-msg{padding:34px 18px;text-align:center;color:#c8cddc;
+  font-family:'Cairo',system-ui,sans-serif;font-size:.86em;line-height:1.9}
+.fv-msg b{display:block;font-size:1.15em;color:#fff;margin-bottom:6px}
+
 @media (max-width:640px){
   .pv-name,.pv-hint{display:none}
   .pv-range{display:none}
@@ -668,6 +707,62 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
       <span class="pv-chip">Size <b id="pvFootSize">—</b></span>
       <span class="pv-chip" id="pvFootRot" style="display:none">Rot <b>0°</b></span>
       <span class="pv-hint">Pinch / Ctrl + scroll = zoom · F = fit width · P = fit page</span>
+    </div>
+  </div>
+
+  <!-- ============ عارض الملفات العادية (إكسل / صور / PDF / نص) — تكبير + تحريك ============ -->
+  <div id="fileView">
+
+    <div class="pv-top">
+      <div class="pv-group">
+        <button class="pv-btn danger" id="fvClose" type="button" title="Close (Esc)">
+          <i class="fas fa-xmark"></i>
+        </button>
+        <span class="pv-name" id="fvName">file</span>
+      </div>
+
+      <div class="pv-spacer"></div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="fvZOut" type="button" title="Zoom out (Ctrl + −)">
+          <i class="fas fa-magnifying-glass-minus"></i>
+        </button>
+        <input  class="pv-range" id="fvSlider" type="range" min="20" max="500" step="5"
+                value="100" title="Zoom" aria-label="Zoom">
+        <button class="pv-btn" id="fvZoomVal" type="button" title="Actual size (0)">
+          <span id="fvZoomTxt">100%</span>
+        </button>
+        <button class="pv-btn" id="fvZIn" type="button" title="Zoom in (Ctrl + +)">
+          <i class="fas fa-magnifying-glass-plus"></i>
+        </button>
+      </div>
+
+      <div class="pv-sep"></div>
+
+      <div class="pv-group">
+        <button class="pv-btn" id="fvFit" type="button" title="Fit whole file (F)">
+          <i class="fas fa-arrows-up-down-left-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="pv-stage fv-stage" id="fvStage">
+      <div class="fv-wrap" id="fvWrap"><div id="fvContent"></div></div>
+
+      <div class="pv-overlay show" id="fvLoad">
+        <div class="ring"></div>
+        <h4 data-i18n="fv.loading">Opening file…</h4>
+        <p data-i18n="fv.loading.ph">Please wait.</p>
+      </div>
+    </div>
+
+    <div class="pv-foot">
+      <span class="pv-chip">Zoom <b id="fvFootZoom">100%</b></span>
+      <span class="pv-chip">Size <b id="fvFootSize">—</b></span>
+      <span class="pv-chip" id="fvFootInfo" style="display:none">—</span>
+      <span class="pv-hint">Drag = move · Ctrl + scroll / pinch = zoom · F = fit · double tap</span>
     </div>
   </div>
 </section>
@@ -1354,6 +1449,7 @@ function iconFor(name){
   if (n.endsWith('.json'))  return 'fa-file-code';
   if (n.endsWith('.pdf'))   return 'fa-file-pdf';
   if (n.endsWith('.zip'))   return 'fa-file-zipper';
+  if (/\.(png|jpe?g|gif|webp|bmp|svg|avif)$/.test(n)) return 'fa-file-image';
   return 'fa-file-lines';
 }
 
@@ -1367,8 +1463,12 @@ grid.addEventListener('click', e => {
     updateBreadcrumbs();
     loadPath(path);
     backBtn.style.display = 'block';
-  } else if (/\.(ks|html?|xlsx?|csv)$/i.test(name)){
+  } else if (/\.ks$/i.test(name)){
+    // .ks هو النوع المشفّر بس → بريفيو الريسيبي + فك التشفير (زي ما هو خالص)
     openPreview({ path, name });
+  } else if (FView.supports(name)){
+    // أي نوع تاني (إكسل / صور / PDF / نص / HTML) → بريفيو منفصل من غير تشفير
+    FView.open({ path, name });
   } else {
     window.open(RAW + '/' + path.replace(/ /g, '%20'), '_blank', 'noopener,noreferrer');
   }
@@ -2159,6 +2259,359 @@ $('#logoutBtn').addEventListener('click', async () => {
   localStorage.removeItem(LS_CODE);
   location.href = LOGIN_PAGE;
 });
+
+/* ==========================================================================
+   5d) عارض الملفات العادية — إكسل / صور / PDF / نص / HTML
+   --------------------------------------------------------------------------
+   الملفات دي مش مشفّرة، فبنعرضها على طول من غير فك تشفير ولا ديالوج.
+   بريفيو مستقل تمامًا عن #preview (اللي فك التشفير بتاع .ks) ومابيلمسهوش:
+   اللي فيه بس تكبير + تحريك — من غير أزرار تصدير.
+   ========================================================================== */
+const FView = (function(){
+  const root    = $('#fileView'), stage = $('#fvStage'), wrap = $('#fvWrap'),
+        content = $('#fvContent'), loadBox = $('#fvLoad');
+  const MIN = 0.1, MAX = 8;
+  const MAX_PAGES = 40, MAX_ROWS = 1000;      // حدود أمان للملفات الكبيرة
+
+  let item = null, z = 1, tx = 0, ty = 0, mode = 'fit',
+      natural = { w: 1, h: 1 }, token = 0;
+
+  const clamp = n => Math.max(MIN, Math.min(MAX, isFinite(n) && n > 0 ? n : 1));
+  const rawUrl = p => `${RAW}/${String(p).replace(/ /g, '%20')}`;
+
+  function kindOf(name){
+    const s = String(name || '').toLowerCase();
+    if (/\.(png|jpe?g|gif|webp|bmp|svg|avif)$/.test(s)) return 'image';
+    if (/\.pdf$/.test(s))                        return 'pdf';
+    if (/\.(xlsx?|xls|csv|tsv)$/.test(s))        return 'sheet';
+    if (/\.(txt|json|xml|md|log|ya?ml)$/.test(s)) return 'text';
+    if (/\.(html?|xhtml)$/.test(s))              return 'html';
+    return '';
+  }
+
+  /* ---------- التكبير / التحريك ---------- */
+  function apply(){
+    wrap.style.transform = `translate(${tx}px,${ty}px) scale(${z})`;
+    const pct = Math.round(z * 100);
+    $('#fvZoomTxt').textContent  = pct + '%';
+    $('#fvFootZoom').textContent = pct + '%';
+    $('#fvSlider').value = Math.max(20, Math.min(500, pct));
+  }
+  function center(){
+    const sw = stage.clientWidth || 1, sh = stage.clientHeight || 1;
+    tx = Math.round((sw - natural.w * z) / 2);
+    ty = Math.round((sh - natural.h * z) / 2);
+  }
+  function setZoom(nz, cx, cy){
+    const sw = stage.clientWidth || 1, sh = stage.clientHeight || 1;
+    const px = cx == null ? sw / 2 : cx, py = cy == null ? sh / 2 : cy;
+    const ux = (px - tx) / z, uy = (py - ty) / z;   // نقطة المحتوى اللي تحت المؤشر
+    z = clamp(nz);
+    tx = px - ux * z; ty = py - uy * z;
+    mode = 'free';
+    apply();
+  }
+  function fit(){
+    const sw = stage.clientWidth || 1, sh = stage.clientHeight || 1;
+    z = clamp(Math.min(sw / natural.w, sh / natural.h, 1));
+    mode = 'fit';
+    center(); apply();
+  }
+  function actual(){ z = 1; mode = 'actual'; center(); apply(); }
+  function measure(){
+    natural.w = Math.max(1, content.offsetWidth);
+    natural.h = Math.max(1, content.offsetHeight);
+    $('#fvFootSize').textContent = Math.round(natural.w) + ' × ' + Math.round(natural.h);
+  }
+  function info(txt){
+    const chip = $('#fvFootInfo');
+    if (!txt){ chip.style.display = 'none'; return; }
+    chip.style.display = '';
+    chip.textContent = txt;
+  }
+  function showLoad(on){ loadBox.classList.toggle('show', !!on); }
+
+  function msg(title, sub){
+    content.innerHTML =
+      `<div class="fv-msg"><b>${esc(title)}</b>${sub ? esc(sub) : ''}</div>`;
+  }
+
+  /* ---------- مكتبات PDF و Excel — تحميل عند أول استخدام ---------- */
+  let pdfP = null, xlsxP = null;
+  function ensurePdf(){
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (!pdfP){
+      pdfP = loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js')
+        .then(() => {
+          const p = window.pdfjsLib;
+          p.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+          return p;
+        })
+        .catch(e => { pdfP = null; throw e; });
+    }
+    return pdfP;
+  }
+  function ensureXLSX(){
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (!xlsxP){
+      xlsxP = loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js')
+        .then(() => window.XLSX)
+        .catch(e => { xlsxP = null; throw e; });
+    }
+    return xlsxP;
+  }
+
+  /* ---------- بناة المحتوى حسب النوع ---------- */
+  function buildImage(url){
+    return new Promise(res => {
+      const im = new Image();
+      im.onload  = () => { content.appendChild(im); res(); };
+      im.onerror = () => { msg(I18n.t('fv.err'), I18n.t('fv.err.image')); res(); };
+      im.src = url;
+    });
+  }
+
+  async function buildPDF(url, name){
+    const lib = await ensurePdf();
+    const doc = await lib.getDocument({ url }).promise;
+    const n = Math.min(doc.numPages, MAX_PAGES);
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    for (let p = 1; p <= n; p++){
+      const page = await doc.getPage(p);
+      const base = page.getViewport({ scale: 1 });
+      const cv = document.createElement('canvas');
+      cv.width  = Math.max(1, Math.floor(base.width  * dpr));
+      cv.height = Math.max(1, Math.floor(base.height * dpr));
+      cv.style.width  = base.width  + 'px';
+      cv.style.height = base.height + 'px';
+      content.appendChild(cv);
+      await page.render({
+        canvasContext: cv.getContext('2d'),
+        viewport: page.getViewport({ scale: dpr })
+      }).promise;
+    }
+    info(doc.numPages > n
+      ? I18n.t('fv.pages', { from: 1, to: n, all: doc.numPages })
+      : I18n.t('fv.pages', { from: 1, to: n, all: doc.numPages }));
+  }
+
+  async function buildSheet(url){
+    const XLSX = await ensureXLSX();
+    const buf  = await fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); });
+    const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+    let shown = 0, total = 0;
+
+    wb.SheetNames.forEach(sn => {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, defval: '' });
+      if (!rows || !rows.length) return;
+      total += rows.length;
+      const take = Math.max(0, Math.min(rows.length, MAX_ROWS - shown));
+      if (take <= 0) return;
+
+      const box = document.createElement('div');
+      box.className = 'fv-sheet';
+      if (wb.SheetNames.length > 1){
+        const h = document.createElement('h3');
+        h.textContent = sn;
+        box.appendChild(h);
+      }
+      const table = document.createElement('table');
+      const tbody = document.createElement('tbody');
+      rows.slice(0, take).forEach(r => {
+        const tr = document.createElement('tr');
+        r.forEach(cell => {
+          const td = document.createElement('td');
+          td.textContent = cell == null ? '' : String(cell);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      box.appendChild(table);
+      content.appendChild(box);
+      shown += take;
+    });
+
+    if (!shown) msg(I18n.t('fv.err'), I18n.t('fv.err.empty'));
+    info(total > shown
+      ? I18n.t('fv.rows', { n: shown, all: total })
+      : I18n.t('fv.rows', { n: shown, all: total }));
+  }
+
+  async function buildText(url){
+    const t = await fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
+    const pre = document.createElement('pre');
+    pre.className = 'fv-pre';
+    pre.textContent = t;
+    content.appendChild(pre);
+  }
+
+  async function buildHTML(url){
+    const html = await fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); });
+    const f = document.createElement('iframe');
+    f.className = 'fv-frame';
+    f.setAttribute('sandbox', 'allow-same-origin');   // بدون allow-scripts
+    f.setAttribute('title', 'file preview');
+    content.appendChild(f);
+    await new Promise(res => { f.onload = res; f.srcdoc = html; });
+    try{
+      const d = f.contentDocument;
+      if (d && d.body) f.style.height = Math.max(240, d.body.scrollHeight + 30) + 'px';
+    }catch(e){}
+  }
+
+  /* ---------- فتح / قفل ---------- */
+  function open(it){
+    const kind = kindOf(it.name);
+    if (!kind) return false;
+    const my = ++token;
+    item = it;
+    $('#fvName').textContent = it.name;
+    $('#fvFootSize').textContent = '—';
+    info('');
+    content.className = 'k-' + kind;
+    content.innerHTML = '';
+    z = 1; tx = 0; ty = 0; natural = { w: 1, h: 1 };
+    apply();
+
+    root.style.display = 'flex';
+    document.documentElement.classList.add('pv-lock');
+    showLoad(true);
+
+    const jobs = {
+      image: buildImage, pdf: buildPDF, sheet: buildSheet,
+      text: buildText, html: buildHTML
+    };
+
+    Promise.resolve(jobs[kind](rawUrl(it.path), it.name))
+      .then(() => {
+        if (my !== token) return;
+        measure(); fit(); showLoad(false);
+      })
+      .catch(e => {
+        if (my !== token) return;
+        showLoad(false);
+        content.innerHTML = '';
+        msg(I18n.t('fv.err'), (e && e.message) || '');
+        natural = { w: Math.min(420, (stage.clientWidth || 400) - 24), h: 140 };
+        center(); apply();
+      });
+    return true;
+  }
+
+  function close(){
+    ++token;
+    root.style.display = 'none';
+    document.documentElement.classList.remove('pv-lock');
+    content.innerHTML = '';
+    item = null;
+  }
+
+  function isOpen(){ return root.style.display === 'flex'; }
+  function supports(name){ return !!kindOf(name); }
+
+  /* ---------- اللمس / الماوس ---------- */
+  const pts = {};
+  let drag = false, pinch = null;
+  const twoIds = () => Object.keys(pts);
+  const dist = () => {
+    const k = twoIds();
+    const a = pts[k[0]], b = pts[k[1]];
+    return Math.hypot(a.x - b.x, a.y - b.y) || 1;
+  };
+
+  stage.addEventListener('pointerdown', e => {
+    if (loadBox.classList.contains('show')) return;
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    try{ stage.setPointerCapture(e.pointerId); }catch(err){}
+    if (twoIds().length === 1){
+      drag = true;
+      stage.classList.add('drag');
+    } else if (twoIds().length === 2){
+      drag = false;
+      stage.classList.remove('drag');
+      const r = stage.getBoundingClientRect();
+      const mx = (pts[twoIds()[0]].x + pts[twoIds()[1]].x) / 2 - r.left;
+      const my = (pts[twoIds()[0]].y + pts[twoIds()[1]].y) / 2 - r.top;
+      pinch = { d: dist(), z, ux: (mx - tx) / z, uy: (my - ty) / z };
+    }
+  });
+
+  stage.addEventListener('pointermove', e => {
+    if (!pts[e.pointerId]) return;
+    const prev = { x: pts[e.pointerId].x, y: pts[e.pointerId].y };
+    pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+    const ids = twoIds();
+    if (pinch && ids.length >= 2){
+      const r = stage.getBoundingClientRect();
+      const mx = (pts[ids[0]].x + pts[ids[1]].x) / 2 - r.left;
+      const my = (pts[ids[0]].y + pts[ids[1]].y) / 2 - r.top;
+      z = clamp(pinch.z * (dist() / pinch.d));
+      tx = mx - pinch.ux * z;
+      ty = my - pinch.uy * z;
+      mode = 'free';
+      apply();
+      return;
+    }
+    if (drag){
+      tx += e.clientX - prev.x;
+      ty += e.clientY - prev.y;
+      apply();
+    }
+  });
+
+  function endPointer(e){
+    delete pts[e.pointerId];
+    if (twoIds().length < 2) pinch = null;
+    if (twoIds().length === 0){ drag = false; stage.classList.remove('drag'); }
+  }
+  stage.addEventListener('pointerup', endPointer);
+  stage.addEventListener('pointercancel', endPointer);
+
+  stage.addEventListener('wheel', e => {
+    if (loadBox.classList.contains('show')) return;
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey){
+      const r = stage.getBoundingClientRect();
+      setZoom(z * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX - r.left, e.clientY - r.top);
+    } else {
+      tx -= e.deltaX; ty -= e.deltaY; mode = 'free'; apply();
+    }
+  }, { passive: false });
+
+  stage.addEventListener('dblclick', e => {
+    const r = stage.getBoundingClientRect();
+    if (mode === 'fit') setZoom(2, e.clientX - r.left, e.clientY - r.top);
+    else fit();
+  });
+
+  /* ---------- الأزرار + الكيبورد ---------- */
+  $('#fvClose').addEventListener('click', close);
+  $('#fvZIn').addEventListener('click',   () => setZoom(z * 1.25));
+  $('#fvZOut').addEventListener('click',  () => setZoom(z / 1.25));
+  $('#fvZoomVal').addEventListener('click', actual);
+  $('#fvFit').addEventListener('click',   fit);
+  $('#fvSlider').addEventListener('input', e => setZoom(Number(e.target.value) / 100));
+
+  addEventListener('resize', () => {
+    if (isOpen() && mode === 'fit'){ measure(); fit(); }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!isOpen()) return;
+    const k = e.key, c = e.ctrlKey || e.metaKey;
+    if (Dialog.isOpen()) return;
+    if (k === 'Escape'){ e.preventDefault(); close(); return; }
+    if (c && (k === 'p' || k === 'P')) return;              // سيب الـ PDF للـ preview
+    if ((c && (k === '+' || k === '=')) || k === '+' || k === '='){ e.preventDefault(); setZoom(z * 1.2); return; }
+    if ((c && (k === '-' || k === '_')) || k === '-' || k === '_'){ e.preventDefault(); setZoom(z / 1.2); return; }
+    if (k === '0'){ e.preventDefault(); actual(); return; }
+    if (k === 'f' || k === 'F'){ e.preventDefault(); fit(); }
+  });
+
+  return { open, close, isOpen, supports, kindOf };
+})();
 
 /* ==========================================================================
    6) إرسال ريسبي جديد

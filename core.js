@@ -189,6 +189,15 @@ const DICT = {
     'dl.open'              : 'فتح التحميل',
     'dl.err'               : 'فشل رفع الملف — جرب تاني.',
 
+    /* ---------- عارض الملفات العادية ---------- */
+    'fv.loading'           : 'جارٍ فتح الملف…',
+    'fv.loading.ph'        : 'استنى ثانية واحدة.',
+    'fv.err'               : 'مش قادرين نعرض الملف ده',
+    'fv.err.image'         : 'الصورة دي مش موجودة أو مش مقروءة.',
+    'fv.err.empty'         : 'الملف فاضي.',
+    'fv.pages'             : 'صفحة {from}–{to} من {all}',
+    'fv.rows'              : '{n} صف',
+
     /* ---------- عام ---------- */
     'common.ok'            : 'تماماً',
     'common.confirm'       : 'تأكيد',
@@ -336,6 +345,15 @@ const DICT = {
     'dl.ready.msg'         : 'The file was uploaded and will open in your browser.<br>Tap <b>Download</b> to save it on your device.<br><span style="font-family:monospace;font-size:.95em;color:var(--primary)">{name}</span>',
     'dl.open'              : 'Open download',
     'dl.err'               : 'Upload failed — please try again.',
+
+    /* ---------- plain file viewer ---------- */
+    'fv.loading'           : 'Opening file…',
+    'fv.loading.ph'        : 'Please wait a moment.',
+    'fv.err'               : 'Could not display this file',
+    'fv.err.image'         : 'The image is missing or not readable.',
+    'fv.err.empty'         : 'This file is empty.',
+    'fv.pages'             : 'Page {from}–{to} of {all}',
+    'fv.rows'              : '{n} rows',
 
     /* ---------- common ---------- */
     'common.ok'            : 'OK',
