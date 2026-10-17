@@ -420,6 +420,43 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
 #gate h3{font-size:1.1em;font-weight:900;margin-bottom:6px}
 #gate p{color:var(--muted);font-size:.86em;line-height:1.9;margin-bottom:16px}
 
+/* ============ بوابة التحديث الإجباري ============ */
+#updGate{
+  position:fixed;inset:0;z-index:9999;background:var(--bg);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));
+  text-align:center;overscroll-behavior:contain;
+}
+#updGate.show{display:flex}
+#updGate .ubox{max-width:340px;width:100%;animation:pop .4s ease both}
+#updGate .uico{
+  width:62px;height:62px;border-radius:20px;margin:0 auto 14px;display:grid;place-items:center;
+  font-size:1.7em;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary-2));
+  box-shadow:0 14px 34px rgba(109,94,252,.35)}
+#updGate h3{font-size:1.08em;font-weight:900;margin-bottom:8px}
+#updGate p{color:var(--muted);font-size:.86em;line-height:1.9;margin-bottom:14px}
+#updGate .ulink{
+  display:block;margin-bottom:11px;padding:10px 12px;border-radius:12px;
+  border:1px dashed var(--stroke);background:rgba(255,255,255,.04);
+  font-family:ui-monospace,Consolas,monospace;font-size:.72em;color:var(--primary);
+  word-break:break-all;direction:ltr;user-select:all;-webkit-user-select:all;
+}
+#updGate .uactions{display:flex;gap:8px;margin-bottom:11px}
+#updGate .ubtn{
+  flex:1;padding:12px;border:1px solid var(--stroke);border-radius:12px;
+  background:rgba(255,255,255,.05);color:var(--txt);
+  font-family:inherit;font-size:.88em;font-weight:800;cursor:pointer;transition:.2s}
+#updGate .ubtn:hover{transform:translateY(-2px);border-color:var(--primary)}
+#updGate .ubtn.go{
+  flex:1.5;border:0;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary-2));
+  box-shadow:0 10px 26px rgba(109,94,252,.32)}
+#updGate .ubtn.go:hover{filter:brightness(1.08);color:#fff}
+#updGate .unote{color:var(--muted);font-size:.72em;line-height:1.8}
+#updGate .uver{
+  display:inline-block;margin-top:14px;padding:3px 10px;border-radius:99px;
+  border:1px solid var(--stroke);color:var(--muted);font-size:.7em;font-weight:800}
+@media (max-width:430px){ #updGate .uactions{flex-direction:column-reverse} }
+
 /* ================= Dialogs ================= */
 .dlg-scrim{
   position:fixed;inset:0;z-index:900;background:rgba(4,6,12,.62);
@@ -567,6 +604,22 @@ footer a{color:var(--primary);text-decoration:none;font-weight:700}
       <i class="fas fa-arrow-right"></i> <span data-i18n="gate.goto">روح لصفحة الدخول</span>
     </button>
     <button class="lang-btn" id="langBtnGate" style="position:static;margin-top:12px" type="button"></button>
+  </div>
+</div>
+
+<!-- ===== بوابة التحديث الإجباري (بتشتغل من index2.html لو APP_UPDATE.on = true) ===== -->
+<div id="updGate">
+  <div class="ubox">
+    <div class="uico"><i class="fas fa-cloud-arrow-down"></i></div>
+    <h3 data-i18n="upd.title">لازم تحدّث التطبيق</h3>
+    <p data-i18n="upd.msg">النسخة اللي على جهازك قديمة.<br>لازم تنزّل التحديث الأول وبعدين تفتح التطبيق تاني.</p>
+    <a class="ulink" id="updLink" href="#" target="_blank" rel="noopener noreferrer">—</a>
+    <div class="uactions">
+      <button class="ubtn" id="updCopy" type="button" data-i18n="upd.copy">نسخ اللينك</button>
+      <button class="ubtn go" id="updGo" type="button" data-i18n="upd.go">فتح صفحة التحديث</button>
+    </div>
+    <div class="unote" data-i18n="upd.note">لو الرابط ما اتفتحش، افتحه في المتصفح بنفسك.</div>
+    <span class="uver" id="updVer">—</span>
   </div>
 </div>
 
@@ -828,6 +881,25 @@ const API_BASE =
 
 const LS_NAME = "tc.name", LS_CODE = "tc.code";
 const LOGIN_PAGE = "./index.html";
+
+/* ==========================================================================
+   تحديث التطبيق — من غير أي تعديل على ملف الأندرويد
+   --------------------------------------------------------------------------
+   الصفحة دي بتتحمّل من GitHub كل مرة الـ WebView بيفتحه، فاللي بيتحط هنا
+   بيوصل لكل الناس فوراً — حتى لو التطبيق عندهم قديم.
+   - on: false  → مفيش بوابة (الوضع الطبيعي)
+   - on: true   → شاشة "لازم تحدّث" إجبارية بتغطي التطبيق كله
+   - until      → تاريخ اختياري: بعده البوابة بتتقفل تلقائياً
+   الاستخدام: لما تنزّل نسخة جديدة، غيّر on لـ true وحدّث version/date،
+   ولما الكل يحدّث رجّعها false (أو سيبها ترقفل لوحدها بـ until).
+   ========================================================================== */
+const APP_UPDATE = {
+  on: false,
+  version: '1.0.0',
+  url: 'https://progkady.github.io/RecipesStore/',
+  pkg: '',                 // اختياري: com.xxx.yyy → بيفتح PLAY STORE مباشرة
+  until: ''                // اختياري: '2026-11-30' → البوابة تتقفل بعد كده
+};
 
 const OWNER = 'ProgKady', REPO = 'Recipes', BRANCH = 'master';
 const API   = `https://api.github.com/repos/${OWNER}/${REPO}/contents`;
@@ -1262,6 +1334,93 @@ async function askActivationKey(){
   refreshKeyChip();
   return key;
 }
+
+/* ==========================================================================
+   بوابة التحديث الإجباري — شغّالة بالكامل من ملفات الويب (من غير تعديل الأندرويد)
+   ========================================================================== */
+const AppUpdate = (function(){
+  const gate = $('#updGate');
+  if (!gate) return { check(){}, open(){} };
+
+  function isAndroid(){ return /Android/i.test(navigator.userAgent); }
+
+  function target(){
+    if (APP_UPDATE.url) return APP_UPDATE.url;
+    if (APP_UPDATE.pkg) return 'https://play.google.com/store/apps/details?id=' + encodeURIComponent(APP_UPDATE.pkg);
+    return '';
+  }
+
+  function needed(){
+    if (!APP_UPDATE.on) return false;
+    if (APP_UPDATE.until){
+      const t = Date.parse(APP_UPDATE.until);
+      if (t && Date.now() > t) return false;      // عدّى الوقت → البوابة بتتقفل لوحدها
+    }
+    return !!target();
+  }
+
+  /* فتح رابط التحديث من جوّه الـ WebView:
+     1) intent  → بيفتح المتجر مباشرة، ولو مفيش حاجة شغالة بيفتح المتصفح
+     2) market  → لو متجر جوجل موجود
+     3) رابط عادي → آخر حل */
+  function open(){
+    const u = target();
+    if (!u) return;
+    if (!isAndroid()){ try{ location.href = u; }catch(e){} return; }
+
+    try{
+      location.href = 'intent://market#Intent;scheme=market;package=com.android.vending' +
+        ';S.browserFallbackUri=' + encodeURIComponent(u) + ';end';
+    }catch(e){}
+
+    if (APP_UPDATE.pkg){
+      setTimeout(() => {
+        try{ location.href = 'market://details?id=' + encodeURIComponent(APP_UPDATE.pkg); }catch(e){}
+      }, 1300);
+    }
+    setTimeout(() => { try{ location.href = u; }catch(e){} }, APP_UPDATE.pkg ? 2600 : 1300);
+  }
+
+  async function copy(){
+    const u = target();
+    if (!u) return;
+    let done = false;
+    try{ await navigator.clipboard.writeText(u); done = true; }catch(e){}
+    if (!done){
+      try{
+        const ta = document.createElement('textarea');
+        ta.value = u;
+        ta.style.cssText = 'position:fixed;top:-1000px;opacity:0';
+        document.body.appendChild(ta); ta.select();
+        done = document.execCommand('copy');
+        ta.remove();
+      }catch(e){}
+    }
+    toast((done ? '✅ ' : '⚠️ ') + I18n.t('upd.copied'));
+  }
+
+  function show(){
+    const u = target();
+    $('#updLink').textContent = u;
+    $('#updLink').href = u;
+    $('#updVer').textContent = 'v' + APP_UPDATE.version;
+    const tb = document.querySelector('.topbar'), ft = document.querySelector('footer');
+    if (tb) tb.style.display = 'none';
+    if (ft) ft.style.display = 'none';
+    gate.classList.add('show');
+    Dialog.closeAll && Dialog.closeAll();
+  }
+
+  $('#updGo').addEventListener('click', open);
+  $('#updCopy').addEventListener('click', copy);
+
+  return {
+    check(){ if (needed()) show(); },
+    isOpen(){ return gate.classList.contains('show'); },
+    open
+  };
+})();
+AppUpdate.check();
 
 /* ==========================================================================
    1) بوابة الحماية
@@ -1905,8 +2064,34 @@ function pvToggleFull(){
    ========================================================================== */
 const UPLOAD_API = 'https://tmpfiles.org/api/v1/upload';
 
-/* فتح رابط التحميل: بنجرّب تاب جديد الأول، ولو الـ WebView منعه بنفتحه في الصفحة نفسها */
+/* tmpfiles.org بيرجّع رابط صفحة العرض (HTML) — وإحنا محتاجين رابط التحميل
+   المباشر (…/dl/…) عشان الملف اللي يتحفظ يبقى الملف نفسه، مش صفحة الموقع.
+   (صفحة العرض HTML صغيرة ~3KB وبتتحفظ باسم .pdf فتلاقي الملف "فاضي".) */
+function directUrl(res){
+  const d = (res && res.data) || {};
+  let u = d.url_download || d.url || '';
+  if (!u) return '';
+  try{
+    const p = new URL(u);
+    if (/(^|\.)tmpfiles\.org$/i.test(p.hostname) && !/\/dl\//i.test(p.pathname)){
+      u = p.origin + '/dl' + p.pathname + p.search;
+    }
+  }catch(e){}
+  return u;
+}
+
+/* فتح رابط التحميل: على الأندرويد بنسلّمه لمتصفح خارجي (Chrome) عشان
+   متصفحه هو اللي يحمّل الملف صح — الـ WebView مش بيفتحش Download Manager */
 function openDownload(url){
+  if (/Android/i.test(navigator.userAgent) && /^https?:/i.test(url)){
+    const intent = 'intent://' + url.replace(/^https?:\/\//, '') +
+      '#Intent;scheme=https;package=com.android.chrome;S.browserFallbackUri=' +
+      encodeURIComponent(url) + ';end';
+    let handed = false;
+    try { handed = !!window.open(intent, '_blank'); } catch(e){}
+    setTimeout(() => { if (!handed){ try { window.location.href = url; } catch(e){} } }, 1200);
+    return;
+  }
   let w = null;
   try { w = window.open(url, '_blank', 'noopener,noreferrer'); } catch(e){}
   if (!w){
@@ -1936,9 +2121,8 @@ async function saveBlob(blob, filename){
     const res = await fetch(UPLOAD_API, { method: 'POST', body: fd });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const out = await res.json();
-    const link = out && out.data && out.data.url;
-    if (!link) throw new Error('no url');
-    const direct = String(link).replace('/dl/', '/');
+    const direct = directUrl(out);
+    if (!direct) throw new Error('no url');
 
     await Dialog.alert({
       icon: 'ok',
@@ -2012,6 +2196,91 @@ function smartBreak(cv, y, pagePx){
   return end;
 }
 
+/* نسبة الحبر في الـ canvas: لو قريبة من صفر معناها الصفحة اتالتقطت فاضية
+   (ده اللي بيطلع ملف ~3KB) — بنستخدمها عشان نجرب طريقة تانية قبل ما نحفظ */
+function inkRatio(cv){
+  try{
+    const w = 180;
+    const h = Math.max(1, Math.round(cv.height * (w / cv.width)));
+    const t = document.createElement('canvas');
+    t.width = w; t.height = h;
+    const c = t.getContext('2d');
+    c.fillStyle = '#fff';
+    c.fillRect(0, 0, w, h);
+    c.drawImage(cv, 0, 0, w, h);
+    const d = c.getImageData(0, 0, w, h).data;
+    let ink = 0;
+    for (let i = 0; i < d.length; i += 4){
+      if (d[i] < 245 || d[i+1] < 245 || d[i+2] < 245) ink++;
+    }
+    return ink / (d.length / 4);
+  }catch(e){ return -1; }         // -1 = مقدرش نقيس
+}
+
+/* ----- الطريقة 1: التقاط من إطار مخفي خارج الشاشة (من غير opacity!) -----
+   opacity:0 بتخلي html2canvas يرجّع صفحة بيضا على WebView الأندرويد */
+async function captureSheet(){
+  const fr = document.createElement('iframe');
+  fr.setAttribute('aria-hidden', 'true');
+  fr.style.cssText = 'position:fixed;left:-20000px;top:0;width:760px;height:1200px;' +
+                     'border:0;z-index:-1;pointer-events:none';
+  document.body.appendChild(fr);
+  try{
+    await new Promise(res => { fr.onload = res; fr.srcdoc = buildExportDoc(V.html, V.dir); });
+
+    const d = fr.contentDocument;
+    try{ await Promise.race([d.fonts.ready, sleep(4000)]); }catch(e){}
+    await Promise.all(Array.from(d.images).map(im =>
+      im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; setTimeout(r, 8000); })));
+    await sleep(200);
+
+    const sheet = d.getElementById('sheet');
+    const W = Math.max(1, sheet.offsetWidth);
+    const H = Math.max(1, sheet.scrollHeight);
+    fr.style.height = (H + 30) + 'px';
+    await sleep(120);
+
+    const scale = Math.max(0.6, Math.min(2, 16000 / H, Math.sqrt(24e6 / (W * H))));
+    return await window.html2canvas(sheet, {
+      scale, useCORS: true, allowTaint: false, logging: false,
+      backgroundColor: '#ffffff', imageTimeout: 15000, removeContainer: true,
+      scrollX: 0, scrollY: 0, width: W, height: H, windowWidth: W, windowHeight: H
+    });
+  } finally {
+    if (fr.parentNode) fr.parentNode.removeChild(fr);
+  }
+}
+
+/* ----- الطريقة 2: التقاط اللي معروض على الشاشة جوّه إطار المعاينة -----
+   شيل التكبير والدوران قبل الالتقاط وبعده نرجّعهم زي ما كانوا */
+async function captureLive(){
+  const doc = iframe.contentDocument;
+  if (!doc || !doc.body) throw new Error('preview not ready');
+  const keepZoom = V.zoom, keepRot = V.rot;
+  pvCmd('zoom', 1);
+  pvCmd('rot', 0);
+  await sleep(350);
+  try{
+    const body = doc.body;
+    const bg = body.style.background;
+    body.style.background = '#fff';
+    const W = Math.max(1, body.scrollWidth);
+    const H = Math.max(1, body.scrollHeight);
+    const scale = Math.max(0.6, Math.min(2, 16000 / H, Math.sqrt(24e6 / (W * H))));
+    const canvas = await window.html2canvas(body, {
+      scale, useCORS: true, allowTaint: false, logging: false,
+      backgroundColor: '#ffffff', imageTimeout: 15000, removeContainer: true,
+      scrollX: 0, scrollY: 0, width: W, height: H, windowWidth: W, windowHeight: H
+    });
+    body.style.background = bg;
+    return canvas;
+  } finally {
+    pvCmd('zoom', keepZoom);
+    pvCmd('rot', keepRot);
+    pvCmd('measure');
+  }
+}
+
 /* ----- تصدير PDF حقيقي (من غير window.print — اللي مش شغّال في الـ WebView) ----- */
 async function pvExportPDF(){
   if (!V.html || V.busy) return;
@@ -2020,38 +2289,27 @@ async function pvExportPDF(){
   const old = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>PDF</span>';
-  toast('⏳ Preparing PDF…');
+  toast('⏳ ' + I18n.t('pdf.work'));
 
-  let fr = null;
   try{
     await ensurePdfLibs();
 
-    fr = document.createElement('iframe');
-    fr.setAttribute('aria-hidden', 'true');
-    fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:700px;height:1200px;border:0;opacity:0;pointer-events:none';
-    document.body.appendChild(fr);
-    await new Promise(res => { fr.onload = res; fr.srcdoc = buildExportDoc(V.html, V.dir); });
+    /* 1) التقاط الصفحة — ونتحقق إن الصورة فيها محتوى مش بيضا */
+    let canvas = null, ink = -1;
+    try{
+      canvas = await captureSheet();
+      ink = inkRatio(canvas);
+    }catch(e){ canvas = null; }
 
-    const d = fr.contentDocument;
-    try{ await Promise.race([d.fonts.ready, sleep(4000)]); }catch(e){}
-    await Promise.all(Array.from(d.images).map(im =>
-      im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; setTimeout(r, 6000); })));
-    await sleep(150);
+    if (!canvas || (ink >= 0 && ink < 0.002)){
+      if (canvas){ canvas.width = canvas.height = 0; }
+      toast('⏳ ' + I18n.t('pdf.retry'));
+      canvas = await captureLive();
+      ink = inkRatio(canvas);
+    }
+    if (!canvas || (ink >= 0 && ink < 0.0008)) throw new Error('EMPTY_PAGE');
 
-    const sheet = d.getElementById('sheet');
-    const W = sheet.offsetWidth, H = sheet.scrollHeight;
-    fr.style.height = (H + 20) + 'px';
-    await sleep(80);
-
-    // حجم الـ canvas بيتظبط عشان الموبايل ما يقعش من الذاكرة
-    let scale = Math.min(2, 16000 / H, Math.sqrt(28e6 / (W * H)));
-    scale = Math.max(0.6, scale);
-
-    const canvas = await window.html2canvas(sheet, {
-      scale, useCORS: true, allowTaint: false, logging: false,
-      backgroundColor: '#ffffff', windowWidth: W, windowHeight: H
-    });
-
+    /* 2) تقسيمها صفحات A4 */
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'p', compress: true });
     const PW = 210, PH = 297, M = 10;
@@ -2059,7 +2317,7 @@ async function pvExportPDF(){
     const pxPerMm = canvas.width / cw;
     const pagePx = Math.floor(chh * pxPerMm);
 
-    let y = 0, first = true;
+    let y = 0, first = true, pages = 0;
     while (y < canvas.height){
       let end = smartBreak(canvas, y, pagePx);
       if (end <= y) end = Math.min(y + pagePx, canvas.height);
@@ -2074,21 +2332,33 @@ async function pvExportPDF(){
 
       if (!first) pdf.addPage();
       first = false;
+      pages++;
       pdf.addImage(pc.toDataURL('image/jpeg', 0.92), 'JPEG', M, M, cw, hpx / pxPerMm);
       pc.width = pc.height = 0;
       y = end;
     }
     canvas.width = canvas.height = 0;
 
+    /* 3) فحص أخير: ملف 3KB يعني صفحة فاضية — متحفظوش */
+    const blob = pdf.output('blob');
+    if (!blob || blob.size < 8000 || pages < 1) throw new Error('PDF_TOO_SMALL');
+
     const name = pvBaseName() + '.pdf';
-    const how = await saveBlob(pdf.output('blob'), name);
+    const how = await saveBlob(blob, name);
     if (how === 'shared' || how === 'download') toast('✅ ' + name);
   } catch (err){
-    toast('⚠️ PDF export failed');
+    toast('⚠️ ' + I18n.t('pdf.fail'));
+    if (Dialog && Dialog.alert){
+      await Dialog.alert({
+        icon: 'warn',
+        title: I18n.t('pdf.fail.title'),
+        message: I18n.t('pdf.fail.msg'),
+        submitText: I18n.t('common.ok')
+      });
+    }
     // احتياطي: على الكمبيوتر نفتح نافذة الطباعة العادية
     if (!/Android|iPhone|iPad/i.test(navigator.userAgent)) pvCmd('print');
   } finally {
-    if (fr && fr.parentNode) fr.parentNode.removeChild(fr);
     btn.disabled = false;
     btn.innerHTML = old;
     V.busy = false;

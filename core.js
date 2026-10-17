@@ -182,6 +182,21 @@ const DICT = {
     'key.err.title'        : 'تعذر عرض الريسيبي',
     'key.err.msg'          : 'حصل خطأ أثناء التحميل. تأكد من الإنترنت وجرب تاني.',
 
+    /* ---------- بوابة التحديث ---------- */
+    'upd.title'            : 'لازم تحدّث التطبيق',
+    'upd.msg'              : 'النسخة اللي على جهازك قديمة.<br>لازم تنزّل التحديث الأول وبعدين تفتح التطبيق تاني.',
+    'upd.copy'             : 'نسخ اللينك',
+    'upd.copied'           : 'تم نسخ اللينك',
+    'upd.go'               : 'فتح صفحة التحديث',
+    'upd.note'             : 'لو الرابط ما اتفتحش، افتحه في المتصفح بنفسك.',
+
+    /* ---------- تصدير PDF ---------- */
+    'pdf.work'              : 'جارٍ تجهيز الـ PDF…',
+    'pdf.retry'             : 'إعادة الالتقاط من الشاشة…',
+    'pdf.fail'              : 'الـ PDF مخرَجش',
+    'pdf.fail.title'        : 'مقدرنا نعمل ملف PDF',
+    'pdf.fail.msg'          : 'الصفحة طلعت فاضية فالمحاولة دي اتلغت (أحسن من ما يتحفظ ملف فاضي).<br>جرّب تصفّح الريسيبي لآخره الأول أو تكبّره، وجرّب تاني.<br><b>الحل المضمون:</b> اطبع من المتصفح أو خد Screenshot من الريسيبي.',
+
     /* ---------- تحميل الملفات ---------- */
     'dl.uploading'         : 'جارٍ رفع الملف…',
     'dl.ready.title'       : 'الملف جاهز',
@@ -338,6 +353,21 @@ const DICT = {
     'key.wrong.msg'        : 'That key did not unlock this file.<br>It has been cleared from this device — you must enter it again.<br><br>{lock}<b>Locked for {n}s</b> after {t} failed attempts.<br><b>If you do not have the correct key, contact us on WhatsApp.</b>',
     'key.err.title'        : 'Could not display recipe',
     'key.err.msg'          : 'An error occurred while loading. Check your connection and try again.',
+
+    /* ---------- update gate ---------- */
+    'upd.title'            : 'App update required',
+    'upd.msg'              : 'The version on your device is outdated.<br>Install the update first, then reopen the app.',
+    'upd.copy'             : 'Copy link',
+    'upd.copied'           : 'Link copied',
+    'upd.go'               : 'Open update page',
+    'upd.note'             : 'If the link does not open, open it in your browser.',
+
+    /* ---------- PDF export ---------- */
+    'pdf.work'              : 'Preparing the PDF…',
+    'pdf.retry'             : 'Re-capturing from the screen…',
+    'pdf.fail'              : 'PDF not ready',
+    'pdf.fail.title'        : 'Could not build the PDF',
+    'pdf.fail.msg'          : 'The page came out blank, so this attempt was cancelled (better than saving an empty file).<br>Scroll to the end of the recipe or zoom it, then try again.<br><b>Guaranteed fix:</b> print from the browser, or take a screenshot of the recipe.',
 
     /* ---------- file download ---------- */
     'dl.uploading'         : 'Uploading the file…',
