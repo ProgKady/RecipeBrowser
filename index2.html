@@ -1026,29 +1026,38 @@ function mimeForFile(name){
   const n = String(name || '').toLowerCase();
   if (n.endsWith('.pdf'))  return 'application/pdf';
   if (n.endsWith('.xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (n.endsWith('.xlsm')) return 'application/vnd.ms-excel.sheet.macroEnabled.12';
+  if (n.endsWith('.xlsb')) return 'application/vnd.ms-excel.sheet.binary.macroEnabled.12';
+  if (n.endsWith('.xltx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.template';
+  if (n.endsWith('.xltm')) return 'application/vnd.ms-excel.template.macroEnabled.12';
   if (n.endsWith('.xls'))  return 'application/vnd.ms-excel';
   if (n.endsWith('.csv'))  return 'text/csv';
   if (n.endsWith('.tsv'))  return 'text/tab-separated-values';
   return 'application/octet-stream';
 }
 function isExcelOrPdf(name){
-  return /\.(xlsx?|xls|csv|tsv|pdf)$/i.test(name || '');
+  return /\.(xlsx|xlsm|xlsb|xltx|xltm|xls|csv|tsv|pdf)$/i.test(name || '');
 }
 /** يحاول يفتح الملف في تطبيق النظام (Excel / PDF viewer). بيرجع true لو حاول. */
-function tryOpenExternalFile(url, mime){
+function tryOpenExternalFile(url, mime, fileName){
   if (!url) return false;
   if (/Android/i.test(navigator.userAgent)){
     try{
       const path = url.replace(/^https?:\/\//, '');
-      // VIEW + MIME → النظام بيختار تطبيق الإكسل أو القارئ الافتراضي
-      const intent = 'intent://' + path +
+      // VIEW + MIME الصحيح + اسم الملف → يمنع الحفظ كـ .bin ويختار تطبيق الإكسل/الـ PDF
+      let intent = 'intent://' + path +
         '#Intent;scheme=https;action=android.intent.action.VIEW;type=' +
-        encodeURIComponent(mime || 'application/octet-stream') + ';end';
+        encodeURIComponent(mime || 'application/octet-stream');
+      if (fileName){
+        intent += ';S.title=' + encodeURIComponent(fileName);
+        // بعض الرومات بتستخدم الاسم من الـ URL؛ نتأكد إن الامتداد ظاهر
+      }
+      intent += ';end';
       location.href = intent;
       return true;
     }catch(e){}
   }
-  // iOS وغيره: فتح في تاب جديد (غالباً بيفتح عارض النظام أو يحمّل)
+  // iOS وغيره: فتح في تاب جديد (غالباً بيفتح عارض النظام أو يحمّل بالامتداد الصح)
   try{
     const w = window.open(url, '_blank', 'noopener,noreferrer');
     return !!w;
@@ -1737,7 +1746,7 @@ function renderGrid(){
 function iconFor(name){
   const n = name.toLowerCase();
   if (n.endsWith('.ks') || n.endsWith('.html') || n.endsWith('.htm')) return 'fa-file-code';
-  if (n.endsWith('.xlsx') || n.endsWith('.xls') || n.endsWith('.csv'))  return 'fa-file-excel';
+  if (/\.(xlsx|xlsm|xlsb|xltx|xltm|xls|csv|tsv)$/.test(n)) return 'fa-file-excel';
   if (n.endsWith('.json'))  return 'fa-file-code';
   if (n.endsWith('.pdf'))   return 'fa-file-pdf';
   if (n.endsWith('.zip'))   return 'fa-file-zipper';
@@ -1763,7 +1772,7 @@ grid.addEventListener('click', e => {
     const url = RAW + '/' + path.replace(/ /g, '%20');
     const mime = mimeForFile(name);
     toast('📂 ' + (I18n.t('fv.external') || 'Opening in app…'));
-    const tried = tryOpenExternalFile(url, mime);
+    const tried = tryOpenExternalFile(url, mime, name);
     // لو النظام ما فتحش تطبيق (مفيش handler) بعد ~1.4 ثانية لسه الصفحة شغّالة → fallback للعرض الداخلي
     if (tried){
       const start = Date.now();
@@ -2706,7 +2715,7 @@ const FView = (function(){
     const s = String(name || '').toLowerCase();
     if (/\.(png|jpe?g|gif|webp|bmp|svg|avif)$/.test(s)) return 'image';
     if (/\.pdf$/.test(s))                        return 'pdf';
-    if (/\.(xlsx?|xls|csv|tsv)$/.test(s))        return 'sheet';
+    if (/\.(xlsx|xlsm|xlsb|xltx|xltm|xls|csv|tsv)$/.test(s)) return 'sheet';
     if (/\.(txt|json|xml|md|log|ya?ml)$/.test(s)) return 'text';
     if (/\.(html?|xhtml)$/.test(s))              return 'html';
     return '';
