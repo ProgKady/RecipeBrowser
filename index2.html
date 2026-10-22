@@ -1038,31 +1038,64 @@ function mimeForFile(name){
 function isExcelOrPdf(name){
   return /\.(xlsx|xlsm|xlsb|xltx|xltm|xls|csv|tsv|pdf)$/i.test(name || '');
 }
-/** يحاول يفتح الملف في تطبيق النظام (Excel / PDF viewer). بيرجع true لو حاول. */
-function tryOpenExternalFile(url, mime, fileName){
-  if (!url) return false;
+/**
+ * فتح Excel / PDF في تطبيق النظام بالامتداد الصحيح (مش .bin).
+ * الطريقة: نجيب الملف → Blob بـ MIME واسم صح → Share أو تحميل باسم الملف الأصلي.
+ * بيرجع: 'shared' | 'download' | 'opened' | 'fail'
+ */
+async function openExternalFile(url, mime, fileName){
+  if (!url || !fileName) return 'fail';
+  const safeName = String(fileName).replace(/[\\/:*?"<>|]+/g, '_');
+  const type = mime || 'application/octet-stream';
+
+  // 1) جلب الملف وفرض الـ MIME الصحيح (GitHub raw غالباً بيبعته octet-stream)
+  let blob;
+  try{
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const buf = await res.arrayBuffer();
+    blob = new Blob([buf], { type: type });
+  }catch(e){
+    return 'fail';
+  }
+
+  // 2) مشاركة الملف (أفضل طريقة على الموبايل — بتفتح قائمة "فتح باستخدام")
+  try{
+    const file = new File([blob], safeName, { type: type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })){
+      await navigator.share({ files: [file], title: safeName });
+      return 'shared';
+    }
+  }catch(e){
+    if (e && e.name === 'AbortError') return 'shared'; // المستخدم قفل شيت المشاركة
+  }
+
+  // 3) تحميل مباشر بالاسم والامتداد الصحيح (يمنع .bin)
+  try{
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objUrl;
+    a.download = safeName;          // ← الامتداد من هنا مش من السيرفر
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(objUrl), 60000);
+    return 'download';
+  }catch(e){}
+
+  // 4) احتياطي أندرويد: Intent على الـ blob URL (نادراً يشتغل، بس بنجرّب)
   if (/Android/i.test(navigator.userAgent)){
     try{
-      const path = url.replace(/^https?:\/\//, '');
-      // VIEW + MIME الصحيح + اسم الملف → يمنع الحفظ كـ .bin ويختار تطبيق الإكسل/الـ PDF
-      let intent = 'intent://' + path +
-        '#Intent;scheme=https;action=android.intent.action.VIEW;type=' +
-        encodeURIComponent(mime || 'application/octet-stream');
-      if (fileName){
-        intent += ';S.title=' + encodeURIComponent(fileName);
-        // بعض الرومات بتستخدم الاسم من الـ URL؛ نتأكد إن الامتداد ظاهر
-      }
-      intent += ';end';
-      location.href = intent;
-      return true;
+      const objUrl = URL.createObjectURL(blob);
+      const path = objUrl.replace(/^https?:\/\//, '').replace(/^blob:/, '');
+      // blob: URLs غالباً مش بتشتغل مع intent خارجي — نسيب التحميل اللي فوق هو الأساسي
+      URL.revokeObjectURL(objUrl);
     }catch(e){}
   }
-  // iOS وغيره: فتح في تاب جديد (غالباً بيفتح عارض النظام أو يحمّل بالامتداد الصح)
-  try{
-    const w = window.open(url, '_blank', 'noopener,noreferrer');
-    return !!w;
-  }catch(e){}
-  return false;
+
+  return 'fail';
 }
 
 /* ---------- ارتفاع الشريط العلوي (عشان الـ sticky يترصّ صح) ---------- */
@@ -1768,25 +1801,22 @@ grid.addEventListener('click', e => {
     // .ks هو النوع المشفّر بس → بريفيو الريسيبي + فك التشفير (زي ما هو خالص)
     openPreview({ path, name });
   } else if (isExcelOrPdf(name) && isMobileDevice()){
-    // Excel / PDF على الموبايل → التطبيق الافتراضي أولاً، ولو مفيش تطبيق نرجع للعرض الداخلي
+    // Excel / PDF على الموبايل → نجيب الملف كـ Blob بالاسم والـ MIME الصحيح
+    // عشان ما يتحفظش كـ .bin، وبعدين Share / تحميل / fallback للعارض الداخلي
     const url = RAW + '/' + path.replace(/ /g, '%20');
     const mime = mimeForFile(name);
-    toast('📂 ' + (I18n.t('fv.external') || 'Opening in app…'));
-    const tried = tryOpenExternalFile(url, mime, name);
-    // لو النظام ما فتحش تطبيق (مفيش handler) بعد ~1.4 ثانية لسه الصفحة شغّالة → fallback للعرض الداخلي
-    if (tried){
-      const start = Date.now();
-      setTimeout(() => {
-        // لو المستخدم لسه جوه الصفحة وما اتغيرش الـ visibility → مفيش تطبيق فتح
-        if (document.visibilityState === 'visible' && (Date.now() - start) < 2500){
-          if (FView.supports(name)) FView.open({ path, name });
-        }
-      }, 1400);
-    } else if (FView.supports(name)){
-      FView.open({ path, name });
-    } else {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    }
+    toast('📂 ' + (I18n.t('fv.external') || 'Opening…'));
+    (async () => {
+      const how = await openExternalFile(url, mime, name);
+      if (how === 'shared' || how === 'download'){
+        // اتفتح أو اتحمّل بالامتداد الصح (.xlsx / .xlsm / .pdf)
+        if (how === 'download') toast('✅ ' + name);
+        return;
+      }
+      // فشل → العارض الداخلي
+      if (FView.supports(name)) FView.open({ path, name });
+      else window.open(url, '_blank', 'noopener,noreferrer');
+    })();
   } else if (FView.supports(name)){
     // أي نوع تاني (صور / نص / HTML) أو Excel/PDF على الديسكتوب → بريفيو منفصل
     FView.open({ path, name });
