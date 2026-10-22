@@ -394,6 +394,101 @@ tbody tr:hover{background:rgba(109,94,252,.1)}
   background:rgba(255,255,255,.06);color:var(--txt);font-size:.9em;outline:none}
 .filters-row input:focus{border-color:var(--primary)}
 
+/* --- عرض وفلتر مناسب للموبايل (كروت + بحث عام) --- */
+.db-toolbar{
+  display:flex;flex-direction:column;gap:8px;margin-top:12px;
+}
+.db-search{
+  position:relative;width:100%;
+}
+.db-search input{
+  width:100%;padding:11px 14px 11px 38px;border-radius:12px;
+  border:1.5px solid var(--stroke);background:rgba(255,255,255,.06);
+  color:var(--txt);font-size:16px;outline:none;transition:.22s;
+  font-family:inherit;
+}
+.db-search input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(109,94,252,.12)}
+.db-search .ic{
+  position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%);
+  color:var(--muted);font-size:.9em;pointer-events:none;
+}
+.db-meta{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:.78em;color:var(--muted);font-weight:700;padding:0 2px;
+}
+.db-meta b{color:var(--txt)}
+.db-cards{
+  display:flex;flex-direction:column;gap:10px;margin-top:10px;
+  max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;padding-bottom:8px;
+}
+.db-card{
+  background:var(--panel);border:1px solid var(--stroke);border-radius:14px;
+  padding:12px 14px;animation:pop .35s ease both;
+}
+.db-card .dc-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--stroke);
+}
+.db-card .dc-title{
+  font-weight:900;font-size:.92em;color:var(--txt);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75%;
+}
+.db-card .dc-idx{
+  font-size:.7em;font-weight:800;color:var(--muted);
+  background:rgba(255,255,255,.06);padding:2px 8px;border-radius:99px;
+}
+.db-card .dc-row{
+  display:flex;gap:8px;padding:5px 0;font-size:.82em;line-height:1.55;
+  border-bottom:1px dashed rgba(255,255,255,.04);
+}
+.db-card .dc-row:last-child{border-bottom:0}
+.db-card .dc-key{
+  flex:0 0 38%;max-width:42%;font-weight:800;color:var(--primary);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.db-card .dc-val{
+  flex:1;color:var(--txt);word-break:break-word;min-width:0;
+}
+.db-empty{
+  text-align:center;padding:28px 14px;color:var(--muted);font-size:.86em;
+}
+.db-filters-toggle{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 12px;
+  border-radius:10px;border:1px solid var(--stroke);background:rgba(255,255,255,.05);
+  color:var(--muted);font-family:inherit;font-size:.78em;font-weight:800;cursor:pointer;
+}
+.db-filters-toggle:hover,.db-filters-toggle.on{color:var(--txt);border-color:var(--primary)}
+.db-col-filters{
+  display:none;flex-direction:column;gap:8px;margin-top:8px;
+  padding:10px;border-radius:12px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.03);
+}
+.db-col-filters.open{display:flex}
+.db-col-filters label{
+  display:flex;flex-direction:column;gap:4px;font-size:.74em;font-weight:800;color:var(--primary);
+}
+.db-col-filters input{
+  width:100%;padding:9px 10px;border-radius:10px;border:1px solid var(--stroke);
+  background:rgba(255,255,255,.06);color:var(--txt);font-size:15px;outline:none;
+  font-family:inherit;
+}
+.db-col-filters input:focus{border-color:var(--primary)}
+
+@media (min-width:641px){
+  .db-cards-mode .table-wrapper{display:block}
+  .db-cards-mode .db-cards,.db-cards-mode .db-toolbar .db-filters-toggle,
+  .db-cards-mode .db-col-filters{display:none !important}
+}
+@media (max-width:640px){
+  .table-wrapper{max-height:55vh}
+  table{min-width:480px;font-size:.75em}
+  th,td{padding:6px 7px}
+  .filters-row input{font-size:15px;padding:8px}
+  /* على الموبايل نفضّل وضع الكروت */
+  .db-desktop-only{display:none !important}
+}
+
 footer{
   text-align:center;padding:8px 12px calc(8px + env(safe-area-inset-bottom));
   border-top:1px solid var(--stroke);background:var(--panel);
@@ -921,6 +1016,44 @@ function toast(text){
   t.classList.add('show');
   clearTimeout(toastT);
   toastT = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+/* ---------- فتح ملفات Excel / PDF في التطبيق الافتراضي للموبايل ---------- */
+function isMobileDevice(){
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+function mimeForFile(name){
+  const n = String(name || '').toLowerCase();
+  if (n.endsWith('.pdf'))  return 'application/pdf';
+  if (n.endsWith('.xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (n.endsWith('.xls'))  return 'application/vnd.ms-excel';
+  if (n.endsWith('.csv'))  return 'text/csv';
+  if (n.endsWith('.tsv'))  return 'text/tab-separated-values';
+  return 'application/octet-stream';
+}
+function isExcelOrPdf(name){
+  return /\.(xlsx?|xls|csv|tsv|pdf)$/i.test(name || '');
+}
+/** يحاول يفتح الملف في تطبيق النظام (Excel / PDF viewer). بيرجع true لو حاول. */
+function tryOpenExternalFile(url, mime){
+  if (!url) return false;
+  if (/Android/i.test(navigator.userAgent)){
+    try{
+      const path = url.replace(/^https?:\/\//, '');
+      // VIEW + MIME → النظام بيختار تطبيق الإكسل أو القارئ الافتراضي
+      const intent = 'intent://' + path +
+        '#Intent;scheme=https;action=android.intent.action.VIEW;type=' +
+        encodeURIComponent(mime || 'application/octet-stream') + ';end';
+      location.href = intent;
+      return true;
+    }catch(e){}
+  }
+  // iOS وغيره: فتح في تاب جديد (غالباً بيفتح عارض النظام أو يحمّل)
+  try{
+    const w = window.open(url, '_blank', 'noopener,noreferrer');
+    return !!w;
+  }catch(e){}
+  return false;
 }
 
 /* ---------- ارتفاع الشريط العلوي (عشان الـ sticky يترصّ صح) ---------- */
@@ -1625,8 +1758,28 @@ grid.addEventListener('click', e => {
   } else if (/\.ks$/i.test(name)){
     // .ks هو النوع المشفّر بس → بريفيو الريسيبي + فك التشفير (زي ما هو خالص)
     openPreview({ path, name });
+  } else if (isExcelOrPdf(name) && isMobileDevice()){
+    // Excel / PDF على الموبايل → التطبيق الافتراضي أولاً، ولو مفيش تطبيق نرجع للعرض الداخلي
+    const url = RAW + '/' + path.replace(/ /g, '%20');
+    const mime = mimeForFile(name);
+    toast('📂 ' + (I18n.t('fv.external') || 'Opening in app…'));
+    const tried = tryOpenExternalFile(url, mime);
+    // لو النظام ما فتحش تطبيق (مفيش handler) بعد ~1.4 ثانية لسه الصفحة شغّالة → fallback للعرض الداخلي
+    if (tried){
+      const start = Date.now();
+      setTimeout(() => {
+        // لو المستخدم لسه جوه الصفحة وما اتغيرش الـ visibility → مفيش تطبيق فتح
+        if (document.visibilityState === 'visible' && (Date.now() - start) < 2500){
+          if (FView.supports(name)) FView.open({ path, name });
+        }
+      }, 1400);
+    } else if (FView.supports(name)){
+      FView.open({ path, name });
+    } else {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   } else if (FView.supports(name)){
-    // أي نوع تاني (إكسل / صور / PDF / نص / HTML) → بريفيو منفصل من غير تشفير
+    // أي نوع تاني (صور / نص / HTML) أو Excel/PDF على الديسكتوب → بريفيو منفصل
     FView.open({ path, name });
   } else {
     window.open(RAW + '/' + path.replace(/ /g, '%20'), '_blank', 'noopener,noreferrer');
@@ -2947,7 +3100,7 @@ async function submitForm(){
   const select = $('#tablesSelect');
   const container = $('#tableContainer');
   const dbStatus = $('#dbStatus');
-  let db = null, current = null, filters = {};
+  let db = null, current = null, filters = {}, globalQ = '';
 
   dbStatus.textContent = '⏳ ' + I18n.t('db.loading');
 
@@ -2975,10 +3128,15 @@ async function submitForm(){
     return;
   }
 
+  function isMobileView(){
+    return window.matchMedia('(max-width: 640px)').matches;
+  }
+
   select.addEventListener('change', () => {
     const name = select.value;
     container.innerHTML = '';
     current = null;
+    globalQ = '';
     if (!name) return;
     Prefs.set('dbTable', name);
 
@@ -3003,62 +3161,171 @@ async function submitForm(){
 
     current = r[0];
     filters = (Prefs.get('dbFilters:' + name, null)) || {};
-    renderTable();
+    renderAll();
   });
 
   function filtered(){
     if (!current) return [];
-    return current.values.filter(row =>
-      current.columns.every((col, i) => {
+    const gq = (globalQ || '').toLowerCase().trim();
+    return current.values.filter(row => {
+      // فلتر الأعمدة
+      const colOk = current.columns.every((col, i) => {
         const f = (filters[col] || '').toLowerCase();
         if (!f) return true;
         return String(row[i] == null ? '' : row[i]).toLowerCase().includes(f);
-      }));
+      });
+      if (!colOk) return false;
+      // بحث عام على كل الحقول
+      if (!gq) return true;
+      return row.some(cell => String(cell == null ? '' : cell).toLowerCase().includes(gq));
+    });
   }
 
-  function renderTable(){
+  function renderAll(){
     container.innerHTML = '';
-    const wrap = document.createElement('div');
-    wrap.className = 'table-wrapper';
-    const table = document.createElement('table');
+    if (!current) return;
 
-    const thead = document.createElement('thead');
-    const hr = document.createElement('tr');
-    current.columns.forEach(c => {
-      const th = document.createElement('th');
-      th.textContent = c;
-      hr.appendChild(th);
+    // شريط البحث العام + معلومات + زر فلاتر الأعمدة (مهم للموبايل)
+    const toolbar = document.createElement('div');
+    toolbar.className = 'db-toolbar';
+    toolbar.innerHTML =
+      `<div class="db-search">
+         <span class="ic"><i class="fas fa-magnifying-glass"></i></span>
+         <input type="search" id="dbGlobalSearch" placeholder="${esc(I18n.t('db.filter.ph') || 'بحث…')}" autocomplete="off" enterkeyhint="search">
+       </div>
+       <div class="db-meta">
+         <span id="dbRowCount"></span>
+         <button type="button" class="db-filters-toggle" id="dbFiltersBtn">
+           <i class="fas fa-sliders"></i> <span>${esc(I18n.t('db.filter.ph') || 'فلاتر')}</span>
+         </button>
+       </div>
+       <div class="db-col-filters" id="dbColFilters"></div>`;
+    container.appendChild(toolbar);
+
+    const gInp = toolbar.querySelector('#dbGlobalSearch');
+    gInp.value = globalQ;
+    gInp.addEventListener('input', e => {
+      globalQ = e.target.value;
+      refreshBody();
     });
-    thead.appendChild(hr);
-    table.appendChild(thead);
 
-    const fr = document.createElement('tr');
-    fr.className = 'filters-row';
+    // فلاتر الأعمدة (قابلة للطي — مناسبة للموبايل)
+    const colBox = toolbar.querySelector('#dbColFilters');
     current.columns.forEach(c => {
-      const td = document.createElement('td');
+      const lab = document.createElement('label');
+      lab.innerHTML = `<span>${esc(c)}</span>`;
       const inp = document.createElement('input');
       inp.type = 'text';
-      inp.placeholder = I18n.t('db.filter.ph');
+      inp.placeholder = c;
       inp.value = filters[c] || '';
       inp.addEventListener('input', e => {
         filters[c] = e.target.value.trim();
-        body(filtered());
+        refreshBody();
         Store.debounce('p:dbFilters:' + select.value, filters, 500);
       });
-      td.appendChild(inp);
-      fr.appendChild(td);
+      lab.appendChild(inp);
+      colBox.appendChild(lab);
     });
-    table.appendChild(fr);
 
-    const tbody = document.createElement('tbody');
-    table.appendChild(tbody);
-    wrap.appendChild(table);
-    container.appendChild(wrap);
-    body(filtered());
+    const filtBtn = toolbar.querySelector('#dbFiltersBtn');
+    filtBtn.addEventListener('click', () => {
+      colBox.classList.toggle('open');
+      filtBtn.classList.toggle('on', colBox.classList.contains('open'));
+    });
+
+    // وضع العرض: كروت على الموبايل، جدول على الشاشات الكبيرة
+    if (isMobileView()){
+      const cards = document.createElement('div');
+      cards.className = 'db-cards';
+      cards.id = 'dbCards';
+      container.appendChild(cards);
+    } else {
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrapper db-desktop-only';
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const hr = document.createElement('tr');
+      current.columns.forEach(c => {
+        const th = document.createElement('th');
+        th.textContent = c;
+        hr.appendChild(th);
+      });
+      thead.appendChild(hr);
+      table.appendChild(thead);
+
+      // صف فلاتر الأعمدة في الجدول (ديسكتوب)
+      const fr = document.createElement('tr');
+      fr.className = 'filters-row';
+      current.columns.forEach(c => {
+        const td = document.createElement('td');
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.placeholder = I18n.t('db.filter.ph');
+        inp.value = filters[c] || '';
+        inp.addEventListener('input', e => {
+          filters[c] = e.target.value.trim();
+          refreshBody();
+          Store.debounce('p:dbFilters:' + select.value, filters, 500);
+        });
+        td.appendChild(inp);
+        fr.appendChild(td);
+      });
+      table.appendChild(fr);
+
+      const tbody = document.createElement('tbody');
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      container.appendChild(wrap);
+    }
+
+    refreshBody();
   }
 
-  function body(rows){
-    const table = container.querySelector('table');
+  function refreshBody(){
+    const rows = filtered();
+    const countEl = container.querySelector('#dbRowCount');
+    if (countEl){
+      countEl.innerHTML = `<b>${rows.length}</b> / ${current ? current.values.length : 0}`;
+    }
+
+    if (isMobileView()){
+      renderCards(rows);
+    } else {
+      renderTableBody(rows);
+    }
+  }
+
+  function renderCards(rows){
+    const box = container.querySelector('#dbCards');
+    if (!box) return;
+    if (!rows.length){
+      box.innerHTML = `<div class="db-empty"><i class="fas fa-inbox" style="opacity:.5;margin-bottom:8px;display:block;font-size:1.6em"></i>${esc(I18n.t('db.noMatch'))}</div>`;
+      return;
+    }
+    // أول عمود كعنوان للكارت لو موجود
+    const titleIdx = 0;
+    box.innerHTML = rows.map((row, idx) => {
+      const title = row[titleIdx] != null && String(row[titleIdx]).trim()
+        ? String(row[titleIdx])
+        : ('#' + (idx + 1));
+      const fields = current.columns.map((col, i) => {
+        if (i === titleIdx && current.columns.length > 1) return '';
+        const val = row[i] == null ? '' : String(row[i]);
+        if (!val && val !== 0) return '';
+        return `<div class="dc-row"><span class="dc-key">${esc(col)}</span><span class="dc-val">${esc(val)}</span></div>`;
+      }).join('');
+      return `<div class="db-card">
+        <div class="dc-head">
+          <span class="dc-title">${esc(title)}</span>
+          <span class="dc-idx">${idx + 1}</span>
+        </div>
+        ${fields}
+      </div>`;
+    }).join('');
+  }
+
+  function renderTableBody(rows){
+    const table = container.querySelector('.table-wrapper table');
     if (!table) return;
     const tbody = table.tBodies[0];
     tbody.innerHTML = '';
@@ -3078,6 +3345,18 @@ async function submitForm(){
       });
     });
   }
+
+  // إعادة رسم عند تغيير حجم الشاشة (من كروت ↔ جدول)
+  let resizeT;
+  addEventListener('resize', () => {
+    if (!current) return;
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => {
+      const hasCards = !!container.querySelector('#dbCards');
+      const wantCards = isMobileView();
+      if (hasCards !== wantCards) renderAll();
+    }, 180);
+  }, { passive: true });
 })();
 
 /* ==========================================================================
